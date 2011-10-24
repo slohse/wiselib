@@ -1,5 +1,5 @@
 #include "CoapPacket.h"
-/*
+
 CoapPacket::CoapPacket()
 {
 	init();
@@ -703,4 +703,3 @@ void CoapPacket::remove_opt_uri_query()
 	remove_option( string_options_, COAP_OPT_URI_QUERY );
 }
 
-*/

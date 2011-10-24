@@ -2,7 +2,7 @@
 #define COAPPACKET_H
 
 #include "coap.h"
-/*
+
 
 #define COAP_START_OF_OPTIONS	4
 
@@ -506,4 +506,4 @@ class CoapPacket
 };
 
 #endif // COAPPACKET_H
-*/
+
