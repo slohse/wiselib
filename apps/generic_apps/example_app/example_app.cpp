@@ -15,29 +15,29 @@ class ExampleApplication
          timer_ = &wiselib::FacetProvider<Os, Os::Timer>::get_facet( value );
          debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 
-         debug_->debug( "Hello World from Example Application!\n" );
+         debug_->debug( "Example Application booting!\n" );
 
          radio_->reg_recv_callback<ExampleApplication,
                                    &ExampleApplication::receive_radio_message>( this );
          timer_->set_timer<ExampleApplication,
-                           &ExampleApplication::start>( 5000, this, 0 );
+                           &ExampleApplication::broadcast_loop>( 5000, this, 0 );
       }
       // --------------------------------------------------------------------
-      void start( void* )
+      void broadcast_loop( void* )
       {
-         debug_->debug( "broadcast message at %d \n", radio_->id() );
+         debug_->debug( "broadcasting message at %x \n", radio_->id() );
          Os::Radio::block_data_t message[] = "hello world!\0";
          radio_->send( Os::Radio::BROADCAST_ADDRESS, sizeof(message), message );
 
          // following can be used for periodic messages to sink
-         // timer_->set_timer<ExampleApplication,
-         //                  &ExampleApplication::start>( 5000, this, 0 );
+         timer_->set_timer<ExampleApplication,
+                           &ExampleApplication::broadcast_loop>( 5000, this, 0 );
       }
       // --------------------------------------------------------------------
       void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
       {
-         debug_->debug( "received msg at %u from %u\n", radio_->id(), from );
-         debug_->debug( "  message is %s\n", buf );
+         debug_->debug( "received msg at %x from %x\n", radio_->id(), from );
+         debug_->debug( "message is %s\n", buf );
       }
    private:
       Os::Radio::self_pointer_t radio_;
