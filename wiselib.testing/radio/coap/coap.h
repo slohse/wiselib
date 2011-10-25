@@ -6,11 +6,11 @@
 // TODO: ersetzen mit <wiselib.stable/external_interfaces/external_interface.h>
 #include <external_interfaces/external_interface.h>
 // TODO: mit was passendem ersetzen...
-#include <string.h>
+#include <static_string.h>
 // TODO: memcpy
 //#include <cstring>
 // TODO: wiselib-äquivalent dazu
-#include <list>
+#include <list_static>
 using namespace std;
 
 // Hilfsmakros
