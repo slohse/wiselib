@@ -4,7 +4,7 @@
 #include "external_interface/external_interface.h"
 #include "algorithms/routing/tree/tree_routing.h"
 
-#include "coap.h"
+#include "radio/coap/coap_packet.h"
 
 
 typedef wiselib::OSMODEL Os;

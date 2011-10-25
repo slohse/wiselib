@@ -4,13 +4,13 @@
 
 
 // TODO: ersetzen mit <wiselib.stable/external_interfaces/external_interface.h>
-#include <external_interfaces/external_interface.h>
+#include "external_interface/external_interface.h"
 // TODO: mit was passendem ersetzen...
-#include <static_string.h>
+#include "util/pstl/static_string.h"
 // TODO: memcpy
 //#include <cstring>
 // TODO: wiselib-äquivalent dazu
-#include <list_static>
+#include "util/pstl/list_static.h"
 using namespace std;
 
 // Hilfsmakros
