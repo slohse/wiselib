@@ -13,7 +13,20 @@
 #include "util/pstl/list_static.h"
 using namespace std;
 
+// Config Tweaks
+// of the uint options (content type, max age, uri port and accept) only accept can occur multiple times
+// and currently (draft-07) there are only six media types. So 8 seemed a pretty good default
+#define COAP_LIST_SIZE_UINT		8
+// TODO: Sinnvollen Default finden
+#define COAP_LIST_SIZE_STRING		16
+// TODO: Sinnvollen Default finden
+#define COAP_LIST_SIZE_OPAQUE		8
+
+
 // Hilfsmakros
+//TODO: die COAP_FORMAT Dinger werden nie benutzt.
+// Ich glaube meine Absicht war eine Lookup-Tabelle zu machen, wo für jede OPT drin steh welchen Typ sie hat.
+// Sollte ich das nochmal umsetzen: 0 für Zero length verwenden (FENCEPOST und IF_NONE_MATCH)
 #define COAP_FORMAT_UINT	0
 #define COAP_FORMAT_STRING	1
 #define COAP_FORMAT_OPAQUE	2
