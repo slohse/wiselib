@@ -5,8 +5,7 @@
 
 namespace wiselib
 {
-	template<typename OsModel_P,
-	         typename Debug_P = typename OsModel_P::Debug>
+	template<typename OsModel_P>
 	class CoapPacket
 	{
 		class UintOption
@@ -137,7 +136,7 @@ namespace wiselib
 
 	public:
 		typedef OsModel_P OsModel;
-		typedef Debug_P Debug;
+		typedef typename OsModel_P::Debug Debug;
 		
 		///@name Construction / Destruction
 		///@{
@@ -146,19 +145,7 @@ namespace wiselib
 		~CoapPacket();
 		///@}
 
-		void init(Debug& debug )
-		{
-			debug_ = &debug;
-
-			version_ = COAP_VERSION;
-			// TODO: sinnvollen Default festlegen und dann ein COAP_MSG_DEFAULT_TYPE Makro anlegen oder so
-			type_ = COAP_MSG_TYPE_NON;
-			code_ = COAP_CODE_EMPTY;
-			msg_id_ = 0;
-			opt_if_none_match_ = false;
-
-			data_length_ = 0;
-		}
+		void init( Debug& debug );
 
 	private:
 		typename Debug::self_pointer_t debug_;
@@ -178,7 +165,26 @@ namespace wiselib
 		size_t data_length_;
 	};
 
+	template<typename OsModel_P>
+	void CoapPacket<OsModel_P>::init( Debug& debug )
+	{
+		debug_ = &debug;
+
+		version_ = COAP_VERSION;
+		// TODO: sinnvollen Default festlegen und dann ein COAP_MSG_DEFAULT_TYPE Makro anlegen oder so
+		type_ = COAP_MSG_TYPE_NON;
+		code_ = COAP_CODE_EMPTY;
+		msg_id_ = 0;
+		opt_if_none_match_ = false;
+
+		data_length_ = 0;
+	}
+
+
+
 }
+
+
 
 
 #endif // COAP_PACKET_H
