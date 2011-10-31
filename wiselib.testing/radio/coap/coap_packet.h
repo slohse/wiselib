@@ -52,7 +52,7 @@ namespace wiselib
 			void set( uint8_t option_number, uint8_t* op, size_t length) { option_number_ = option_number; memcpy( value_, op, length ); length_ = length; }
 
 			int operator==(const OpaqueOption& other)
-							{
+			{
 				if ( length() == other.length() )
 				{
 					for(size_t i = 0; i < length(); ++i )
@@ -65,7 +65,7 @@ namespace wiselib
 					return true;
 				}
 				return false;
-							}
+			}
 
 			int operator>(const OpaqueOption& other)
 			{
@@ -92,7 +92,7 @@ namespace wiselib
 			}
 
 			int operator>=(const OpaqueOption& other)
-							{
+			{
 				if ( length() > other.length() )
 				{
 					return true;
@@ -115,18 +115,18 @@ namespace wiselib
 				}
 				// this is shorter in length
 				return false;
-							}
+			}
 
-			/*			int operator<(const OpaqueOption& other)
-					{
-						return(!(this >= other));
-					}
+			int operator<(const OpaqueOption& other)
+			{
+				return(!(this >= other));
+			}
 
-					int operator<=(const OpaqueOption& other)
-					{
-						return(!(this > other));
-					}
-			 */
+			int operator<=(const OpaqueOption& other)
+			{
+				return(!(this > other));
+			}
+
 
 		private:
 			uint8_t option_number_;
@@ -164,6 +164,9 @@ namespace wiselib
 		uint8_t* data_;
 		size_t data_length_;
 	};
+
+
+// Implementation starts here
 
 	template<typename OsModel_P>
 	void CoapPacket<OsModel_P>::init( Debug& debug )
