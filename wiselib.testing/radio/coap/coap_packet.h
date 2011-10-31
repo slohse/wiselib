@@ -154,6 +154,8 @@ namespace wiselib
 			// TODO: sinnvollen Default festlegen und dann ein COAP_MSG_DEFAULT_TYPE Makro anlegen oder so
 			type_ = COAP_MSG_TYPE_NON;
 			code_ = COAP_CODE_EMPTY;
+			msg_id_ = 0;
+			opt_if_none_match_ = false;
 
 			data_length_ = 0;
 		}
