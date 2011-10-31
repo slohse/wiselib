@@ -24,12 +24,6 @@ using namespace std;
 
 
 // Hilfsmakros
-//TODO: die COAP_FORMAT Dinger werden nie benutzt.
-// Ich glaube meine Absicht war eine Lookup-Tabelle zu machen, wo für jede OPT drin steh welchen Typ sie hat.
-// Sollte ich das nochmal umsetzen: 0 für Zero length verwenden (FENCEPOST und IF_NONE_MATCH)
-#define COAP_FORMAT_UINT	0
-#define COAP_FORMAT_STRING	1
-#define COAP_FORMAT_OPAQUE	2
 
 // Constants defined in draft-ietf-core-coap-07
 #define COAP_VERSION	1
@@ -119,6 +113,37 @@ using namespace std;
 
 
 #define NEXT_FENCEPOST(previous_option_number)	( COAP_OPT_FENCEPOST - ( (previous_option_number) % COAP_OPT_FENCEPOST ) )
+
+#define COAP_FORMAT_NONE	0
+#define COAP_FORMAT_UINT	1
+#define COAP_FORMAT_STRING	2
+#define COAP_FORMAT_OPAQUE	3
+
+static const uint8_t COAP_OPTION_FORMAT[22] =
+{
+	COAP_FORMAT_NONE,			// 0: not in use
+	COAP_FORMAT_UINT,			// 1: COAP_OPT_CONTENT_TYPE
+	COAP_FORMAT_UINT,			// 2: COAP_OPT_MAX_AGE
+	COAP_FORMAT_STRING,			// 3: COAP_OPT_PROXY_URI
+	COAP_FORMAT_OPAQUE,			// 4: COAP_OPT_ETAG
+	COAP_FORMAT_STRING,			// 5: COAP_OPT_URI_HOST
+	COAP_FORMAT_STRING,			// 6: COAP_OPT_LOCATION_PATH
+	COAP_FORMAT_UINT,			// 7: COAP_OPT_URI_PORT
+	COAP_FORMAT_STRING,			// 8: COAP_OPT_LOCATION_QUERY
+	COAP_FORMAT_STRING,			// 9: COAP_OPT_URI_PATH
+	COAP_FORMAT_NONE,			// 10: not in use
+	COAP_FORMAT_OPAQUE,			// 11: COAP_OPT_TOKEN
+	COAP_FORMAT_UINT,			// 12: COAP_OPT_ACCEPT
+	COAP_FORMAT_OPAQUE,			// 13: COAP_OPT_IF_MATCH
+	COAP_FORMAT_NONE,			// 14: COAP_OPT_FENCEPOST
+	COAP_FORMAT_STRING,			// 15: COAP_OPT_URI_QUERY
+	COAP_FORMAT_NONE,			// 16: not in use
+	COAP_FORMAT_NONE,			// 17: not in use
+	COAP_FORMAT_NONE,			// 18: not in use
+	COAP_FORMAT_NONE,			// 19: not in use
+	COAP_FORMAT_NONE,			// 20: not in use
+	COAP_FORMAT_NONE			// 21: COAP_OPT_IF_NONE_MATCH
+};
 
 
 #endif // COAP_H

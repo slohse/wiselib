@@ -6,7 +6,6 @@
 namespace wiselib
 {
 	template<typename OsModel_P,
-	         typename Radio_P = typename OsModel_P::Radio,
 	         typename Debug_P = typename OsModel_P::Debug>
 	class CoapPacket
 	{
@@ -138,7 +137,6 @@ namespace wiselib
 
 	public:
 		typedef OsModel_P OsModel;
-		typedef Radio_P Radio;
 		typedef Debug_P Debug;
 		
 		///@name Construction / Destruction
@@ -148,9 +146,8 @@ namespace wiselib
 		~CoapPacket();
 		///@}
 
-		void init( Radio& radio, Debug& debug )
+		void init(Debug& debug )
 		{
-			radio_ = &radio;
 			debug_ = &debug;
 
 			version_ = COAP_VERSION;
@@ -162,7 +159,6 @@ namespace wiselib
 		}
 
 	private:
-		typename Radio::self_pointer_t radio_;
 		typename Debug::self_pointer_t debug_;
 
 		uint8_t version_;
