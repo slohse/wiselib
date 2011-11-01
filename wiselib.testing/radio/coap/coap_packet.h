@@ -146,11 +146,43 @@ namespace wiselib
 		///@}
 
 		void init( Debug& debug );
+
+		/**
+		 * Returns the CoAP version number of the packet
+		 * @return CoAP version number
+		 */
 		uint8_t version();
+
+		/**
+		 * Sets the CoAP version number of the packet. DO NOT set it to anything other than COAP_VERSION unless you know what you are doing!
+		 * Note: the corresponding field in the CoAP packet is 2 bit wide. Setting it to anything greater than 3 is pointless.
+		 * @param version version number
+		 */
 		void set_version( uint8_t version );
+
+		/**
+		 * Returns the type of the packet. Can be Confirmable, Non-Confirmable, Acknowledgement or Reset.
+		 * @return message type
+		 */
 		uint8_t type();
+
+		/**
+		 * Sets the type of the packet. Can be COAP_MSG_TYPE_CON, COAP_MSG_TYPE_NON, COAP_MSG_TYPE_ACK or COAP_MSG_TYPE_RST.
+		 * @param type message type
+		 */
 		void set_type( uint8_t type );
+
+		/**
+		 * Returns the number of options that are set in this packet.
+		 * @return number of options set
+		 */
 		uint8_t option_count();
+
+		/**
+		 * Returns the code of the packet. Can be a request (1-31), response (64-191) or empty (0). (all other values are reserved)
+		 * For details refer to the CoAP Code Registry section of the CoAP draft.
+		 * @return code of the message
+		 */
 		uint8_t code();
 		void set_code( uint8_t code );
 		uint16_t msg_id();
@@ -230,7 +262,7 @@ namespace wiselib
 	template<typename OsModel_P>
 	void CoapPacket<OsModel_P>::set_version( uint8_t version )
 	{
-		version_ = version;
+		version_ = version & 0x03;
 	}
 
 	template<typename OsModel_P>
