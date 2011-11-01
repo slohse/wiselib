@@ -146,6 +146,18 @@ namespace wiselib
 		///@}
 
 		void init( Debug& debug );
+		uint8_t version();
+		void set_version( uint8_t version );
+		uint8_t type();
+		void set_type( uint8_t type );
+		uint8_t option_count();
+		uint8_t code();
+		void set_code( uint8_t code );
+		uint16_t msg_id();
+		void set_msg_id( uint16_t msg_id );
+		void set_data( uint8_t* data , size_t length);
+		uint8_t* data();
+		size_t data_length();
 
 	private:
 		typename Debug::self_pointer_t debug_;
@@ -169,6 +181,19 @@ namespace wiselib
 // Implementation starts here
 
 	template<typename OsModel_P>
+	CoapPacket<OsModel_P>::CoapPacket()
+	{
+		init();
+	}
+
+	template<typename OsModel_P>
+	CoapPacket<OsModel_P>::CoapPacket( uint8_t *datastream, size_t length )
+	{
+		init();
+		// TODO
+	}
+
+	template<typename OsModel_P>
 	void CoapPacket<OsModel_P>::init( Debug& debug )
 	{
 		debug_ = &debug;
@@ -181,6 +206,81 @@ namespace wiselib
 		opt_if_none_match_ = false;
 
 		data_length_ = 0;
+	}
+
+	template<typename OsModel_P>
+	uint8_t CoapPacket<OsModel_P>::version()
+	{
+		return version_;
+	}
+
+	template<typename OsModel_P>
+	void CoapPacket<OsModel_P>::set_version( uint8_t version )
+	{
+		version_ = version;
+	}
+
+	template<typename OsModel_P>
+	uint8_t CoapPacket<OsModel_P>::type()
+	{
+		return type_;
+	}
+
+	template<typename OsModel_P>
+	void CoapPacket<OsModel_P>::set_type( uint8_t type )
+	{
+		type_ = type;
+	}
+
+	template<typename OsModel_P>
+	uint8_t CoapPacket<OsModel_P>::option_count()
+	{
+		return ( string_options_.size()
+				+ uint_options_.size()
+				+ opaque_options_.size()
+				+ opt_if_none_match_ );
+	}
+
+	template<typename OsModel_P>
+	uint8_t CoapPacket<OsModel_P>::code()
+	{
+		return code_;
+	}
+
+	template<typename OsModel_P>
+	void CoapPacket<OsModel_P>::set_code( uint8_t code )
+	{
+		code_ = code;
+	}
+
+	template<typename OsModel_P>
+	uint16_t CoapPacket<OsModel_P>::msg_id()
+	{
+		return msg_id_;
+	}
+
+	template<typename OsModel_P>
+	void CoapPacket<OsModel_P>::set_msg_id( uint16_t msg_id )
+	{
+		msg_id_ = msg_id;
+	}
+
+	template<typename OsModel_P>
+	void CoapPacket<OsModel_P>::set_data( uint8_t* data , size_t length)
+	{
+		data_ = data; data_length_ = length;
+	}
+
+	template<typename OsModel_P>
+	uint8_t* CoapPacket<OsModel_P>::data()
+	{
+		return data_;
+	}
+
+	template<typename OsModel_P>
+	size_t CoapPacket<OsModel_P>::data_length()
+	{
+		return data_length_;
 	}
 
 
