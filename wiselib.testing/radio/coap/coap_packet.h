@@ -163,6 +163,11 @@ namespace wiselib
 		template <typename T, list_size_t N>
 		void set_option(list_static<OsModel, T, N> &options, T option);
 
+		template <typename T, list_size_t N>
+		void add_option(list_static<OsModel, T, N> &options, T option);
+
+		template <typename T, list_size_t N>
+		void remove_option(list_static<OsModel, T, N> &options, uint8_t option_number);
 
 		bool opt_if_none_match();
 		void set_opt_if_none_match( bool opt_if_none_match );
@@ -317,6 +322,34 @@ namespace wiselib
 				options.push_back(option);
 				break;
 			}
+		}
+	}
+
+	template <typename OsModel_P>
+	template <typename T, list_size_t N>
+	void CoapPacket<OsModel_P>::add_option(list_static<OsModel, T, N> &options, T option)
+	{
+		typename list_static<OsModel, T, N>::iterator it = options.begin();
+		while(it != options.end() && ( *it ).option_number() <= option.option_number() )
+		{
+			++it;
+		}
+		options.insert(it, option);
+	}
+
+	template <typename OsModel_P>
+	template <typename T, list_size_t N>
+	void CoapPacket<OsModel_P>::remove_option(list_static<OsModel, T, N> &options, uint8_t option_number)
+	{
+		typename list_static<OsModel, T, N>::iterator it = options.begin();
+		while(it != options.end())
+		{
+			if( ( *it ).option_number() == option_number )
+			{
+				it = options.erase(it);
+				continue;
+			}
+			++it;
 		}
 	}
 
