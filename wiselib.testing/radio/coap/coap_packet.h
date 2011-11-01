@@ -159,6 +159,9 @@ namespace wiselib
 		uint8_t* data();
 		size_t data_length();
 
+		bool opt_if_none_match();
+		void set_opt_if_none_match( bool opt_if_none_match );
+
 	private:
 		typename Debug::self_pointer_t debug_;
 
@@ -283,7 +286,17 @@ namespace wiselib
 		return data_length_;
 	}
 
+	template<typename OsModel_P>
+	bool CoapPacket<OsModel_P>::opt_if_none_match()
+	{
+		return opt_if_none_match_;
+	}
 
+	template<typename OsModel_P>
+	void CoapPacket<OsModel_P>::set_opt_if_none_match( bool opt_if_none_match )
+	{
+		opt_if_none_match_ = opt_if_none_match;
+	}
 
 }
 
