@@ -159,6 +159,11 @@ namespace wiselib
 		uint8_t* data();
 		size_t data_length();
 
+		// methods dealing with Options
+		template <typename T, list_size_t N>
+		void set_option(list_static<OsModel, T, N> &options, T option);
+
+
 		bool opt_if_none_match();
 		void set_opt_if_none_match( bool opt_if_none_match );
 
@@ -284,6 +289,35 @@ namespace wiselib
 	size_t CoapPacket<OsModel_P>::data_length()
 	{
 		return data_length_;
+	}
+
+	template <typename OsModel_P>
+	template <typename T, list_size_t N>
+	void CoapPacket<OsModel_P>::set_option(list_static<OsModel, T, N> &options, T option)
+	{
+		typename list_static<OsModel, T, N>::iterator it = options.begin();
+		for(;; ++it)
+		{
+			if( ( *it ).option_number() < option.option_number() )
+			{
+				continue;
+			}
+			if( ( *it ).option_number() == option.option_number() )
+			{
+				( *it ) = option;
+				break;
+			}
+			if( ( *it ).option_number() > option.option_number() )
+			{
+				options.insert(it, option);
+				break;
+			}
+			if(it == options.end())
+			{
+				options.push_back(option);
+				break;
+			}
+		}
 	}
 
 	template<typename OsModel_P>
