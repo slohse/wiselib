@@ -116,8 +116,9 @@ using namespace std;
 #define COAP_FORMAT_UINT	1
 #define COAP_FORMAT_STRING	2
 #define COAP_FORMAT_OPAQUE	3
+#define COAP_OPTION_FORMAT_ARRAY_SIZE	22
 
-static const uint8_t COAP_OPTION_FORMAT[22] =
+static const uint8_t COAP_OPTION_FORMAT[COAP_OPTION_FORMAT_ARRAY_SIZE] =
 {
 	COAP_FORMAT_NONE,			// 0: not in use
 	COAP_FORMAT_UINT,			// 1: COAP_OPT_CONTENT_TYPE
