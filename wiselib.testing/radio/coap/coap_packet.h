@@ -191,6 +191,8 @@ namespace wiselib
 		uint8_t* data();
 		size_t data_length();
 
+		size_t serialize(uint8_t *datastream);
+
 		// methods dealing with Options
 		template <typename T, list_size_t N>
 		void set_option(list_static<OsModel, T, N> &options, T option);
@@ -338,6 +340,111 @@ namespace wiselib
 		return data_length_;
 	}
 
+	template<typename OsModel_P>
+	size_t CoapPacket<OsModel_P>::serialize( uint8_t *datastream )
+	{
+		datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | (option_count() & 0x0f);
+		datastream[1] = code();
+		datastream[2] = (this->msg_id() & 0xff00) >> 8;
+		datastream[3] = (this->msg_id() & 0x00ff);
+
+		int offset = 4;
+
+		typename list_static<OsModel, UintOption, COAP_LIST_SIZE_UINT>::iterator uit = uint_options_.begin();
+		typename list_static<OsModel, StringOption, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
+		typename list_static<OsModel, OpaqueOption, COAP_LIST_SIZE_OPAQUE>::iterator oit = opaque_options_.begin();
+
+		size_t sindex;
+		size_t uindex;
+		size_t oindex;
+		uint8_t last_option_number = 0;
+
+		while( true )
+		{
+			if( uit != uint_options_.end() )
+			{
+				uindex = ( *uit ).option_number();
+			}
+			else
+			{
+				uindex = (size_t) - 1;
+			}
+
+			if( sit != string_options_.end() )
+			{
+				sindex = ( *sit ).option_number();
+			}
+			else
+			{
+				sindex = (size_t) - 1;
+			}
+
+			if( oit != opaque_options_.end() )
+			{
+				oindex = ( *oit ).option_number();
+			}
+			else
+			{
+				oindex = (size_t) - 1;
+			}
+
+			// all options have been serialized
+			if( uindex == ( (size_t) - 1 )
+					&& sindex == ( (size_t) - 1 )
+					&& oindex == ( (size_t) - 1 ))
+			{
+				break;
+			}
+
+			if( uindex < sindex )
+			{
+				if( oindex < uindex )
+				{
+					offset += serialize_option( datastream + offset, last_option_number, ( *oit ) );
+					last_option_number = ( *oit ).option_number();
+					++oit;
+					continue;
+				}
+				else
+				{
+					offset += serialize_option( datastream + offset, last_option_number, ( *uit ) );
+					last_option_number = ( *uit ).option_number();
+					++uit;
+					continue;
+				}
+			}
+			else
+			{
+				if( oindex < sindex )
+				{
+					offset += serialize_option( datastream + offset, last_option_number, ( *oit ) );
+					last_option_number = ( *oit ).option_number();
+					++oit;
+					continue;
+				}
+				else
+				{
+					offset += serialize_option( datastream + offset, last_option_number, ( *sit ) );
+					last_option_number = ( *sit ).option_number();
+					++sit;
+					continue;
+				}
+			}
+		}
+
+		if(opt_if_none_match())
+		{
+			fenceposting( COAP_OPT_IF_NONE_MATCH, last_option_number, datastream, offset );
+			datastream[offset] = (uint8_t) (( COAP_OPT_IF_NONE_MATCH - last_option_number ) << 4 );
+			++offset;
+		}
+
+		memcpy( datastream + offset, data(), data_length());
+		offset += data_length();
+		return offset;
+	}
+
+
 	template <typename OsModel_P>
 	template <typename T, list_size_t N>
 	void CoapPacket<OsModel_P>::set_option(list_static<OsModel, T, N> &options, T option)
@@ -407,6 +514,8 @@ namespace wiselib
 		opt_if_none_match_ = opt_if_none_match;
 	}
 
+
+	// private methods
 	template<typename OsModel_P>
 	inline uint8_t CoapPacket<OsModel_P>::next_fencepost(uint8_t previous_opt_number)
 	{
