@@ -445,9 +445,9 @@ namespace wiselib
 	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t last_option_number, OpaqueOption &opt )
 	{
 		size_t offset = 0;
-		fenceposting( opt.option_number() );
+		fenceposting( opt.option_number(), last_option_number, datastream, offset );
 		datastream[offset] = (uint8_t) (( opt.option_number() - last_option_number ) << 4 );
-		optlength(opt.length());
+		optlength( opt.length(), datastream, offset );
 		memcpy( datastream + offset, opt.value(), opt.length());
 		offset += opt.length();
 		return offset;
@@ -457,9 +457,9 @@ namespace wiselib
 	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t last_option_number, StringOption &opt )
 	{
 		size_t offset = 0;
-		fenceposting( opt.option_number() );
+		fenceposting( opt.option_number(), last_option_number, datastream, offset );
 		datastream[offset] = (uint8_t) (( opt.option_number() - last_option_number ) << 4 );
-		optlength(opt.value().length());
+		optlength( opt.value().length(), datastream, offset );
 
 		memcpy(datastream + offset, opt.value().c_str(), opt.value().length());
 		offset += opt.value().length();
@@ -470,7 +470,7 @@ namespace wiselib
 	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t last_option_number, UintOption &opt )
 	{
 		size_t offset = 0;
-		fenceposting( opt.option_number() );
+		fenceposting( opt.option_number(), last_option_number, datastream, offset );
 		datastream[offset] = (uint8_t) (( opt.option_number() - last_option_number ) << 4 );
 
 		size_t length = 0;
