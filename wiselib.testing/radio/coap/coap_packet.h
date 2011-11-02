@@ -220,6 +220,16 @@ namespace wiselib
 
 		uint8_t* data_;
 		size_t data_length_;
+
+		// methods:
+		inline uint8_t next_fencepost(uint8_t previous_opt_number);
+		inline void fenceposting( uint8_t option_number, uint8_t last_opt_number, uint8_t *datastream, size_t &offset );
+		inline void optlength( size_t length, uint8_t *datastream, size_t &offset );
+
+		size_t serialize_option( uint8_t *datastream, uint8_t last_option_number, OpaqueOption &opt );
+		size_t serialize_option( uint8_t *datastream, uint8_t last_option_number, StringOption &opt );
+		size_t serialize_option( uint8_t *datastream, uint8_t last_option_number, UintOption &opt );
+
 	};
 
 
@@ -396,6 +406,93 @@ namespace wiselib
 	{
 		opt_if_none_match_ = opt_if_none_match;
 	}
+
+	template<typename OsModel_P>
+	inline uint8_t CoapPacket<OsModel_P>::next_fencepost(uint8_t previous_opt_number)
+	{
+		return ( COAP_OPT_FENCEPOST - ( (previous_opt_number) % COAP_OPT_FENCEPOST ) );
+	}
+
+	template<typename OsModel_P>
+	inline void CoapPacket<OsModel_P>::fenceposting( uint8_t option_number, uint8_t previous_opt_number, uint8_t *datastream, size_t &offset )
+	{
+		while( option_number - previous_opt_number > 15 )
+		{
+			datastream[offset] = next_fencepost(previous_opt_number) << 4;
+			previous_opt_number += next_fencepost(previous_opt_number) << 4;
+			++offset;
+		}
+	}
+
+	template<typename OsModel_P>
+	inline void CoapPacket<OsModel_P>::optlength( size_t length, uint8_t *datastream, size_t &offset )
+	{
+		if( length > 14 )
+		{
+			datastream[offset] |= 0x0f;
+			++offset;
+			datastream[offset] = (length - 15) & 0xff;
+			++offset;
+		}
+		else
+		{
+			datastream[offset] |= length & 0x0f ;
+			++offset;
+		}
+	}
+
+	template<typename OsModel_P>
+	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t last_option_number, OpaqueOption &opt )
+	{
+		size_t offset = 0;
+		fenceposting( opt.option_number() );
+		datastream[offset] = (uint8_t) (( opt.option_number() - last_option_number ) << 4 );
+		optlength(opt.length());
+		memcpy( datastream + offset, opt.value(), opt.length());
+		offset += opt.length();
+		return offset;
+	}
+
+	template<typename OsModel_P>
+	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t last_option_number, StringOption &opt )
+	{
+		size_t offset = 0;
+		fenceposting( opt.option_number() );
+		datastream[offset] = (uint8_t) (( opt.option_number() - last_option_number ) << 4 );
+		optlength(opt.value().length());
+
+		memcpy(datastream + offset, opt.value().c_str(), opt.value().length());
+		offset += opt.value().length();
+		return offset;
+	}
+
+	template<typename OsModel_P>
+	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t last_option_number, UintOption &opt )
+	{
+		size_t offset = 0;
+		fenceposting( opt.option_number() );
+		datastream[offset] = (uint8_t) (( opt.option_number() - last_option_number ) << 4 );
+
+		size_t length = 0;
+		for( int i = 0; i < 4; ++i )
+		{
+			if ( opt.value() % (0x100 << (i * 8)) == opt.value() )
+			{
+				length += i+1;
+				break;
+			}
+		}
+		datastream[offset] |= (length & 0x0f);
+		++offset;
+		for( int i = length; i > 0; --i)
+		{
+			datastream[offset] = opt.value() >> (( ( i - 1) * 8 ) & 0xff);
+			++offset;
+		}
+
+		return offset;
+	}
+
 
 }
 

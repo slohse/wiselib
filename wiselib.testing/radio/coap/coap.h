@@ -112,8 +112,6 @@ using namespace std;
 #define COAP_CODE_PROXYING_NOT_SUPPORTED	165
 
 
-#define NEXT_FENCEPOST(previous_option_number)	( COAP_OPT_FENCEPOST - ( (previous_option_number) % COAP_OPT_FENCEPOST ) )
-
 #define COAP_FORMAT_NONE	0
 #define COAP_FORMAT_UINT	1
 #define COAP_FORMAT_STRING	2
