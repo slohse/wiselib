@@ -251,7 +251,7 @@ namespace wiselib
 	CoapPacket<OsModel_P>::CoapPacket( uint8_t *datastream, size_t length )
 	{
 		init();
-		// TODO
+		parse_message( datastream, length );
 	}
 
 	template<typename OsModel_P>
@@ -265,6 +265,9 @@ namespace wiselib
 		code_ = COAP_CODE_EMPTY;
 		msg_id_ = 0;
 		opt_if_none_match_ = false;
+		uint_options_.clear();
+		string_options_.clear();
+		opaque_options_.clear();
 
 		data_length_ = 0;
 	}
