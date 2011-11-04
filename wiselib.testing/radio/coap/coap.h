@@ -112,6 +112,8 @@ using namespace std;
 #define COAP_CODE_PROXYING_NOT_SUPPORTED	165
 
 
+#define COAP_START_OF_OPTIONS	4
+
 #define COAP_FORMAT_NONE	0
 #define COAP_FORMAT_UINT	1
 #define COAP_FORMAT_STRING	2

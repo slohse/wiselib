@@ -224,6 +224,7 @@ namespace wiselib
 		size_t data_length_;
 
 		// methods:
+		void parse_message( uint8_t *datastream, size_t length );
 		void parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value);
 		inline uint8_t next_fencepost(uint8_t previous_opt_number);
 		inline void fenceposting( uint8_t option_number, uint8_t last_opt_number, uint8_t *datastream, size_t &offset );
@@ -351,7 +352,7 @@ namespace wiselib
 		datastream[2] = (this->msg_id() & 0xff00) >> 8;
 		datastream[3] = (this->msg_id() & 0x00ff);
 
-		int offset = 4;
+		int offset = COAP_START_OF_OPTIONS;
 
 		typename list_static<OsModel, UintOption, COAP_LIST_SIZE_UINT>::iterator uit = uint_options_.begin();
 		typename list_static<OsModel, StringOption, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
@@ -521,6 +522,58 @@ namespace wiselib
 	// private methods
 
 	template<typename OsModel_P>
+	void CoapPacket<OsModel_P>::parse_message( uint8_t *datastream, size_t length )
+	{
+		if(length > 3)
+			{
+				version_ = datastream[0] >> 6;
+				type_ = ( datastream[0] & 0x30 ) >> 4;
+				size_t option_count = datastream[0] & 0x0f;
+				code_ = datastream[1];
+				msg_id_ = ( datastream[2] << 8 ) | datastream[3];
+
+				uint8_t parsed_options = 0;
+				uint8_t last_option_number = 0;
+
+				unsigned int i = COAP_START_OF_OPTIONS;
+				uint8_t option_number = 0;
+				size_t length_of_option = 0;
+				// TODO: Überlegen ob das mit der while-Schleife so klug ist
+				// bzw. aufpassen, dass man mit den ganzen i++ nicht aus den Options
+				// rausläuft
+				while( parsed_options < option_count && i < length )
+				{
+					option_number = last_option_number + ( datastream[i] >> 4 );
+					last_option_number = option_number;
+					length_of_option = datastream[i] & 0x0f;
+					if( length_of_option == COAP_LONG_OPTION && i + 1 < length )
+					{
+						++i;
+						length_of_option = datastream[i] + 15;
+					}
+					++i;
+					if( i + length_of_option - 1 < length )
+					{
+						parse_option(option_number, length_of_option, datastream+i);
+						++parsed_options;
+						i += length_of_option;
+					}
+					else
+					{
+						// TODO: Fehlerhaftes Paket behandeln!
+					}
+				}
+
+				// if there is no data we just leave it at (NULL, 0)
+				if(i < length)
+				{
+					set_data( datastream + i, length - i );
+				}
+
+			}
+	}
+
+	template<typename OsModel_P>
 	void CoapPacket<OsModel_P>::parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value)
 	{
 		if( option_number <= COAP_OPTION_FORMAT_ARRAY_SIZE )
@@ -647,6 +700,8 @@ namespace wiselib
 		datastream[offset] = (uint8_t) (( opt.option_number() - last_option_number ) << 4 );
 
 		size_t length = 0;
+		// the maximum size of the integer is 32bit or 4 byte
+		// this loop determines how many bytes are actually needed to transmit a uint
 		for( int i = 0; i < 4; ++i )
 		{
 			if ( opt.value() % (0x100 << (i * 8)) == opt.value() )
