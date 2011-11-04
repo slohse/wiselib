@@ -28,7 +28,7 @@ namespace wiselib
 		{
 		public:
 			StringOption() { set(0, StaticString("")); }
-			StringOption( uint8_t option_number, string value) { set( option_number, value); }
+			StringOption( uint8_t option_number, StaticString value) { set( option_number, value); }
 			virtual ~StringOption() {}
 			uint8_t option_number() {return option_number_;}
 			StaticString value() {return value_; }
@@ -145,7 +145,7 @@ namespace wiselib
 		~CoapPacket();
 		///@}
 
-		void init( Debug& debug );
+		void init();
 
 		/**
 		 * Returns the CoAP version number of the packet
@@ -255,9 +255,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P>
-	void CoapPacket<OsModel_P>::init( Debug& debug )
+	void CoapPacket<OsModel_P>::init()
 	{
-		debug_ = &debug;
+//		debug_ = OsModel::;
 
 		version_ = COAP_VERSION;
 		// TODO: sinnvollen Default festlegen und dann ein COAP_MSG_DEFAULT_TYPE Makro anlegen oder so
@@ -603,7 +603,7 @@ namespace wiselib
 				break;
 			case COAP_FORMAT_STRING:
 				// TODO: Überschreitung der 270-Zeichen Grenze beachten
-				StringOption str_opt( option_number, StaticString( value, option_length ) );
+				StringOption str_opt( option_number, StaticString( (char*) value, option_length ) );
 				if( str_opt.option_number() == COAP_OPT_URI_HOST )
 				{
 					set_option( string_options_, str_opt );
@@ -618,11 +618,11 @@ namespace wiselib
 				OpaqueOption opq_opt( option_number, value, option_length );
 				if( opq_opt.option_number() == COAP_OPT_TOKEN )
 				{
-					set_option( string_options_, opq_opt );
+					set_option( opaque_options_, opq_opt );
 				}
 				else
 				{
-					add_option( string_options_, opq_opt );
+					add_option( opaque_options_, opq_opt );
 				}
 				break;
 			default:
