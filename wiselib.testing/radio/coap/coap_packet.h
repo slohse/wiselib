@@ -32,7 +32,7 @@ namespace wiselib
 			virtual ~StringOption() {}
 			uint8_t option_number() {return option_number_;}
 			StaticString value() {return value_; }
-			void set( uint8_t option_number, string value ) { option_number_ = option_number; value_ = value; }
+			void set( uint8_t option_number, StaticString value ) { option_number_ = option_number; value_ = value; }
 
 		private:
 			uint8_t option_number_;
@@ -252,6 +252,11 @@ namespace wiselib
 	{
 		init();
 		parse_message( datastream, length );
+	}
+
+	template<typename OsModel_P>
+	CoapPacket<OsModel_P>::~CoapPacket()
+	{
 	}
 
 	template<typename OsModel_P>
@@ -581,16 +586,16 @@ namespace wiselib
 	{
 		if( option_number <= COAP_OPTION_FORMAT_ARRAY_SIZE )
 		{
-			switch( COAP_OPTION_FORMAT[option_number] )
+			if( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_NONE )
 			{
-			case COAP_FORMAT_NONE:
 				if( option_number == COAP_OPT_IF_NONE_MATCH )
 				{
 					set_opt_if_none_match(true);
 				}
 				// else: do nothing
-				break;
-			case COAP_FORMAT_UINT:
+			}
+			else if( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_UINT )
+			{
 				UintOption uint_opt(option_number, deserialize_uint(value, option_length));
 				if( uint_opt.option_number() == COAP_OPT_ACCEPT )
 				{
@@ -600,8 +605,9 @@ namespace wiselib
 				{
 					set_option( uint_options_, uint_opt );
 				}
-				break;
-			case COAP_FORMAT_STRING:
+			}
+			else if( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_STRING )
+			{
 				// TODO: Überschreitung der 270-Zeichen Grenze beachten
 				StringOption str_opt( option_number, StaticString( (char*) value, option_length ) );
 				if( str_opt.option_number() == COAP_OPT_URI_HOST )
@@ -612,8 +618,9 @@ namespace wiselib
 				{
 					add_option( string_options_, str_opt );
 				}
-				break;
-			case COAP_FORMAT_OPAQUE:
+			}
+			else if( COAP_OPTION_FORMAT[option_number] ==  COAP_FORMAT_OPAQUE )
+			{
 				// TODO: Überschreitung der 270-Zeichen Grenze beachten
 				OpaqueOption opq_opt( option_number, value, option_length );
 				if( opq_opt.option_number() == COAP_OPT_TOKEN )
@@ -624,10 +631,6 @@ namespace wiselib
 				{
 					add_option( opaque_options_, opq_opt );
 				}
-				break;
-			default:
-				//do nothing
-				break;
 			}
 		}
 		else
@@ -728,7 +731,7 @@ namespace wiselib
 	uint32_t CoapPacket<OsModel_P>::deserialize_uint( uint8_t *datastream, size_t length)
 	{
 		uint32_t result = 0;
-		for(int i = 0; i < length; ++i)
+		for(size_t i = 0; i < length; ++i)
 		{
 			result = (result << 8) | datastream[i];
 		}
