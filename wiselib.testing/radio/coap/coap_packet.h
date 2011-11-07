@@ -184,13 +184,56 @@ namespace wiselib
 		 * @return code of the message
 		 */
 		uint8_t code();
+
+		/**
+		 * Sets the code of the packet. Can be a request (1-31), response (64-191) or empty (0). (all other values are reserved)
+		 * For details refer to the CoAP Code Registry section of the CoAP draft.
+		 * @param code code of the packet
+		 */
 		void set_code( uint8_t code );
+
+		/**
+		 * Returns the message ID by which message duplication can be detected and request/response matching can be done.
+		 * @return the message ID
+		 */
 		uint16_t msg_id();
+
+		/**
+		 * Sets the message ID by which message duplication can be detected and request/response matching can be done.
+		 * @param msg_id new message ID
+		 */
 		void set_msg_id( uint16_t msg_id );
-		void set_data( uint8_t* data , size_t length);
+
+		/**
+		 * Returns a pointer to the payload section of the packet
+		 * @return pointer to payload
+		 */
 		uint8_t* data();
+
+		/**
+		 * Returns the length of the payload
+		 * @return payload length
+		 */
 		size_t data_length();
 
+		/**
+		 * Sets the payload
+		 * @param data the payload
+		 * @param length payload length
+		 */
+		void set_data( uint8_t* data , size_t length);
+
+		/**
+		 * Calculates the length of the message if it were serialized in the current sate
+		 * @return the expected length of the serialized message
+		 */
+		size_t serialize_length();
+
+		/**
+		 * Serializes the packet so it can be sent over the radio.
+		 * @param pointer to where the serialized packet will be written.
+		 * @return length of the packet
+		 */
 		size_t serialize( uint8_t *datastream );
 
 		// methods dealing with Options
@@ -350,6 +393,86 @@ namespace wiselib
 	size_t CoapPacket<OsModel_P>::data_length()
 	{
 		return data_length_;
+	}
+
+	template<typename OsModel_P>
+	size_t CoapPacket<OsModel_P>::serialize_length()
+	{
+		// save all option numbers to see if fenceposting is needed (which would increase the length)
+		uint32_t optnums = 0;
+
+		// the header is 4 bytes long
+		size_t length = 4;
+
+		typename list_static<OsModel, StringOption, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
+		for(; sit != string_options_.end(); ++sit)
+		{
+			// Option header
+			++length;
+			if( ( *sit ).value().length() > 14 )
+			{
+				++length;
+			}
+			length += ( *sit ).value().length();
+			optnums |= 1 << ( *sit ).option_number();
+		}
+
+		typename list_static<OsModel, UintOption, COAP_LIST_SIZE_UINT>::iterator uit = uint_options_.begin();
+		for(; uit != uint_options_.end(); ++uit)
+		{
+			// Option header
+			++length;
+
+			// TODO: Magic Number.... die Uint-Optionen sind in der aktuellen Version (draft-07)
+			// des Standards maximal 4 byte lang (Max-Age)
+			// TODO: und es gibt sicher einen eleganteren Weg herauszufinden wie viele Bytes
+			// man für eine Zahl braucht
+			for( int i = 0; i < 4; ++i )
+			{
+				if ( ( *uit ).value() % (0x100 << (i * 8)) == ( *uit ).value() )
+				{
+					length += i+1;
+					break;
+				}
+			}
+			optnums |= 1 << ( *uit ).option_number();
+		}
+
+		typename list_static<OsModel, OpaqueOption, COAP_LIST_SIZE_OPAQUE>::iterator oit = opaque_options_.begin();
+		for(; oit != opaque_options_.end(); ++oit)
+		{
+			// Option header
+			++length;
+			// TODO: nach aktuellem Standard (draft07) gibt es keine Opaque Options
+			// länger als 8 byte, klären ob das so bleibt, oder ob man wie bei
+			// String optionen damit rechnen muss, dass die Optionen länger als 14
+			// byte werden können
+			length += ( *oit ).length();
+			optnums |= 1 << ( *oit ).option_number();
+		}
+
+		length += opt_if_none_match();
+
+		length += data_length();
+
+		// determine the need for fenceposts
+		uint8_t previous_option_number = 0;
+		for( int i = 1; i <= COAP_LARGEST_OPTION_NUMBER; ++i)
+		{
+			if( optnums & ( 1 << i) )
+			{
+				previous_option_number = i;
+				continue;
+			}
+			// 0xf is the largest number describable by a nibble (I've always wanted to use that term :D).
+			if( i - previous_option_number > 0xf )
+			{
+				++length;
+				previous_option_number = COAP_OPT_FENCEPOST * ( 1 + (previous_option_number / (uint8_t) COAP_OPT_FENCEPOST ) );
+			}
+		}
+
+		return length;
 	}
 
 	template<typename OsModel_P>
@@ -584,7 +707,7 @@ namespace wiselib
 	template<typename OsModel_P>
 	void CoapPacket<OsModel_P>::parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value)
 	{
-		if( option_number <= COAP_OPTION_FORMAT_ARRAY_SIZE )
+		if( option_number <= COAP_LARGEST_OPTION_NUMBER )
 		{
 			if( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_NONE )
 			{
