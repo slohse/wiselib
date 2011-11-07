@@ -360,7 +360,7 @@ namespace wiselib
 		datastream[2] = (this->msg_id() & 0xff00) >> 8;
 		datastream[3] = (this->msg_id() & 0x00ff);
 
-		int offset = COAP_START_OF_OPTIONS;
+		size_t offset = COAP_START_OF_OPTIONS;
 
 		typename list_static<OsModel, UintOption, COAP_LIST_SIZE_UINT>::iterator uit = uint_options_.begin();
 		typename list_static<OsModel, StringOption, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
@@ -446,7 +446,7 @@ namespace wiselib
 
 		if(opt_if_none_match())
 		{
-			fenceposting( COAP_OPT_IF_NONE_MATCH, last_option_number, datastream, offset );
+			fenceposting( (uint8_t) COAP_OPT_IF_NONE_MATCH, last_option_number, datastream, offset );
 			datastream[offset] = (uint8_t) (( COAP_OPT_IF_NONE_MATCH - last_option_number ) << 4 );
 			++offset;
 		}
