@@ -666,7 +666,7 @@ namespace wiselib
 				uint8_t parsed_options = 0;
 				uint8_t last_option_number = 0;
 
-				unsigned int i = COAP_START_OF_OPTIONS;
+				size_t i = COAP_START_OF_OPTIONS;
 				uint8_t option_number = 0;
 				size_t length_of_option = 0;
 				// TODO: Überlegen ob das mit der while-Schleife so klug ist

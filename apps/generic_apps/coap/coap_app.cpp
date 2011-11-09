@@ -25,7 +25,7 @@ class ExampleApplication
 #define EXAMPLE_DATA	0x43, 0x01, 0xa4, 0xf2, 0x97, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x0b, 0x4b, 0xc3, 0x84, 0x53, 0x45, 0x4b, 0x55, 0x43, 0x48, 0x45, 0x4e, 0xc1, 0x00
 #define EXAMPLE_DATA_LEN	26
          uint8_t example_data[ EXAMPLE_DATA_LEN ] = { EXAMPLE_DATA };
-         wiselib::CoapPacket<Os> testpacket(example_data, 25);
+         wiselib::CoapPacket<Os> testpacket(example_data, EXAMPLE_DATA_LEN);
          size_t example_data_expected_length = testpacket.serialize_length();
          uint8_t example_data_reserialized[50];
          size_t example_data_length;
@@ -44,10 +44,6 @@ class ExampleApplication
         		 {
         			 debug_->debug( "reserialized data differs from input data at position %i ( %i vs %i )\n", i, example_data_reserialized[i], example_data[i]);
         		 }
-        		 else
-        		 {
-        			 debug_->debug( "example_data[%i] == example_data_reserialized[%i]\n", i , i );
-        		 }
         	 }
          }
          else
@@ -61,10 +57,6 @@ class ExampleApplication
         		 if( example_data[i] != example_data_reserialized[i] )
         		 {
         			 debug_->debug( "reserialized data differs from input data at position %i ( %i vs %i )\n", i, example_data_reserialized[i], example_data[i]);
-        		 }
-        		 else
-        		 {
-        			 debug_->debug( "example_data[%i] == example_data_reserialized[%i]\n", i , i );
         		 }
         	 }
          }
