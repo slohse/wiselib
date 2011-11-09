@@ -14,18 +14,17 @@ class ExampleApplication
    public:
       void init( Os::AppMainParameter& value )
       {
-//         radio_ = &wiselib::FacetProvider<Os, Os::Radio>::get_facet( value );
-//         timer_ = &wiselib::FacetProvider<Os, Os::Timer>::get_facet( value );
-//         debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
+         radio_ = &wiselib::FacetProvider<Os, Os::Radio>::get_facet( value );
+         timer_ = &wiselib::FacetProvider<Os, Os::Timer>::get_facet( value );
+         debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 //
-//         debug_->debug( "Example Application booting!\n" );
+         debug_->debug( "Example Application booting!\n" );
 //
 //         radio_->reg_recv_callback<ExampleApplication,
 //                                   &ExampleApplication::receive_radio_message>( this );
-//         timer_->set_timer<ExampleApplication,
-//                           &ExampleApplication::broadcast_loop>( 5000, this, 0 );
-
-         uint8_t example_data[] = {0x43, 0x01, 0xa4, 0xf2, 0x97, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x0b, 0x4b, 0xc3, 0x84, 0x53, 0x45, 0x4b, 0x55, 0x43, 0x48, 0x45, 0x4e, 0xc1, 0x00};
+#define EXAMPLE_DATA	0x43, 0x01, 0xa4, 0xf2, 0x97, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x0b, 0x4b, 0xc3, 0x84, 0x53, 0x45, 0x4b, 0x55, 0x43, 0x48, 0x45, 0x4e, 0xc1, 0x00
+#define EXAMPLE_DATA_LEN	26
+         uint8_t example_data[ EXAMPLE_DATA_LEN ] = { EXAMPLE_DATA };
          wiselib::CoapPacket<Os> testpacket(example_data, 25);
          size_t example_data_expected_length = testpacket.serialize_length();
          uint8_t example_data_reserialized[50];
@@ -35,11 +34,48 @@ class ExampleApplication
          {
         	 debug_->debug( "serialize_length has bugs!" );
          }
+
+         if( example_data_length < EXAMPLE_DATA_LEN )
+         {
+        	 debug_->debug( "reserialized length is smaller than input length (%i vs %i)\n", example_data_length, EXAMPLE_DATA_LEN );
+        	 for(size_t i = 0; i < example_data_length; ++i )
+        	 {
+        		 if( example_data[i] != example_data_reserialized[i] )
+        		 {
+        			 debug_->debug( "reserialized data differs from input data at position %i ( %i vs %i )\n", i, example_data_reserialized[i], example_data[i]);
+        		 }
+        		 else
+        		 {
+        			 debug_->debug( "example_data[%i] == example_data_reserialized[%i]\n", i , i );
+        		 }
+        	 }
+         }
+         else
+         {
+        	 if( example_data_length > EXAMPLE_DATA_LEN )
+        	 {
+        		 debug_->debug( "reserialized length is bigger than input length\n" );
+        	 }
+        	 for(size_t i = 0; i < EXAMPLE_DATA_LEN; ++i )
+        	 {
+        		 if( example_data[i] != example_data_reserialized[i] )
+        		 {
+        			 debug_->debug( "reserialized data differs from input data at position %i ( %i vs %i )\n", i, example_data_reserialized[i], example_data[i]);
+        		 }
+        		 else
+        		 {
+        			 debug_->debug( "example_data[%i] == example_data_reserialized[%i]\n", i , i );
+        		 }
+        	 }
+         }
+
+         timer_->set_timer<ExampleApplication,
+                           &ExampleApplication::broadcast_loop>( 5000, this, 0 );
       }
       // --------------------------------------------------------------------
       void broadcast_loop( void* )
       {
-//         debug_->debug( "broadcasting message at %x \n", radio_->id() );
+         debug_->debug( "broadcast_loop\n" );
 //         Os::Radio::block_data_t message[] = "hello world!\0";
 //         radio_->send( Os::Radio::BROADCAST_ADDRESS, sizeof(message), message );
 //
