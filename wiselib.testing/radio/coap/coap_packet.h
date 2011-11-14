@@ -236,18 +236,29 @@ namespace wiselib
 		 */
 		size_t serialize( uint8_t *datastream );
 
-		// methods dealing with Options
-		template <typename T, list_size_t N>
-		void set_option( list_static<OsModel, T, N> &options, T option );
+		int set_option( uint8_t option_number, uint32_t value );
+		int set_option( uint8_t option_number, StaticString value );
+		int set_option( uint8_t option_number, uint8_t *value, size_t length );
 
-		template <typename T, list_size_t N>
-		void add_option( list_static<OsModel, T, N> &options, T option );
+		int add_option( uint8_t option_number, uint32_t value );
+		int add_option( uint8_t option_number, StaticString value );
+		int add_option( uint8_t option_number, uint8_t *value, size_t length );
 
-		template <typename T, list_size_t N>
-		void remove_option( list_static<OsModel, T, N> &options, uint8_t option_number );
+		int remove_option( uint8_t option_number );
 
 		bool opt_if_none_match();
 		void set_opt_if_none_match( bool opt_if_none_match );
+
+		enum error_codes
+		{
+			// inherited from concepts::BasicReturnValues_concept
+			SUCCESS = OsModel::SUCCESS,
+			ERR_UNSPEC = OsModel::ERR_UNSPEC,
+			ERR_NOTIMPL = OsModel::ERR_NOTIMPL,
+			// coap specific
+			ERR_WRONG_TYPE,
+			ERR_UNKNOWN_OPT
+		};
 
 	private:
 		typename Debug::self_pointer_t debug_;
@@ -272,6 +283,16 @@ namespace wiselib
 		inline uint8_t next_fencepost(uint8_t previous_opt_number);
 		inline void fenceposting( uint8_t option_number, uint8_t last_opt_number, uint8_t *datastream, size_t &offset );
 		inline void optlength( size_t length, uint8_t *datastream, size_t &offset );
+
+		// methods dealing with Options
+		template <typename T, list_size_t N>
+		void set_option( list_static<OsModel, T, N> &options, T option );
+
+		template <typename T, list_size_t N>
+		void add_option( list_static<OsModel, T, N> &options, T option );
+
+		template <typename T, list_size_t N>
+		void remove_option( list_static<OsModel, T, N> &options, uint8_t option_number );
 
 		size_t serialize_option( uint8_t *datastream, uint8_t last_option_number, OpaqueOption &opt );
 		size_t serialize_option( uint8_t *datastream, uint8_t last_option_number, StringOption &opt );
@@ -580,62 +601,7 @@ namespace wiselib
 	}
 
 
-	template <typename OsModel_P>
-	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P>::set_option(list_static<OsModel, T, N> &options, T option)
-	{
-		typename list_static<OsModel, T, N>::iterator it = options.begin();
-		for(;; ++it)
-		{
-			if( ( *it ).option_number() < option.option_number() )
-			{
-				continue;
-			}
-			if( ( *it ).option_number() == option.option_number() )
-			{
-				( *it ) = option;
-				break;
-			}
-			if( ( *it ).option_number() > option.option_number() )
-			{
-				options.insert(it, option);
-				break;
-			}
-			if(it == options.end())
-			{
-				options.push_back(option);
-				break;
-			}
-		}
-	}
 
-	template <typename OsModel_P>
-	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P>::add_option(list_static<OsModel, T, N> &options, T option)
-	{
-		typename list_static<OsModel, T, N>::iterator it = options.begin();
-		while(it != options.end() && ( *it ).option_number() <= option.option_number() )
-		{
-			++it;
-		}
-		options.insert(it, option);
-	}
-
-	template <typename OsModel_P>
-	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P>::remove_option(list_static<OsModel, T, N> &options, uint8_t option_number)
-	{
-		typename list_static<OsModel, T, N>::iterator it = options.begin();
-		while(it != options.end())
-		{
-			if( ( *it ).option_number() == option_number )
-			{
-				it = options.erase(it);
-				continue;
-			}
-			++it;
-		}
-	}
 
 	template<typename OsModel_P>
 	bool CoapPacket<OsModel_P>::opt_if_none_match()
@@ -649,6 +615,104 @@ namespace wiselib
 		opt_if_none_match_ = opt_if_none_match;
 	}
 
+	template<typename OsModel_P>
+	int CoapPacket<OsModel_P>::set_option( uint8_t option_number, uint32_t value )
+	{
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_UINT )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		UintOption uopt(option_number, value);
+		set_option(uint_options_, uopt);
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P>
+	int CoapPacket<OsModel_P>::set_option( uint8_t option_number, StaticString value )
+	{
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_STRING )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		StringOption sopt(option_number, value);
+		set_option(string_options_, sopt);
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P>
+	int CoapPacket<OsModel_P>::set_option( uint8_t option_number, uint8_t *value, size_t length )
+	{
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_OPAQUE )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		OpaqueOption oopt(option_number, value);
+		set_option(opaque_options_, oopt, length );
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P>
+	int CoapPacket<OsModel_P>::add_option( uint8_t option_number, uint32_t value )
+	{
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_UINT )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		UintOption uopt(option_number, value);
+		add_option(uint_options_, uopt);
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P>
+	int CoapPacket<OsModel_P>::add_option( uint8_t option_number, StaticString value )
+	{
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_STRING )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		StringOption sopt(option_number, value);
+		add_option(string_options_, sopt);
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P>
+	int CoapPacket<OsModel_P>::add_option( uint8_t option_number, uint8_t *value, size_t length )
+	{
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_OPAQUE )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		OpaqueOption oopt(option_number, value);
+		add_option(opaque_options_, oopt, length );
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P>
+	int CoapPacket<OsModel_P>::remove_option( uint8_t option_number )
+	{
+		switch( COAP_OPTION_FORMAT[option_number] )
+		{
+		case COAP_FORMAT_UINT:
+			remove_option( uint_options_, option_number );
+			break;
+		case COAP_FORMAT_STRING:
+			remove_option( string_options_, option_number );
+			break;
+		case COAP_FORMAT_OPAQUE:
+			remove_option( opaque_options_, option_number );
+			break;
+		case COAP_FORMAT_NONE:
+			if( option_number == COAP_OPT_IF_NONE_MATCH )
+			{
+				set_opt_if_none_match( false );
+			}
+			break;
+		default:
+			return ERR_UNKNOWN_OPT;
+			break;
+		}
+		return SUCCESS;
+	}
 
 	// private methods
 
@@ -795,6 +859,64 @@ namespace wiselib
 			++offset;
 		}
 	}
+
+	template <typename OsModel_P>
+	template <typename T, list_size_t N>
+	void CoapPacket<OsModel_P>::set_option(list_static<OsModel, T, N> &options, T option)
+	{
+		typename list_static<OsModel, T, N>::iterator it = options.begin();
+		for(;; ++it)
+		{
+			if( ( *it ).option_number() < option.option_number() )
+			{
+				continue;
+			}
+			if( ( *it ).option_number() == option.option_number() )
+			{
+				( *it ) = option;
+				break;
+			}
+			if( ( *it ).option_number() > option.option_number() )
+			{
+				options.insert(it, option);
+				break;
+			}
+			if(it == options.end())
+			{
+				options.push_back(option);
+				break;
+			}
+		}
+	}
+
+	template <typename OsModel_P>
+	template <typename T, list_size_t N>
+	void CoapPacket<OsModel_P>::add_option(list_static<OsModel, T, N> &options, T option)
+	{
+		typename list_static<OsModel, T, N>::iterator it = options.begin();
+		while(it != options.end() && ( *it ).option_number() <= option.option_number() )
+		{
+			++it;
+		}
+		options.insert(it, option);
+	}
+
+	template <typename OsModel_P>
+	template <typename T, list_size_t N>
+	void CoapPacket<OsModel_P>::remove_option(list_static<OsModel, T, N> &options, uint8_t option_number)
+	{
+		typename list_static<OsModel, T, N>::iterator it = options.begin();
+		while(it != options.end())
+		{
+			if( ( *it ).option_number() == option_number )
+			{
+				it = options.erase(it);
+				continue;
+			}
+			++it;
+		}
+	}
+
 
 	template<typename OsModel_P>
 	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t last_option_number, OpaqueOption &opt )
