@@ -281,7 +281,7 @@ namespace wiselib
 		void parse_message( uint8_t *datastream, size_t length );
 		void parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value);
 		inline uint8_t next_fencepost(uint8_t previous_opt_number);
-		inline void fenceposting( uint8_t option_number, uint8_t last_opt_number, uint8_t *datastream, size_t &offset );
+		inline void fenceposting( uint8_t option_number, uint8_t &previous_opt_number, uint8_t *datastream, size_t &offset );
 		inline void optlength( size_t length, uint8_t *datastream, size_t &offset );
 
 		// methods dealing with Options
@@ -294,9 +294,9 @@ namespace wiselib
 		template <typename T, list_size_t N>
 		void remove_option( list_static<OsModel, T, N> &options, uint8_t option_number );
 
-		size_t serialize_option( uint8_t *datastream, uint8_t last_option_number, OpaqueOption &opt );
-		size_t serialize_option( uint8_t *datastream, uint8_t last_option_number, StringOption &opt );
-		size_t serialize_option( uint8_t *datastream, uint8_t last_option_number, UintOption &opt );
+		size_t serialize_option( uint8_t *datastream, uint8_t previous_option_number, OpaqueOption &opt );
+		size_t serialize_option( uint8_t *datastream, uint8_t previous_option_number, StringOption &opt );
+		size_t serialize_option( uint8_t *datastream, uint8_t previous_option_number, UintOption &opt );
 
 		uint32_t deserialize_uint( uint8_t *datastream, size_t length);
 
@@ -513,7 +513,7 @@ namespace wiselib
 		size_t sindex;
 		size_t uindex;
 		size_t oindex;
-		uint8_t last_option_number = 0;
+		uint8_t previous_option_number = 0;
 
 		while( true )
 		{
@@ -556,15 +556,15 @@ namespace wiselib
 			{
 				if( oindex < uindex )
 				{
-					offset += serialize_option( datastream + offset, last_option_number, ( *oit ) );
-					last_option_number = ( *oit ).option_number();
+					offset += serialize_option( datastream + offset, previous_option_number, ( *oit ) );
+					previous_option_number = ( *oit ).option_number();
 					++oit;
 					continue;
 				}
 				else
 				{
-					offset += serialize_option( datastream + offset, last_option_number, ( *uit ) );
-					last_option_number = ( *uit ).option_number();
+					offset += serialize_option( datastream + offset, previous_option_number, ( *uit ) );
+					previous_option_number = ( *uit ).option_number();
 					++uit;
 					continue;
 				}
@@ -573,15 +573,15 @@ namespace wiselib
 			{
 				if( oindex < sindex )
 				{
-					offset += serialize_option( datastream + offset, last_option_number, ( *oit ) );
-					last_option_number = ( *oit ).option_number();
+					offset += serialize_option( datastream + offset, previous_option_number, ( *oit ) );
+					previous_option_number = ( *oit ).option_number();
 					++oit;
 					continue;
 				}
 				else
 				{
-					offset += serialize_option( datastream + offset, last_option_number, ( *sit ) );
-					last_option_number = ( *sit ).option_number();
+					offset += serialize_option( datastream + offset, previous_option_number, ( *sit ) );
+					previous_option_number = ( *sit ).option_number();
 					++sit;
 					continue;
 				}
@@ -590,8 +590,8 @@ namespace wiselib
 
 		if(opt_if_none_match())
 		{
-			fenceposting( (uint8_t) COAP_OPT_IF_NONE_MATCH, last_option_number, datastream, offset );
-			datastream[offset] = (uint8_t) (( COAP_OPT_IF_NONE_MATCH - last_option_number ) << 4 );
+			fenceposting( (uint8_t) COAP_OPT_IF_NONE_MATCH, previous_option_number, datastream, offset );
+			datastream[offset] = (uint8_t) (( COAP_OPT_IF_NONE_MATCH - previous_option_number ) << 4 );
 			++offset;
 		}
 
@@ -729,7 +729,7 @@ namespace wiselib
 				msg_id_ = ( datastream[2] << 8 ) | datastream[3];
 
 				uint8_t parsed_options = 0;
-				uint8_t last_option_number = 0;
+				uint8_t previous_option_number = 0;
 
 				size_t i = COAP_START_OF_OPTIONS;
 				uint8_t option_number = 0;
@@ -739,8 +739,8 @@ namespace wiselib
 				// rausläuft
 				while( parsed_options < option_count && i < length )
 				{
-					option_number = last_option_number + ( datastream[i] >> 4 );
-					last_option_number = option_number;
+					option_number = previous_option_number + ( datastream[i] >> 4 );
+					previous_option_number = option_number;
 					length_of_option = datastream[i] & 0x0f;
 					if( length_of_option == COAP_LONG_OPTION && i + 1 < length )
 					{
@@ -834,12 +834,14 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P>
-	inline void CoapPacket<OsModel_P>::fenceposting( uint8_t option_number, uint8_t previous_opt_number, uint8_t *datastream, size_t &offset )
+	inline void CoapPacket<OsModel_P>::fenceposting( uint8_t option_number, uint8_t &previous_opt_number, uint8_t *datastream, size_t &offset )
 	{
+		int fencepost_delta = 0;
 		while( option_number - previous_opt_number > 15 )
 		{
-			datastream[offset] = next_fencepost(previous_opt_number) << 4;
-			previous_opt_number = next_fencepost(previous_opt_number);
+			fencepost_delta = next_fencepost(previous_opt_number);
+			datastream[offset] =  fencepost_delta << 4;
+			previous_opt_number = previous_opt_number + fencepost_delta;
 			++offset;
 		}
 	}
@@ -920,11 +922,11 @@ namespace wiselib
 
 
 	template<typename OsModel_P>
-	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t last_option_number, OpaqueOption &opt )
+	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t previous_option_number, OpaqueOption &opt )
 	{
 		size_t offset = 0;
-		fenceposting( opt.option_number(), last_option_number, datastream, offset );
-		datastream[offset] = (uint8_t) (( opt.option_number() - last_option_number ) << 4 );
+		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
+		datastream[offset] = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 );
 		optlength( opt.length(), datastream, offset );
 		memcpy( datastream + offset, opt.value(), opt.length());
 		offset += opt.length();
@@ -932,11 +934,11 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P>
-	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t last_option_number, StringOption &opt )
+	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t previous_option_number, StringOption &opt )
 	{
 		size_t offset = 0;
-		fenceposting( opt.option_number(), last_option_number, datastream, offset );
-		datastream[offset] = (uint8_t) (( opt.option_number() - last_option_number ) << 4 );
+		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
+		datastream[offset] = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 );
 		optlength( opt.value().length(), datastream, offset );
 
 		memcpy(datastream + offset, opt.value().c_str(), opt.value().length());
@@ -945,11 +947,11 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P>
-	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t last_option_number, UintOption &opt )
+	size_t CoapPacket<OsModel_P>::serialize_option( uint8_t *datastream, uint8_t previous_option_number, UintOption &opt )
 	{
 		size_t offset = 0;
-		fenceposting( opt.option_number(), last_option_number, datastream, offset );
-		datastream[offset] = (uint8_t) (( opt.option_number() - last_option_number ) << 4 );
+		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
+		datastream[offset] = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 );
 
 		size_t length = 0;
 		// the maximum size of the integer is 32bit or 4 byte
