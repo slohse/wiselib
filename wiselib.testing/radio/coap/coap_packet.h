@@ -597,6 +597,7 @@ namespace wiselib
 
 		memcpy( datastream + offset, data(), data_length());
 		offset += data_length();
+
 		return offset;
 	}
 
@@ -838,7 +839,7 @@ namespace wiselib
 		while( option_number - previous_opt_number > 15 )
 		{
 			datastream[offset] = next_fencepost(previous_opt_number) << 4;
-			previous_opt_number += next_fencepost(previous_opt_number) << 4;
+			previous_opt_number = next_fencepost(previous_opt_number);
 			++offset;
 		}
 	}
@@ -867,6 +868,11 @@ namespace wiselib
 		typename list_static<OsModel, T, N>::iterator it = options.begin();
 		for(;; ++it)
 		{
+			if(it == options.end())
+			{
+				options.push_back(option);
+				break;
+			}
 			if( ( *it ).option_number() < option.option_number() )
 			{
 				continue;
@@ -879,11 +885,6 @@ namespace wiselib
 			if( ( *it ).option_number() > option.option_number() )
 			{
 				options.insert(it, option);
-				break;
-			}
-			if(it == options.end())
-			{
-				options.push_back(option);
 				break;
 			}
 		}

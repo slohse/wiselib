@@ -6,6 +6,8 @@
 
 #include "radio/coap/coap_packet.h"
 
+#include "util/pstl/static_string.h"
+
 
 typedef wiselib::OSMODEL Os;
 
@@ -58,6 +60,48 @@ class ExampleApplication
         		 {
         			 debug_->debug( "reserialized data differs from input data at position %i ( %i vs %i )\n", i, example_data_reserialized[i], example_data[i]);
         		 }
+        	 }
+         }
+
+         wiselib::CoapPacket<Os> testpacket2;
+         debug_->debug( "setting type\n");
+         testpacket2.set_type( COAP_MSG_TYPE_NON );
+         debug_->debug( "setting msg id\n");
+         testpacket2.set_msg_id( 0xbeef );
+         debug_->debug( "setting code\n");
+         testpacket2.set_code( COAP_CODE_GET );
+         debug_->debug( "setting uri host\n");
+         testpacket2.set_option(COAP_OPT_URI_HOST, wiselib::StaticString("CoapHost"));
+         debug_->debug( "setting if_none_match\n");
+         testpacket2.set_opt_if_none_match(true);
+
+         debug_->debug( "setting stuff worked\n");
+
+         uint8_t expected_result[15] = {
+        		 // Version 1, Type NON, OC= 2;Code: GET; Msg ID 0xbeef
+        		 0x52, 0x01, 0xbe, 0xef,
+        		// Delta 5, length 8; C, o, a, p, H, o, s, t
+        		 0x58, 0x43, 0x6f, 0x61, 0x70, 0x48, 0x6f, 0x73, 0x74,
+        		 // fencepost
+        		 0x90,
+        		 // if_none_match
+        		 0x70
+         };
+
+         uint8_t actual_result[20];
+         uint actual_length = 0;
+         actual_length = testpacket2.serialize( actual_result );
+
+         if( actual_length != 15 )
+         {
+        	 debug_->debug( "actual_length is %i \n", actual_length);
+         }
+
+         for(size_t i = 0; i < actual_length; ++i )
+         {
+        	 if( actual_result[i] != expected_result[i] )
+        	 {
+        		 debug_->debug( "actual differs from expected at position %i ( %i vs %i )\n", i, actual_result[i], expected_result[i]);
         	 }
          }
 
