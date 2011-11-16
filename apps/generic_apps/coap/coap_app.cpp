@@ -5,6 +5,7 @@
 #include "algorithms/routing/tree/tree_routing.h"
 
 #include "radio/coap/coap_packet.h"
+#include "radio/coap/coapradio.h"
 
 #include "util/pstl/static_string.h"
 
