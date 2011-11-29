@@ -16,7 +16,15 @@ template<typename OsModel_P,
 		typename Radio_P::node_id_t,
 		typename Radio_P::size_t,
 		typename Radio_P::block_data_t> {
-		
+
+	struct coapreceiver
+	{
+		// TODO:
+		// Typ des Receivers (bekommt der nur die Daten, oder das ganze Paket?)
+		// Callback Pointer oder sowas
+		// string der die Resource bezeichnet
+	};
+
 	public:
 		// Type definitions
 		typedef OsModel_P OsModel;
@@ -30,12 +38,16 @@ template<typename OsModel_P,
 		typedef typename Radio::size_t size_t;
 		typedef typename Radio::block_data_t block_data_t;
 		typedef typename Radio::message_id_t message_id_t;
+		typedef typename Radio::self_pointer_t self_pointer_t;
 		
 		int enable_radio();
 		int disable_radio();
 		node_id_t id ();
 		int send (node_id_t receiver, size_t len, block_data_t *data );
+		void receive(node_id_t from, size_t len, block_data_t * data);
 		
+
+	private:
 		
 	};
 }
