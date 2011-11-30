@@ -244,6 +244,13 @@ namespace wiselib
 		int add_option( uint8_t option_number, StaticString value );
 		int add_option( uint8_t option_number, uint8_t *value, size_t length );
 
+		int get_option( uint8_t option_number, uint32_t &value );
+		int get_option( uint8_t option_number, StaticString &value );
+		int get_option( uint8_t option_number, uint8_t *value, size_t &length );
+
+		template <typename T, list_size_t N>
+		int get_options( uint8_t option_number, list_static<OsModel_P, T, N> &values );
+
 		int remove_option( uint8_t option_number );
 
 		bool opt_if_none_match();
@@ -286,13 +293,13 @@ namespace wiselib
 
 		// methods dealing with Options
 		template <typename T, list_size_t N>
-		void set_option( list_static<OsModel, T, N> &options, T option );
+		void set_option( list_static<OsModel_P, T, N> &options, T option );
 
 		template <typename T, list_size_t N>
-		void add_option( list_static<OsModel, T, N> &options, T option );
+		void add_option( list_static<OsModel_P, T, N> &options, T option );
 
 		template <typename T, list_size_t N>
-		void remove_option( list_static<OsModel, T, N> &options, uint8_t option_number );
+		void remove_option( list_static<OsModel_P, T, N> &options, uint8_t option_number );
 
 		size_t serialize_option( uint8_t *datastream, uint8_t previous_option_number, OpaqueOption &opt );
 		size_t serialize_option( uint8_t *datastream, uint8_t previous_option_number, StringOption &opt );
@@ -865,9 +872,9 @@ namespace wiselib
 
 	template <typename OsModel_P>
 	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P>::set_option(list_static<OsModel, T, N> &options, T option)
+	void CoapPacket<OsModel_P>::set_option(list_static<OsModel_P, T, N> &options, T option)
 	{
-		typename list_static<OsModel, T, N>::iterator it = options.begin();
+		typename list_static<OsModel_P, T, N>::iterator it = options.begin();
 		for(;; ++it)
 		{
 			if(it == options.end())
@@ -894,9 +901,9 @@ namespace wiselib
 
 	template <typename OsModel_P>
 	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P>::add_option(list_static<OsModel, T, N> &options, T option)
+	void CoapPacket<OsModel_P>::add_option(list_static<OsModel_P, T, N> &options, T option)
 	{
-		typename list_static<OsModel, T, N>::iterator it = options.begin();
+		typename list_static<OsModel_P, T, N>::iterator it = options.begin();
 		while(it != options.end() && ( *it ).option_number() <= option.option_number() )
 		{
 			++it;
@@ -906,9 +913,9 @@ namespace wiselib
 
 	template <typename OsModel_P>
 	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P>::remove_option(list_static<OsModel, T, N> &options, uint8_t option_number)
+	void CoapPacket<OsModel_P>::remove_option(list_static<OsModel_P, T, N> &options, uint8_t option_number)
 	{
-		typename list_static<OsModel, T, N>::iterator it = options.begin();
+		typename list_static<OsModel_P, T, N>::iterator it = options.begin();
 		while(it != options.end())
 		{
 			if( ( *it ).option_number() == option_number )
