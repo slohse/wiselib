@@ -5,57 +5,27 @@
 
 namespace wiselib
 {
-
-	class OpaqueData
-	{
-	public:
-		OpaqueData& operator=(const OpaqueData &rhs)
-		{
-			// avoid self-assignemnt
-			if(this != &rhs)
-			{
-				set( rhs.value(), rhs.length() );
-			}
-			return *this;
-		}
-
-		void set( const uint8_t *value, const size_t length)
-		{
-			//TODO: check if length exceeds COAP_OPT_MAXLEN_OPAQUE ?
-			memcpy(value_, value, length);
-			length_ = length;
-		}
-
-		const void get(uint8_t *value, size_t &length) const
-		{
-			memcpy(value, value_, length_);
-			length = length_;
-		}
-
-		size_t length() const
-		{
-			return length_;
-		}
-
-		uint8_t * value()
-		{
-			return value_;
-		}
-
-		const uint8_t * value() const
-		{
-			return value_;
-		}
-
-	private:
-		uint8_t value_[COAP_OPT_MAXLEN_OPAQUE];
-		size_t length_;
-	};
-
-
 	template<typename OsModel_P>
 	class CoapPacket
 	{
+
+		// TODO: maybe when I have spare time...
+//		template<typename T>
+//		class CoapOption
+//		{
+//		public:
+//			CoapOption() { T default_value; set(0, default_value); }
+//			CoapOption( uint8_t option_number, T value) { set(option_number, value); }
+//			virtual ~CoapOption() {}
+//			uint8_t option_number() {return option_number_;}
+//			T value() {return value_; }
+//			void set( uint8_t option_number, T value ) { option_number_ = option_number; value_ = value; }
+//
+//		private:
+//			uint8_t option_number_;
+//			T value_;
+//		};
+
 		class UintOption
 		{
 		public:

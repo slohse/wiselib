@@ -148,4 +148,68 @@ static const uint8_t COAP_OPTION_FORMAT[COAP_OPTION_FORMAT_ARRAY_SIZE] =
 	COAP_FORMAT_NONE			// 21: COAP_OPT_IF_NONE_MATCH
 };
 
+namespace wiselib
+{
+	class OpaqueData
+	{
+	public:
+		OpaqueData& operator=(const OpaqueData &rhs)
+		{
+			// avoid self-assignemnt
+			if(this != &rhs)
+			{
+				set( rhs.value(), rhs.length() );
+			}
+			return *this;
+		}
+
+		OpaqueData()
+		{
+			length_ = 0;
+		}
+
+		OpaqueData( uint8_t * value, size_t length )
+		{
+			set( value, length );
+		}
+
+		~OpaqueData()
+		{
+
+		}
+
+		void set( const uint8_t *value, const size_t length)
+		{
+			//TODO: check if length exceeds COAP_OPT_MAXLEN_OPAQUE ?
+			memcpy(value_, value, length);
+			length_ = length;
+		}
+
+		const void get(uint8_t *value, size_t &length) const
+		{
+			memcpy(value, value_, length_);
+			length = length_;
+		}
+
+		size_t length() const
+		{
+			return length_;
+		}
+
+		uint8_t * value()
+		{
+			return value_;
+		}
+
+		const uint8_t * value() const
+		{
+			return value_;
+		}
+
+	private:
+		uint8_t value_[COAP_OPT_MAXLEN_OPAQUE];
+		size_t length_;
+	};
+}
+
 #endif // COAP_H
