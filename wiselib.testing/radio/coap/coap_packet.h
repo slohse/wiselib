@@ -5,6 +5,58 @@
 
 namespace wiselib
 {
+
+	class OpaqueData
+	{
+	public:
+		OpaqueData& operator=(const OpaqueData &rhs)
+		{
+			// avoid self-assignemnt
+			if(this != &rhs)
+			{
+				set( rhs.value(), rhs.length() );
+			}
+			return *this;
+		}
+//		{
+//			rhs.get(value_, length_);
+//			return *this;
+//		}
+
+		void set(uint8_t *value, size_t length)
+		{
+			//TODO: check if length exceeds COAP_OPT_MAXLEN_OPAQUE ?
+			memcpy(value_, value, length);
+			length_ = length;
+		}
+
+		const void get(uint8_t *value, size_t &length) const
+		{
+			memcpy(value, value_, length_);
+			length = length_;
+		}
+
+		size_t length() const
+		{
+			return length_;
+		}
+
+		uint8_t * value()
+		{
+			return value_;
+		}
+
+		uint8_t * value() const
+		{
+			return value_;
+		}
+
+	private:
+		uint8_t value_[COAP_OPT_MAXLEN_OPAQUE];
+		size_t length_;
+	};
+
+
 	template<typename OsModel_P>
 	class CoapPacket
 	{
@@ -42,96 +94,18 @@ namespace wiselib
 		class OpaqueOption
 		{
 		public:
-			OpaqueOption() { length_ = 0; }
+			OpaqueOption() { set(0, NULL, 0); }
 			OpaqueOption( uint8_t option_number, uint8_t* value, int length ) { set(option_number, value, length); }
 			virtual ~OpaqueOption() {}
 			uint8_t option_number() const {return option_number_;}
-			size_t length() const { return length_; }
-			uint8_t *value() { return value_; }
-			uint8_t const *value() const { return value_; }
-			void set( uint8_t option_number, uint8_t* op, size_t length) { option_number_ = option_number; memcpy( value_, op, length ); length_ = length; }
-
-			int operator==(const OpaqueOption& other)
-			{
-				if ( length() == other.length() )
-				{
-					for(size_t i = 0; i < length(); ++i )
-					{
-						if( value()[i] != other.value()[i] )
-						{
-							return false;
-						}
-					}
-					return true;
-				}
-				return false;
-			}
-
-			int operator>(const OpaqueOption& other)
-			{
-				if ( length() > other.length() )
-				{
-					return true;
-				}
-				if ( length() == other.length() )
-				{
-					for(size_t i = 0; i < length(); ++i )
-					{
-						if( value()[i] > other.value()[i] )
-						{
-							return true;
-						}
-						if( value()[i] < other.value()[i] )
-						{
-							return false;
-						}
-					}
-				}
-				// this is either shorter in length, or both are equal
-				return false;
-			}
-
-			int operator>=(const OpaqueOption& other)
-			{
-				if ( length() > other.length() )
-				{
-					return true;
-				}
-				if ( length() == other.length() )
-				{
-					for(size_t i = 0; i < length(); ++i )
-					{
-						if( value()[i] > other.value()[i] )
-						{
-							return true;
-						}
-						if( value()[i] < other.value()[i] )
-						{
-							return false;
-						}
-					}
-					// they are equal
-					return true;
-				}
-				// this is shorter in length
-				return false;
-			}
-
-			int operator<(const OpaqueOption& other)
-			{
-				return(!(this >= other));
-			}
-
-			int operator<=(const OpaqueOption& other)
-			{
-				return(!(this > other));
-			}
-
+			size_t length() const { return value_.length(); }
+			uint8_t *value() { return value_.value(); }
+			uint8_t const *value() const { return value_.value(); }
+			void set( uint8_t option_number, uint8_t* value, size_t length) { option_number_ = option_number; value_.set(value, length); }
 
 		private:
 			uint8_t option_number_;
-			uint8_t value_[COAP_OPT_MAXLEN_OPAQUE];
-			size_t length_;
+			OpaqueData value_;
 		};
 
 	public:
