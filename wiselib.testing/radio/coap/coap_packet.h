@@ -176,6 +176,8 @@ namespace wiselib
 		 */
 		size_t serialize( uint8_t *datastream );
 
+		uint32_t what_options_are_set();
+
 		int set_option( uint8_t option_number, uint32_t value );
 		int set_option( uint8_t option_number, StaticString value );
 		int set_option( uint8_t option_number, uint8_t *value, size_t length );
@@ -561,9 +563,6 @@ namespace wiselib
 		return offset;
 	}
 
-
-
-
 	template<typename OsModel_P>
 	bool CoapPacket<OsModel_P>::opt_if_none_match()
 	{
@@ -574,6 +573,30 @@ namespace wiselib
 	void CoapPacket<OsModel_P>::set_opt_if_none_match( bool opt_if_none_match )
 	{
 		opt_if_none_match_ = opt_if_none_match;
+	}
+
+	template<typename OsModel_P>
+	uint32_t CoapPacket<OsModel_P>::what_options_are_set()
+	{
+		uint32_t result = 0;
+		typename list_static<OsModel, UintOption, COAP_LIST_SIZE_UINT>::iterator uit = uint_options_.begin();
+		typename list_static<OsModel, StringOption, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
+		typename list_static<OsModel, OpaqueOption, COAP_LIST_SIZE_OPAQUE>::iterator oit = opaque_options_.begin();
+		for( ; uit != uint_options_.end(); ++uit )
+		{
+			result |= (1 << ( *uit ).option_number() );
+		}
+
+		for( ; sit != string_options_.end(); ++sit )
+		{
+			result |= (1 << ( *sit ).option_number() );
+		}
+
+		for( ; oit != opaque_options_.end(); ++oit )
+		{
+			result |= (1 << ( *oit ).option_number() );
+		}
+		return result;
 	}
 
 	template<typename OsModel_P>

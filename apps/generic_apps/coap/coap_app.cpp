@@ -29,6 +29,7 @@ class ExampleApplication
 #define EXAMPLE_DATA_LEN	26
          uint8_t example_data[ EXAMPLE_DATA_LEN ] = { EXAMPLE_DATA };
          wiselib::CoapPacket<Os> testpacket(example_data, EXAMPLE_DATA_LEN);
+         debug_->debug( "set options are 0x%x\n ", testpacket.what_options_are_set() );
          size_t example_data_expected_length = testpacket.serialize_length();
          uint8_t example_data_reserialized[50];
          size_t example_data_length;
