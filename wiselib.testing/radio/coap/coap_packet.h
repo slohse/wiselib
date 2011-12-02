@@ -188,8 +188,14 @@ namespace wiselib
 		int get_option( uint8_t option_number, StaticString &value );
 		int get_option( uint8_t option_number, OpaqueData &value );
 
-		template <typename T, list_size_t N>
-		int get_options( uint8_t option_number, list_static<OsModel_P, T, N> &values );
+		template <list_size_t N>
+		int get_options( uint8_t option_number, list_static<OsModel_P, uint32_t, N> &values );
+
+		template <list_size_t N>
+		int get_options( uint8_t option_number, list_static<OsModel_P, StaticString, N> &values );
+
+		template <list_size_t N>
+		int get_options( uint8_t option_number, list_static<OsModel_P, OpaqueData, N> &values );
 
 		int remove_option( uint8_t option_number );
 
@@ -204,7 +210,8 @@ namespace wiselib
 			ERR_NOTIMPL = OsModel::ERR_NOTIMPL,
 			// coap specific
 			ERR_WRONG_TYPE,
-			ERR_UNKNOWN_OPT
+			ERR_UNKNOWN_OPT,
+			ERR_OPT_NOT_SET
 		};
 
 	private:
@@ -237,6 +244,12 @@ namespace wiselib
 
 		template <typename T, list_size_t N>
 		void add_option( list_static<OsModel_P, T, N> &options, T option );
+
+		template <typename T, list_size_t N>
+		int get_option( uint8_t option_number, T &value, list_static<OsModel_P, T, N> &options );
+
+		template <typename T, list_size_t N, list_size_t M>
+		int get_options( uint8_t option_number, list_static<OsModel_P, T, N> &values, list_static<OsModel_P, T, M> &options );
 
 		template <typename T, list_size_t N>
 		void remove_option( list_static<OsModel_P, T, N> &options, uint8_t option_number );
@@ -566,6 +579,10 @@ namespace wiselib
 	template<typename OsModel_P>
 	int CoapPacket<OsModel_P>::set_option( uint8_t option_number, uint32_t value )
 	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
 		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_UINT )
 		{
 			return ERR_WRONG_TYPE;
@@ -578,6 +595,10 @@ namespace wiselib
 	template<typename OsModel_P>
 	int CoapPacket<OsModel_P>::set_option( uint8_t option_number, StaticString value )
 	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
 		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_STRING )
 		{
 			return ERR_WRONG_TYPE;
@@ -590,6 +611,10 @@ namespace wiselib
 	template<typename OsModel_P>
 	int CoapPacket<OsModel_P>::set_option( uint8_t option_number, uint8_t *value, size_t length )
 	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
 		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_OPAQUE )
 		{
 			return ERR_WRONG_TYPE;
@@ -602,6 +627,10 @@ namespace wiselib
 	template<typename OsModel_P>
 	int CoapPacket<OsModel_P>::add_option( uint8_t option_number, uint32_t value )
 	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
 		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_UINT )
 		{
 			return ERR_WRONG_TYPE;
@@ -614,6 +643,10 @@ namespace wiselib
 	template<typename OsModel_P>
 	int CoapPacket<OsModel_P>::add_option( uint8_t option_number, StaticString value )
 	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
 		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_STRING )
 		{
 			return ERR_WRONG_TYPE;
@@ -626,6 +659,10 @@ namespace wiselib
 	template<typename OsModel_P>
 	int CoapPacket<OsModel_P>::add_option( uint8_t option_number, uint8_t *value, size_t length )
 	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
 		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_OPAQUE )
 		{
 			return ERR_WRONG_TYPE;
@@ -635,9 +672,100 @@ namespace wiselib
 		return SUCCESS;
 	}
 
+	template <typename OsModel_P>
+	int CoapPacket<OsModel_P>::get_option( uint8_t option_number, uint32_t &value )
+	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_UINT )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		return get_option(option_number, value, uint_options_);
+	}
+
+	template <typename OsModel_P>
+	int CoapPacket<OsModel_P>::get_option( uint8_t option_number, StaticString &value )
+	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_STRING )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		return get_option(option_number, value, string_options_);
+	}
+
+	template <typename OsModel_P>
+	int CoapPacket<OsModel_P>::get_option( uint8_t option_number, OpaqueData &value )
+	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_OPAQUE )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		return get_option(option_number, value, opaque_options_);
+	}
+
+	template <typename OsModel_P>
+	template <list_size_t N>
+	int CoapPacket<OsModel_P>::get_options( uint8_t option_number, list_static<OsModel_P, uint32_t, N> &values )
+	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_UINT )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		return get_options( option_number, values, uint_options_ );
+	}
+
+	template <typename OsModel_P>
+	template <list_size_t N>
+	int CoapPacket<OsModel_P>::get_options( uint8_t option_number, list_static<OsModel_P, StaticString, N> &values )
+	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_STRING )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		return get_options( option_number, values, string_options_ );
+	}
+
+	template <typename OsModel_P>
+	template <list_size_t N>
+	int CoapPacket<OsModel_P>::get_options( uint8_t option_number, list_static<OsModel_P, OpaqueData, N> &values )
+	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
+		if( COAP_OPTION_FORMAT[option_number] != COAP_FORMAT_OPAQUE )
+		{
+			return ERR_WRONG_TYPE;
+		}
+		return get_options( option_number, values, opaque_options_ );
+	}
+
 	template<typename OsModel_P>
 	int CoapPacket<OsModel_P>::remove_option( uint8_t option_number )
 	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+		{
+			return ERR_UNKNOWN_OPT;
+		}
 		switch( COAP_OPTION_FORMAT[option_number] )
 		{
 		case COAP_FORMAT_UINT:
@@ -852,17 +980,41 @@ namespace wiselib
 	}
 
 	template <typename OsModel_P>
-	template <typename T>
-	int CoapPacket<OsModel_P>::get_option( uint8_t option_number, T &value )
+	template <typename T, list_size_t N>
+	int CoapPacket<OsModel_P>::get_option( uint8_t option_number, T &value, list_static<OsModel_P, T, N> &options )
 	{
-		TODO();
+		typename list_static<OsModel_P, T, N>::iterator it = options.begin();
+		while(it != options.end() && ( *it ).option_number() < option_number )
+		{
+			++it;
+		}
+		if(it != options.end())
+		{
+			value = (*it).value();
+			return SUCCESS;
+		}
+		return ERR_OPT_NOT_SET;
 	}
 
 	template <typename OsModel_P>
-	template <typename T, list_size_t N>
-	int CoapPacket<OsModel_P>::get_options( uint8_t option_number, list_static<OsModel_P, T, N> &values )
+	template <typename T, list_size_t N, list_size_t M>
+	int CoapPacket<OsModel_P>::get_options( uint8_t option_number, list_static<OsModel_P, T, N> &values, list_static<OsModel_P, T, M> &options )
 	{
-		TODO();
+		typename list_static<OsModel_P, T, N>::iterator it = options.begin();
+		while(it != options.end() && ( *it ).option_number() < option_number )
+		{
+			++it;
+		}
+		if(it == options.end())
+		{
+			return ERR_OPT_NOT_SET;
+		}
+		while(it != options.end() && ( *it ).option_number() == option_number )
+		{
+			values.push_back( ( *it ).value() );
+			++it;
+		}
+		return SUCCESS;
 	}
 
 	template <typename OsModel_P>
