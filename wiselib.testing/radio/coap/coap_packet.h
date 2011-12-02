@@ -186,7 +186,7 @@ namespace wiselib
 
 		int get_option( uint8_t option_number, uint32_t &value );
 		int get_option( uint8_t option_number, StaticString &value );
-		int get_option( uint8_t option_number, uint8_t *value, size_t &length );
+		int get_option( uint8_t option_number, OpaqueData &value );
 
 		template <typename T, list_size_t N>
 		int get_options( uint8_t option_number, list_static<OsModel_P, T, N> &values );
@@ -849,6 +849,20 @@ namespace wiselib
 			++it;
 		}
 		options.insert(it, option);
+	}
+
+	template <typename OsModel_P>
+	template <typename T>
+	int CoapPacket<OsModel_P>::get_option( uint8_t option_number, T &value )
+	{
+		TODO();
+	}
+
+	template <typename OsModel_P>
+	template <typename T, list_size_t N>
+	int CoapPacket<OsModel_P>::get_options( uint8_t option_number, list_static<OsModel_P, T, N> &values )
+	{
+		TODO();
 	}
 
 	template <typename OsModel_P>
