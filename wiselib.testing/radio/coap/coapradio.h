@@ -40,6 +40,7 @@ template<typename OsModel_P,
 		typedef typename Radio::message_id_t message_id_t;
 		typedef typename Radio::self_pointer_t self_pointer_t;
 		
+		void init( Radio& radio, Timer& timer, Debug& debug );
 		int enable_radio();
 		int disable_radio();
 		node_id_t id ();
@@ -48,8 +49,45 @@ template<typename OsModel_P,
 		
 
 	private:
-		
+		Radio *radio_;
+		Timer *timer_;
+		Debug *debug_;
+
+		uint32_t msg_id_;
+
+		uint32_t msg_id();
 	};
+
+
+// public
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename Timer_P,
+		typename Debug_P>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::init(Radio& radio, Timer& timer, Debug& debug)
+	{
+		radio_ = &radio;
+		timer_ = &timer;
+		debug_ = &debug;
+
+		// random initial message ID
+		msg_id_ = rand();
+
+	}
+
+
+
+
+// private
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P>
+		uint32_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::msg_id()
+		{
+			return(msg_id_++);
+		}
+
 }
 
 

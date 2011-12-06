@@ -596,6 +596,10 @@ namespace wiselib
 		{
 			result |= (1 << ( *oit ).option_number() );
 		}
+		if( opt_if_none_match() )
+		{
+			result |= (1 << COAP_OPT_IF_NONE_MATCH );
+		}
 		return result;
 	}
 
