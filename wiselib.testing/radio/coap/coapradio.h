@@ -6,7 +6,6 @@
 
 namespace wiselib {
 
-
 template<typename OsModel_P,
 	typename Radio_P,
 	typename Timer_P,
@@ -16,6 +15,20 @@ template<typename OsModel_P,
 		typename Radio_P::node_id_t,
 		typename Radio_P::size_t,
 		typename Radio_P::block_data_t> {
+
+
+	struct SentMessage
+	{
+		CoapPacket<OsModel_P> *message_;
+		uint8_t retransmit_count_;
+	};
+
+	struct ReceivedMessage
+	{
+		CoapPacket<OsModel_P> *message_;
+		bool ack_;
+		bool response_;
+	};
 
 	struct coapreceiver
 	{
@@ -52,10 +65,14 @@ template<typename OsModel_P,
 		Radio *radio_;
 		Timer *timer_;
 		Debug *debug_;
+		list_static<OsModel, CoapPacket<OsModel>, COAPRADIO_LIST_SIZE> message_buffer;
 
 		uint32_t msg_id_;
+		COAP_TOKEN_TYPE token_;
 
 		uint32_t msg_id();
+		COAP_TOKEN_TYPE token();
+
 	};
 
 
@@ -70,8 +87,9 @@ template<typename OsModel_P,
 		timer_ = &timer;
 		debug_ = &debug;
 
-		// random initial message ID
+		// random initial message ID and token
 		msg_id_ = rand();
+		token_ = rand();
 
 	}
 
@@ -87,6 +105,15 @@ template<typename OsModel_P,
 		{
 			return(msg_id_++);
 		}
+
+	template<typename OsModel_P,
+				typename Radio_P,
+				typename Timer_P,
+				typename Debug_P>
+		COAP_TOKEN_TYPE CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::token()
+			{
+				return(token_++);
+			}
 
 }
 

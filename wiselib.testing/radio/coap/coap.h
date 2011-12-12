@@ -22,6 +22,11 @@ using namespace std;
 // TODO: Sinnvollen Default finden
 #define COAP_LIST_SIZE_OPAQUE		8
 
+// Size of tokens sent by coapradio.h. This does not affect what size tokens coapradio can receive/process!
+#define COAP_TOKEN_TYPE uint32_t
+// Size of message buffer that saves sent and received messages for a while
+#define COAPRADIO_LIST_SIZE		25
+
 
 // Hilfsmakros
 

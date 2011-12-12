@@ -911,7 +911,6 @@ namespace wiselib
 			}
 			else if( COAP_OPTION_FORMAT[option_number] ==  COAP_FORMAT_OPAQUE )
 			{
-				// TODO: Überschreitung der 270-Zeichen Grenze beachten
 				OpaqueOption opq_opt( option_number, value, option_length );
 				if( opq_opt.option_number() == COAP_OPT_TOKEN )
 				{
