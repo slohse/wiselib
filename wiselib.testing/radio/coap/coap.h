@@ -120,16 +120,17 @@ using namespace std;
 
 #define COAP_START_OF_OPTIONS	4
 
-#define COAP_FORMAT_NONE	0
-#define COAP_FORMAT_UINT	1
-#define COAP_FORMAT_STRING	2
-#define COAP_FORMAT_OPAQUE	3
+#define COAP_FORMAT_NONE		0
+#define COAP_FORMAT_UNKNOWN		255
+#define COAP_FORMAT_UINT		1
+#define COAP_FORMAT_STRING		2
+#define COAP_FORMAT_OPAQUE		3
 #define COAP_LARGEST_OPTION_NUMBER	21
 #define COAP_OPTION_FORMAT_ARRAY_SIZE	COAP_LARGEST_OPTION_NUMBER + 1
 
 static const uint8_t COAP_OPTION_FORMAT[COAP_OPTION_FORMAT_ARRAY_SIZE] =
 {
-	COAP_FORMAT_NONE,			// 0: not in use
+	COAP_FORMAT_UNKNOWN,			// 0: not in use
 	COAP_FORMAT_UINT,			// 1: COAP_OPT_CONTENT_TYPE
 	COAP_FORMAT_UINT,			// 2: COAP_OPT_MAX_AGE
 	COAP_FORMAT_STRING,			// 3: COAP_OPT_PROXY_URI
@@ -139,18 +140,44 @@ static const uint8_t COAP_OPTION_FORMAT[COAP_OPTION_FORMAT_ARRAY_SIZE] =
 	COAP_FORMAT_UINT,			// 7: COAP_OPT_URI_PORT
 	COAP_FORMAT_STRING,			// 8: COAP_OPT_LOCATION_QUERY
 	COAP_FORMAT_STRING,			// 9: COAP_OPT_URI_PATH
-	COAP_FORMAT_NONE,			// 10: not in use
+	COAP_FORMAT_UNKNOWN,		// 10: not in use
 	COAP_FORMAT_OPAQUE,			// 11: COAP_OPT_TOKEN
 	COAP_FORMAT_UINT,			// 12: COAP_OPT_ACCEPT
 	COAP_FORMAT_OPAQUE,			// 13: COAP_OPT_IF_MATCH
 	COAP_FORMAT_NONE,			// 14: COAP_OPT_FENCEPOST
 	COAP_FORMAT_STRING,			// 15: COAP_OPT_URI_QUERY
-	COAP_FORMAT_NONE,			// 16: not in use
-	COAP_FORMAT_NONE,			// 17: not in use
-	COAP_FORMAT_NONE,			// 18: not in use
-	COAP_FORMAT_NONE,			// 19: not in use
-	COAP_FORMAT_NONE,			// 20: not in use
+	COAP_FORMAT_UNKNOWN,		// 16: not in use
+	COAP_FORMAT_UNKNOWN,		// 17: not in use
+	COAP_FORMAT_UNKNOWN,		// 18: not in use
+	COAP_FORMAT_UNKNOWN,		// 19: not in use
+	COAP_FORMAT_UNKNOWN,		// 20: not in use
 	COAP_FORMAT_NONE			// 21: COAP_OPT_IF_NONE_MATCH
+};
+
+static const bool COAP_OPT_CAN_OCCUR_MULTIPLE[COAP_OPTION_FORMAT_ARRAY_SIZE] =
+{
+	false,			// 0: not in use
+	false,			// 1: COAP_OPT_CONTENT_TYPE
+	false,			// 2: COAP_OPT_MAX_AGE
+	true,			// 3: COAP_OPT_PROXY_URI
+	true,			// 4: COAP_OPT_ETAG -- can occur multiple times in Requests, but only once in a response
+	false,			// 5: COAP_OPT_URI_HOST
+	true,			// 6: COAP_OPT_LOCATION_PATH
+	false,			// 7: COAP_OPT_URI_PORT
+	true,			// 8: COAP_OPT_LOCATION_QUERY
+	true,			// 9: COAP_OPT_URI_PATH
+	false,			// 10: not in use
+	false,			// 11: COAP_OPT_TOKEN
+	true,			// 12: COAP_OPT_ACCEPT
+	true,			// 13: COAP_OPT_IF_MATCH
+	false,			// 14: COAP_OPT_FENCEPOST
+	true,			// 15: COAP_OPT_URI_QUERY
+	false,			// 16: not in use
+	false,			// 17: not in use
+	false,			// 18: not in use
+	false,			// 19: not in use
+	false,			// 20: not in use
+	false			// 21: COAP_OPT_IF_NONE_MATCH
 };
 
 namespace wiselib

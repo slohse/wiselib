@@ -3,6 +3,12 @@
 
 #include "coap.h"
 
+
+#define SKIP_OPTION_AND_CONTINUE		previous_option_number = option_number; \
+					i += length_of_option; \
+					++parsed_options; \
+					continue; \
+
 namespace wiselib
 {
 	template<typename OsModel_P>
@@ -86,6 +92,15 @@ namespace wiselib
 		///@}
 
 		void init();
+
+		/**
+		 * Takes a stream of data and tries to parse it into the CoapPacket from which this method is called
+		 * If parsing fails this CoapPacket will be turned into a RST-Message with the corresponding Error code, so it can be send to the sender of the offending message.
+		 * @param datastream the serial data to be parsed
+		 * @param length length of the datastream
+		 * @return error code, 0 for success, the Coap Code corresponding to the error otherwise.
+		 */
+		int parse_message( uint8_t *datastream, size_t length );
 
 		/**
 		 * Returns the CoAP version number of the packet
@@ -204,6 +219,8 @@ namespace wiselib
 		bool opt_if_none_match();
 		void set_opt_if_none_match( bool opt_if_none_match );
 
+		uint8_t error_response( uint8_t error_code, char *error_description_format, size_t len );
+
 		enum error_codes
 		{
 			// inherited from concepts::BasicReturnValues_concept
@@ -234,7 +251,6 @@ namespace wiselib
 		size_t data_length_;
 
 		// methods:
-		void parse_message( uint8_t *datastream, size_t length );
 		void parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value);
 		inline uint8_t next_fencepost(uint8_t previous_opt_number);
 		inline void fenceposting( uint8_t option_number, uint8_t &previous_opt_number, uint8_t *datastream, size_t &offset );
@@ -274,13 +290,6 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P>
-	CoapPacket<OsModel_P>::CoapPacket( uint8_t *datastream, size_t length )
-	{
-		init();
-		parse_message( datastream, length );
-	}
-
-	template<typename OsModel_P>
 	CoapPacket<OsModel_P>::~CoapPacket()
 	{
 	}
@@ -301,6 +310,107 @@ namespace wiselib
 		opaque_options_.clear();
 
 		data_length_ = 0;
+	}
+
+	template<typename OsModel_P>
+	int CoapPacket<OsModel_P>::parse_message( uint8_t *datastream, size_t length )
+	{
+		// clear everything
+		init();
+
+		// can this possible be a coap packet?
+		if(length > 3)
+		{
+			version_ = datastream[0] >> 6;
+			type_ = ( datastream[0] & 0x30 ) >> 4;
+			size_t option_count = datastream[0] & 0x0f;
+			code_ = datastream[1];
+			msg_id_ = ( datastream[2] << 8 ) | datastream[3];
+
+			uint8_t parsed_options = 0;
+			uint8_t previous_option_number = 0;
+
+			size_t i = COAP_START_OF_OPTIONS;
+			uint8_t option_number = 0;
+			size_t length_of_option = 0;
+			// TODO: Überlegen ob das mit der while-Schleife so klug ist
+			// bzw. aufpassen, dass man mit den ganzen i++ nicht aus den Options
+			// rausläuft
+			while( parsed_options < option_count && i < length )
+			{
+				option_number = previous_option_number + ( datastream[i] >> 4 );
+				length_of_option = datastream[i] & 0x0f;
+				if( length_of_option == COAP_LONG_OPTION && i + 1 < length )
+				{
+					++i;
+					length_of_option = datastream[i] + 15;
+				}
+				else if ( i + 1 >= length )
+				{
+					char error_description[35];
+					int len = sprintf(error_description, "Options exceed packet length.");
+					return error_response( COAP_CODE_BAD_REQUEST, error_description, len );
+				}
+
+				// check for unknown options
+				if ( ( option_number > COAP_LARGEST_OPTION_NUMBER ) || ( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_UNKNOWN ) )
+				{
+					// option is critical
+					if ( (option_number & 0x01 ) )
+					{
+						char error_description[35];
+						int len = sprintf(error_description, "Unknown critical option %i.", option_number);
+						return error_response( COAP_CODE_BAD_OPTION , error_description, len );
+					}
+					// option is not critical --> ignore
+					SKIP_OPTION_AND_CONTINUE
+				}
+				// check for illegal repetition of options (Section 5.4.4)
+				if( option_number == previous_option_number )
+				{
+					if ( !COAP_OPT_CAN_OCCUR_MULTIPLE[option_number] )
+					{
+						// option is critical
+						if ( (option_number & 0x01 ) )
+						{
+							char error_description[50];
+							int len = sprintf(error_description, "Multiple occurences of critical option %i.", option_number);
+							return error_response( COAP_CODE_BAD_OPTION , error_description, len );
+						}
+						// option is not critical --> ignore
+						SKIP_OPTION_AND_CONTINUE
+					}
+				}
+
+
+				previous_option_number = option_number;
+				++i;
+				if( i + length_of_option - 1 < length )
+				{
+					parse_option(option_number, length_of_option, datastream+i);
+					++parsed_options;
+					i += length_of_option;
+				}
+				else
+				{
+					// TODO: Fehlerhaftes Paket behandeln!
+				}
+			}
+
+			// if there is no data we just leave it at (NULL, 0)
+			if(i < length)
+			{
+				set_data( datastream + i, length - i );
+			}
+		}
+		else
+		{
+			char error_description[25];
+			int len = sprintf(error_description, "Malformed packet");
+			return error_response( COAP_CODE_BAD_REQUEST, error_description, len );
+		}
+
+		return 0;
 	}
 
 	template<typename OsModel_P>
@@ -817,59 +927,17 @@ namespace wiselib
 		return SUCCESS;
 	}
 
-	// private methods
-
 	template<typename OsModel_P>
-	void CoapPacket<OsModel_P>::parse_message( uint8_t *datastream, size_t length )
+	uint8_t CoapPacket<OsModel_P>::error_response( uint8_t error_code, char *error_description, size_t len )
 	{
-		if(length > 3)
-			{
-				version_ = datastream[0] >> 6;
-				type_ = ( datastream[0] & 0x30 ) >> 4;
-				size_t option_count = datastream[0] & 0x0f;
-				code_ = datastream[1];
-				msg_id_ = ( datastream[2] << 8 ) | datastream[3];
-
-				uint8_t parsed_options = 0;
-				uint8_t previous_option_number = 0;
-
-				size_t i = COAP_START_OF_OPTIONS;
-				uint8_t option_number = 0;
-				size_t length_of_option = 0;
-				// TODO: Überlegen ob das mit der while-Schleife so klug ist
-				// bzw. aufpassen, dass man mit den ganzen i++ nicht aus den Options
-				// rausläuft
-				while( parsed_options < option_count && i < length )
-				{
-					option_number = previous_option_number + ( datastream[i] >> 4 );
-					previous_option_number = option_number;
-					length_of_option = datastream[i] & 0x0f;
-					if( length_of_option == COAP_LONG_OPTION && i + 1 < length )
-					{
-						++i;
-						length_of_option = datastream[i] + 15;
-					}
-					++i;
-					if( i + length_of_option - 1 < length )
-					{
-						parse_option(option_number, length_of_option, datastream+i);
-						++parsed_options;
-						i += length_of_option;
-					}
-					else
-					{
-						// TODO: Fehlerhaftes Paket behandeln!
-					}
-				}
-
-				// if there is no data we just leave it at (NULL, 0)
-				if(i < length)
-				{
-					set_data( datastream + i, length - i );
-				}
-
-			}
+		init();
+		set_type( COAP_MSG_TYPE_RST );
+		set_code( error_code );
+		set_data( (uint8_t*) error_description, len );
+		return code();
 	}
+
+	// private methods
 
 	template<typename OsModel_P>
 	void CoapPacket<OsModel_P>::parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value)
