@@ -141,6 +141,19 @@ namespace wiselib
 		uint8_t code();
 
 		/**
+		 * Returns whether the packet is a request
+		 * @return true if packet is a request, false otherwise
+		 */
+		bool is_a_request();
+
+		/**
+		 * Returns whether the packet is a response
+		 * @return true if packet is a response, false otherwise
+		 */
+		bool is_a_response();
+
+
+		/**
 		 * Sets the code of the packet. Can be a request (1-31), response (64-191) or empty (0). (all other values are reserved)
 		 * For details refer to the CoAP Code Registry section of the CoAP draft.
 		 * @param code code of the packet
@@ -219,7 +232,7 @@ namespace wiselib
 		bool opt_if_none_match();
 		void set_opt_if_none_match( bool opt_if_none_match );
 
-		uint8_t error_response( uint8_t error_code, char *error_description_format, size_t len );
+		int error_response( bool needs_to_be_CON, uint8_t error_code, char *error_description_format, size_t len );
 
 		enum error_codes
 		{
@@ -230,7 +243,11 @@ namespace wiselib
 			// coap specific
 			ERR_WRONG_TYPE,
 			ERR_UNKNOWN_OPT,
-			ERR_OPT_NOT_SET
+			ERR_OPT_NOT_SET,
+			// message parsing errors
+			ERR_CON_RESPONSE,		// error occured, requires a Confirmable response
+			ERR_RST,				// error occured, requires a to respond with RST
+			ERR_IGNORE_MSG			// error occured, according to RFC the entire message must be ignored
 		};
 
 	private:
@@ -251,7 +268,7 @@ namespace wiselib
 		size_t data_length_;
 
 		// methods:
-		void parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value);
+		int parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value);
 		inline uint8_t next_fencepost(uint8_t previous_opt_number);
 		inline void fenceposting( uint8_t option_number, uint8_t &previous_opt_number, uint8_t *datastream, size_t &offset );
 		inline void optlength( size_t length, uint8_t *datastream, size_t &offset );
@@ -347,9 +364,14 @@ namespace wiselib
 				}
 				else if ( i + 1 >= length )
 				{
-					char error_description[35];
-					int len = sprintf(error_description, "Options exceed packet length.");
-					return error_response( COAP_CODE_BAD_REQUEST, error_description, len );
+					if( type() == COAP_MSG_TYPE_CON )
+					{
+						char error_description[35];
+						int len = sprintf(error_description, "Options exceed packet length.");
+						return error_response( is_a_request(), COAP_CODE_BAD_REQUEST, error_description, len );
+					}
+					else
+						return ERR_IGNORE_MSG;
 				}
 
 				// check for unknown options
@@ -358,9 +380,17 @@ namespace wiselib
 					// option is critical
 					if ( (option_number & 0x01 ) )
 					{
-						char error_description[35];
-						int len = sprintf(error_description, "Unknown critical option %i.", option_number);
-						return error_response( COAP_CODE_BAD_OPTION , error_description, len );
+						if( type() == COAP_MSG_TYPE_CON )
+						{
+							char error_description[35];
+							int len = sprintf(error_description, "Unknown critical option %i.", option_number);
+							return error_response( is_a_request(), COAP_CODE_BAD_OPTION , error_description, len );
+						}
+						else
+						{
+							return ERR_IGNORE_MSG;
+						}
+
 					}
 					// option is not critical --> ignore
 					SKIP_OPTION_AND_CONTINUE
@@ -373,9 +403,16 @@ namespace wiselib
 						// option is critical
 						if ( (option_number & 0x01 ) )
 						{
-							char error_description[50];
-							int len = sprintf(error_description, "Multiple occurences of critical option %i.", option_number);
-							return error_response( COAP_CODE_BAD_OPTION , error_description, len );
+							if( type() == COAP_MSG_TYPE_CON )
+							{
+								char error_description[50];
+								int len = sprintf(error_description, "Multiple occurences of critical option %i.", option_number);
+								return error_response( is_a_request(), COAP_CODE_BAD_OPTION , error_description, len );
+							}
+							else
+							{
+								return ERR_IGNORE_MSG;
+							}
 						}
 						// option is not critical --> ignore
 						SKIP_OPTION_AND_CONTINUE
@@ -387,13 +424,29 @@ namespace wiselib
 				++i;
 				if( i + length_of_option - 1 < length )
 				{
-					parse_option(option_number, length_of_option, datastream+i);
-					++parsed_options;
-					i += length_of_option;
+					int option_parse_status = parse_option(option_number, length_of_option, datastream+i);
+					if ( option_parse_status == SUCCESS )
+					{
+						++parsed_options;
+						i += length_of_option;
+					}
+					else
+					{
+						return option_parse_status;
+					}
 				}
 				else
 				{
-					// TODO: Fehlerhaftes Paket behandeln!
+					if( type() == COAP_MSG_TYPE_CON )
+					{
+						char error_description[35];
+						int len = sprintf(error_description, "Options exceed packet length.");
+						return error_response( is_a_request(), COAP_CODE_BAD_OPTION, error_description, len );
+					}
+					else
+					{
+						return ERR_IGNORE_MSG;
+					}
 				}
 			}
 
@@ -405,12 +458,11 @@ namespace wiselib
 		}
 		else
 		{
-			char error_description[25];
-			int len = sprintf(error_description, "Malformed packet");
-			return error_response( COAP_CODE_BAD_REQUEST, error_description, len );
+			// can't make any sense of it
+			return ERR_IGNORE_MSG;
 		}
 
-		return 0;
+		return SUCCESS;
 	}
 
 	template<typename OsModel_P>
@@ -456,6 +508,18 @@ namespace wiselib
 	void CoapPacket<OsModel_P>::set_code( uint8_t code )
 	{
 		code_ = code;
+	}
+
+	template<typename OsModel_P>
+	bool CoapPacket<OsModel_P>::is_a_request()
+	{
+		return( code() >= COAP_REQUEST_CODE_RANGE_MIN && code() <= COAP_REQUEST_CODE_RANGE_MAX );
+	}
+
+	template<typename OsModel_P>
+	bool CoapPacket<OsModel_P>::is_a_response()
+	{
+		return( code() >= COAP_RESPONSE_CODE_RANGE_MIN && code() <= COAP_RESPONSE_CODE_RANGE_MAX );
 	}
 
 	template<typename OsModel_P>
@@ -928,19 +992,28 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P>
-	uint8_t CoapPacket<OsModel_P>::error_response( uint8_t error_code, char *error_description, size_t len )
+	int CoapPacket<OsModel_P>::error_response( bool needs_to_be_CON, uint8_t error_code, char *error_description, size_t len )
 	{
 		init();
-		set_type( COAP_MSG_TYPE_RST );
+		if( needs_to_be_CON )
+		{
+			set_type( COAP_MSG_TYPE_CON );
+		}
+		else
+		{
+			set_type( COAP_MSG_TYPE_RST );
+		}
 		set_code( error_code );
 		set_data( (uint8_t*) error_description, len );
-		return code();
+		if( needs_to_be_CON )
+			return ERR_CON_RESPONSE;
+		return ERR_RST;
 	}
 
 	// private methods
 
 	template<typename OsModel_P>
-	void CoapPacket<OsModel_P>::parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value)
+	int CoapPacket<OsModel_P>::parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value)
 	{
 		if( option_number <= COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -966,7 +1039,25 @@ namespace wiselib
 			}
 			else if( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_STRING )
 			{
-				// TODO: Überschreitung der 270-Zeichen Grenze beachten
+				if( option_length < COAP_STRING_OPTS_MINLEN || option_length > COAP_STRING_OPTS_MAXLEN )
+				{
+					// option is critical
+					if ( (option_number & 0x01 ) )
+					{
+						if( type() == COAP_MSG_TYPE_CON )
+						{
+							char error_description[50];
+							int len = sprintf(error_description, "String option %i out of bounds.", option_number );
+							return error_response( is_a_request(), COAP_CODE_BAD_OPTION, error_description, len );
+						}
+						else
+						{
+							return ERR_IGNORE_MSG;
+						}
+					}
+					// option is elective --> ignore
+					return 0;
+				}
 				StringOption str_opt( option_number, StaticString( (char*) value, option_length ) );
 				if( str_opt.option_number() == COAP_OPT_URI_HOST )
 				{
@@ -990,10 +1081,8 @@ namespace wiselib
 				}
 			}
 		}
-		else
-		{
-			// TODO: unbekannte Optionsnummer behandeln
-		}
+
+		return SUCCESS;
 	}
 
 	template<typename OsModel_P>
