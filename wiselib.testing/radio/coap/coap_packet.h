@@ -272,6 +272,7 @@ namespace wiselib
 		inline uint8_t next_fencepost(uint8_t previous_opt_number);
 		inline void fenceposting( uint8_t option_number, uint8_t &previous_opt_number, uint8_t *datastream, size_t &offset );
 		inline void optlength( size_t length, uint8_t *datastream, size_t &offset );
+		inline uint8_t is_critical( uint8_t option_number );
 
 		// methods dealing with Options
 		template <typename T, list_size_t N>
@@ -378,7 +379,7 @@ namespace wiselib
 				if ( ( option_number > COAP_LARGEST_OPTION_NUMBER ) || ( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_UNKNOWN ) )
 				{
 					// option is critical
-					if ( IS_CRITICAL(option_number) )
+					if ( is_critical( option_number ) )
 					{
 						if( type() == COAP_MSG_TYPE_CON )
 						{
@@ -401,7 +402,7 @@ namespace wiselib
 					if ( !COAP_OPT_CAN_OCCUR_MULTIPLE[option_number] )
 					{
 						// option is critical
-						if ( IS_CRITICAL(option_number) )
+						if ( is_critical(option_number) )
 						{
 							if( type() == COAP_MSG_TYPE_CON )
 							{
@@ -1042,7 +1043,7 @@ namespace wiselib
 				if( option_length < COAP_STRING_OPTS_MINLEN || option_length > COAP_STRING_OPTS_MAXLEN )
 				{
 					// option is critical
-					if ( IS_CRITICAL(option_number) )
+					if ( is_critical( option_number ) )
 					{
 						if( type() == COAP_MSG_TYPE_CON )
 						{
@@ -1120,6 +1121,14 @@ namespace wiselib
 			++offset;
 		}
 	}
+
+	template<typename OsModel_P>
+	inline uint8_t CoapPacket<OsModel_P>::is_critical( uint8_t option_number )
+	{
+		// odd option numbers are critical
+		return( option_number & 0x01 );
+	}
+
 
 	template <typename OsModel_P>
 	template <typename T, list_size_t N>

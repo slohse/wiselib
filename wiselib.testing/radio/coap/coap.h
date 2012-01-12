@@ -57,9 +57,6 @@ using namespace std;
 #define COAP_OPT_URI_QUERY			15
 #define COAP_OPT_IF_NONE_MATCH		21
 
-// odd option numbers are critical
-#define IS_CRITICAL(number)		number & 0x01
-
 #define COAP_OPT_MAXLEN_FENCEPOST		0
 #define COAP_OPT_MAXLEN_CONTENT_TYPE	2
 #define COAP_OPT_MAXLEN_MAX_AGE			4
