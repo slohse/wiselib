@@ -378,7 +378,7 @@ namespace wiselib
 				if ( ( option_number > COAP_LARGEST_OPTION_NUMBER ) || ( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_UNKNOWN ) )
 				{
 					// option is critical
-					if ( (option_number & 0x01 ) )
+					if ( IS_CRITICAL(option_number) )
 					{
 						if( type() == COAP_MSG_TYPE_CON )
 						{
@@ -401,7 +401,7 @@ namespace wiselib
 					if ( !COAP_OPT_CAN_OCCUR_MULTIPLE[option_number] )
 					{
 						// option is critical
-						if ( (option_number & 0x01 ) )
+						if ( IS_CRITICAL(option_number) )
 						{
 							if( type() == COAP_MSG_TYPE_CON )
 							{
@@ -1042,7 +1042,7 @@ namespace wiselib
 				if( option_length < COAP_STRING_OPTS_MINLEN || option_length > COAP_STRING_OPTS_MAXLEN )
 				{
 					// option is critical
-					if ( (option_number & 0x01 ) )
+					if ( IS_CRITICAL(option_number) )
 					{
 						if( type() == COAP_MSG_TYPE_CON )
 						{
