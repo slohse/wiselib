@@ -1129,7 +1129,7 @@ namespace wiselib
 		return( option_number & 0x01 );
 	}
 
-
+	// TODO: die Listen könnten voll sein, hier und in aufrufenden Funktionen abfangen!
 	template <typename OsModel_P>
 	template <typename T, list_size_t N>
 	void CoapPacket<OsModel_P>::set_option(list_static<OsModel_P, T, N> &options, T option)
@@ -1159,6 +1159,7 @@ namespace wiselib
 		}
 	}
 
+	// TODO: die Listen könnten voll sein, hier und in aufrufenden Funktionen abfangen
 	template <typename OsModel_P>
 	template <typename T, list_size_t N>
 	void CoapPacket<OsModel_P>::add_option(list_static<OsModel_P, T, N> &options, T option)

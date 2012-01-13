@@ -2,6 +2,8 @@
 #define COAP_H
 
 
+#define DEBUG_COAPRADIO
+
 
 // TODO: ersetzen mit <wiselib.stable/external_interfaces/external_interface.h>
 #include "external_interface/external_interface.h"
@@ -14,7 +16,7 @@
 using namespace std;
 
 // Config Tweaks
-// of the uint options (content type, max age, uri port and accept) only accept can occur multiple times
+// out of all the uint options (content type, max age, uri port and accept) only accept can occur multiple times
 // and currently (draft-07) there are only six media types. So 8 seemed a pretty good default
 #define COAP_LIST_SIZE_UINT		8
 // TODO: Sinnvollen Default finden
@@ -27,6 +29,11 @@ using namespace std;
 // Size of message buffer that saves sent and received messages for a while
 #define COAPRADIO_LIST_SIZE		25
 
+
+enum CoapMsgIds
+{
+	CoapMsgId = 51 // Coap Message Type according to Wiselibs Reserved Message IDs
+};
 
 // Hilfsmakros
 

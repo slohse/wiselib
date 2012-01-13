@@ -53,6 +53,8 @@ template<typename OsModel_P,
 		typedef typename Radio::message_id_t message_id_t;
 		typedef typename Radio::self_pointer_t self_pointer_t;
 		
+		typedef CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P> self_t;
+
 		void init( Radio& radio, Timer& timer, Debug& debug );
 		int enable_radio();
 		int disable_radio();
@@ -60,11 +62,19 @@ template<typename OsModel_P,
 		int send (node_id_t receiver, size_t len, block_data_t *data );
 		void receive(node_id_t from, size_t len, block_data_t * data);
 		
+		enum error_codes
+		{
+			// inherited from concepts::BasicReturnValues_concept
+			SUCCESS = OsModel::SUCCESS,
+			ERR_UNSPEC = OsModel::ERR_UNSPEC,
+			ERR_NOTIMPL = OsModel::ERR_NOTIMPL
+		};
 
 	private:
 		Radio *radio_;
 		Timer *timer_;
 		Debug *debug_;
+		int recv_callback_id_; // callback for receive function
 		list_static<OsModel, CoapPacket<OsModel>, COAPRADIO_LIST_SIZE> message_buffer;
 
 		uint32_t msg_id_;
@@ -93,27 +103,87 @@ template<typename OsModel_P,
 
 	}
 
-
-
-
-// private
 	template<typename OsModel_P,
 			typename Radio_P,
 			typename Timer_P,
 			typename Debug_P>
-		uint32_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::msg_id()
-		{
-			return(msg_id_++);
-		}
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::enable_radio()
+	{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::enable\n");
+#endif
+		//enable normal radio
+		radio_->enable_radio();
+		// register receive callback to normal radio
+		recv_callback_id_ = radio_->template reg_recv_callback<self_t,
+			&self_t::receive > ( this);
+
+		return SUCCESS;
+	}
 
 	template<typename OsModel_P,
-				typename Radio_P,
-				typename Timer_P,
-				typename Debug_P>
-		COAP_TOKEN_TYPE CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::token()
+	typename Radio_P,
+	typename Timer_P,
+	typename Debug_P>
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::disable_radio()
+	{
+		radio_->unreg_recv_callback(recv_callback_id_);
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename Timer_P,
+	typename Debug_P>
+	typename Radio_P::node_id_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::id ()
+	{
+		return radio_->id();
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename Timer_P,
+	typename Debug_P>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::receive(node_id_t from, size_t len, block_data_t * data)
+	{
+		// do not receive own messages
+		if (radio_->id() == from) {
+#ifdef DEBUG_COAPRADIO
+			debug_->debug( "own message received\n");
+#endif
+			return;
+		}
+		if (len > 0 )
+		{
+			message_id_t msg_id = read<OsModel, block_data_t, message_id_t>( data );
+			if( msg_id == CoapMsgId )
 			{
-				return(token_++);
+#ifdef DEBUG_COAPRADIO
+				debug_->debug( "received coap message!\n");
+#endif
 			}
+		}
+	}
+
+
+// private
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename Timer_P,
+	typename Debug_P>
+	uint32_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::msg_id()
+	{
+		return(msg_id_++);
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename Timer_P,
+	typename Debug_P>
+	COAP_TOKEN_TYPE CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::token()
+	{
+		return(token_++);
+	}
 
 }
 
