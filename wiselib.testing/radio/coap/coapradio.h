@@ -88,9 +88,9 @@ template<typename OsModel_P,
 
 // public
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename Timer_P,
-		typename Debug_P>
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::init(Radio& radio, Timer& timer, Debug& debug)
 	{
 		radio_ = &radio;
@@ -122,9 +122,9 @@ template<typename OsModel_P,
 	}
 
 	template<typename OsModel_P,
-	typename Radio_P,
-	typename Timer_P,
-	typename Debug_P>
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P>
 	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::disable_radio()
 	{
 		radio_->unreg_recv_callback(recv_callback_id_);
@@ -132,18 +132,18 @@ template<typename OsModel_P,
 	}
 
 	template<typename OsModel_P,
-	typename Radio_P,
-	typename Timer_P,
-	typename Debug_P>
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P>
 	typename Radio_P::node_id_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::id ()
 	{
 		return radio_->id();
 	}
 
 	template<typename OsModel_P,
-	typename Radio_P,
-	typename Timer_P,
-	typename Debug_P>
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::receive(node_id_t from, size_t len, block_data_t * data)
 	{
 		// do not receive own messages
@@ -161,6 +161,7 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 				debug_->debug( "received coap message!\n");
 #endif
+
 			}
 		}
 	}
@@ -168,18 +169,18 @@ template<typename OsModel_P,
 
 // private
 	template<typename OsModel_P,
-	typename Radio_P,
-	typename Timer_P,
-	typename Debug_P>
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P>
 	uint32_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::msg_id()
 	{
 		return(msg_id_++);
 	}
 
 	template<typename OsModel_P,
-	typename Radio_P,
-	typename Timer_P,
-	typename Debug_P>
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P>
 	COAP_TOKEN_TYPE CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::token()
 	{
 		return(token_++);
