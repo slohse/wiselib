@@ -92,7 +92,6 @@ namespace wiselib
 		///@name Construction / Destruction
 		///@{
 		CoapPacket();
-		CoapPacket( uint8_t *datastream, size_t length );
 		~CoapPacket();
 		///@}
 
@@ -105,7 +104,7 @@ namespace wiselib
 		 * @param length length of the datastream
 		 * @return error code, 0 for success, the Coap Code corresponding to the error otherwise.
 		 */
-		int parse_message( uint8_t *datastream, size_t length );
+		int parse_message( block_data_t *datastream, size_t length );
 
 		/**
 		 * Returns the CoAP version number of the packet
@@ -169,13 +168,13 @@ namespace wiselib
 		 * Returns the message ID by which message duplication can be detected and request/response matching can be done.
 		 * @return the message ID
 		 */
-		uint16_t msg_id();
+		coap_msg_id_t msg_id();
 
 		/**
 		 * Sets the message ID by which message duplication can be detected and request/response matching can be done.
 		 * @param msg_id new message ID
 		 */
-		void set_msg_id( uint16_t msg_id );
+		void set_msg_id( coap_msg_id_t msg_id );
 
 		/**
 		 * Returns a pointer to the payload section of the packet
@@ -194,7 +193,7 @@ namespace wiselib
 		 * @param data the payload
 		 * @param length payload length
 		 */
-		void set_data( uint8_t* data , size_t length);
+		void set_data( block_data_t* data , size_t length);
 
 		/**
 		 * Calculates the length of the message if it were serialized in the current sate
@@ -213,11 +212,11 @@ namespace wiselib
 
 		int set_option( uint8_t option_number, uint32_t value );
 		int set_option( uint8_t option_number, StaticString value );
-		int set_option( uint8_t option_number, uint8_t *value, size_t length );
+		int set_option( uint8_t option_number, block_data_t *value, size_t length );
 
 		int add_option( uint8_t option_number, uint32_t value );
 		int add_option( uint8_t option_number, StaticString value );
-		int add_option( uint8_t option_number, uint8_t *value, size_t length );
+		int add_option( uint8_t option_number, block_data_t *value, size_t length );
 
 		int get_option( uint8_t option_number, uint32_t &value );
 		int get_option( uint8_t option_number, StaticString &value );
@@ -261,7 +260,7 @@ namespace wiselib
 		uint8_t version_;
 		uint8_t type_;
 		uint8_t code_;
-		uint16_t msg_id_;
+		coap_msg_id_t msg_id_;
 
 		// options
 		list_static<OsModel, UintOption, COAP_LIST_SIZE_UINT> uint_options_;
@@ -269,14 +268,14 @@ namespace wiselib
 		list_static<OsModel, OpaqueOption, COAP_LIST_SIZE_OPAQUE> opaque_options_;
 		bool opt_if_none_match_;
 
-		uint8_t* data_;
+		block_data_t* data_;
 		size_t data_length_;
 
 		// methods:
-		int parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value);
+		int parse_option( uint8_t option_number, uint16_t option_length, block_data_t* value);
 		inline uint8_t next_fencepost(uint8_t previous_opt_number);
-		inline void fenceposting( uint8_t option_number, uint8_t &previous_opt_number, uint8_t *datastream, size_t &offset );
-		inline void optlength( size_t length, uint8_t *datastream, size_t &offset );
+		inline void fenceposting( uint8_t option_number, uint8_t &previous_opt_number, block_data_t *datastream, size_t &offset );
+		inline void optlength( size_t length, block_data_t *datastream, size_t &offset );
 		inline uint8_t is_critical( uint8_t option_number );
 
 		// methods dealing with Options
@@ -295,11 +294,11 @@ namespace wiselib
 		template <typename T, list_size_t N>
 		void remove_option( list_static<OsModel_P, T, N> &options, uint8_t option_number );
 
-		size_t serialize_option( uint8_t *datastream, uint8_t previous_option_number, OpaqueOption &opt );
-		size_t serialize_option( uint8_t *datastream, uint8_t previous_option_number, StringOption &opt );
-		size_t serialize_option( uint8_t *datastream, uint8_t previous_option_number, UintOption &opt );
+		size_t serialize_option( block_data_t *datastream, uint8_t previous_option_number, OpaqueOption &opt );
+		size_t serialize_option( block_data_t *datastream, uint8_t previous_option_number, StringOption &opt );
+		size_t serialize_option( block_data_t *datastream, uint8_t previous_option_number, UintOption &opt );
 
-		uint32_t deserialize_uint( uint8_t *datastream, size_t length);
+		uint32_t deserialize_uint( block_data_t *datastream, size_t length);
 
 	};
 
@@ -340,7 +339,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::parse_message( uint8_t *datastream, size_t length )
+	int CoapPacket<OsModel_P, Radio_P>::parse_message( block_data_t *datastream, size_t length )
 	{
 		// clear everything
 		init();
@@ -558,7 +557,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	void CoapPacket<OsModel_P, Radio_P>::set_data( uint8_t* data , size_t length)
+	void CoapPacket<OsModel_P, Radio_P>::set_data( block_data_t* data , size_t length)
 	{
 		data_ = data; data_length_ = length;
 	}
@@ -843,7 +842,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::set_option( uint8_t option_number, uint8_t *value, size_t length )
+	int CoapPacket<OsModel_P, Radio_P>::set_option( uint8_t option_number, block_data_t *value, size_t length )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -894,7 +893,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::add_option( uint8_t option_number, uint8_t *value, size_t length )
+	int CoapPacket<OsModel_P, Radio_P>::add_option( uint8_t option_number,block_data_t *value, size_t length )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1058,7 +1057,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::parse_option( uint8_t option_number, uint16_t option_length, uint8_t* value)
+	int CoapPacket<OsModel_P, Radio_P>::parse_option( uint8_t option_number, uint16_t option_length, block_data_t* value)
 	{
 		if( option_number <= COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1139,7 +1138,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	inline void CoapPacket<OsModel_P, Radio_P>::fenceposting( uint8_t option_number, uint8_t &previous_opt_number, uint8_t *datastream, size_t &offset )
+	inline void CoapPacket<OsModel_P, Radio_P>::fenceposting( uint8_t option_number, uint8_t &previous_opt_number, block_data_t *datastream, size_t &offset )
 	{
 		int fencepost_delta = 0;
 		while( option_number - previous_opt_number > 15 )
@@ -1153,7 +1152,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	inline void CoapPacket<OsModel_P, Radio_P>::optlength( size_t length, uint8_t *datastream, size_t &offset )
+	inline void CoapPacket<OsModel_P, Radio_P>::optlength( size_t length, block_data_t *datastream, size_t &offset )
 	{
 		if( length > 14 )
 		{
@@ -1282,7 +1281,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	size_t CoapPacket<OsModel_P, Radio_P>::serialize_option( uint8_t *datastream, uint8_t previous_option_number, OpaqueOption &opt )
+	size_t CoapPacket<OsModel_P, Radio_P>::serialize_option( block_data_t *datastream, uint8_t previous_option_number, OpaqueOption &opt )
 	{
 		size_t offset = 0;
 		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
@@ -1295,7 +1294,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	size_t CoapPacket<OsModel_P, Radio_P>::serialize_option( uint8_t *datastream, uint8_t previous_option_number, StringOption &opt )
+	size_t CoapPacket<OsModel_P, Radio_P>::serialize_option( block_data_t *datastream, uint8_t previous_option_number, StringOption &opt )
 	{
 		size_t offset = 0;
 		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
@@ -1309,11 +1308,14 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	size_t CoapPacket<OsModel_P, Radio_P>::serialize_option( uint8_t *datastream, uint8_t previous_option_number, UintOption &opt )
+	size_t CoapPacket<OsModel_P, Radio_P>::serialize_option( block_data_t *datastream, uint8_t previous_option_number, UintOption &opt )
 	{
 		size_t offset = 0;
+		uint8_t delta_and_size = 0;
 		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
-		datastream[offset] = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 );
+
+		delta_and_size = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 );
+		//write<OsModel , block_data_t , uint8_t >( ( block_data_t* ) datastream + offset, ;
 
 		size_t length = 0;
 		// the maximum size of the integer is 32bit or 4 byte
@@ -1326,7 +1328,8 @@ namespace wiselib
 				break;
 			}
 		}
-		datastream[offset] |= (length & 0x0f);
+		delta_and_size |= (length & 0x0f);
+		write<OsModel , block_data_t , uint8_t >( ( block_data_t* ) datastream + offset, delta_and_size );
 		++offset;
 		for( int i = length; i > 0; --i)
 		{
@@ -1339,12 +1342,25 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	uint32_t CoapPacket<OsModel_P, Radio_P>::deserialize_uint( uint8_t *datastream, size_t length)
+	uint32_t CoapPacket<OsModel_P, Radio_P>::deserialize_uint( block_data_t *datastream, size_t length)
 	{
 		uint32_t result = 0;
-		for(size_t i = 0; i < length; ++i)
+		switch( length )
 		{
-			result = (result << 8) | datastream[i];
+		case 1:
+			result = (uint32_t) read<OsModel , block_data_t , uint8_t >( datastream );
+			break;
+		case 2:
+			result = (uint32_t) read<OsModel , block_data_t , uint16_t >( datastream );
+			break;
+		case 3:
+			// TODO: FUCKING ENDIANNESS!!!!! Whoever came up with anything but Big Endian should be shot!
+		case 4:
+			result = read<OsModel , block_data_t , uint32_t >( datastream );
+			break;
+		default:
+			//do nothing
+			break;
 		}
 		return result;
 	}
