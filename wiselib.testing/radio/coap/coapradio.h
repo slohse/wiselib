@@ -19,13 +19,13 @@ template<typename OsModel_P,
 
 	struct SentMessage
 	{
-		CoapPacket<OsModel_P> *message_;
+		CoapPacket<OsModel_P, Radio_P> *message_;
 		uint8_t retransmit_count_;
 	};
 
 	struct ReceivedMessage
 	{
-		CoapPacket<OsModel_P> *message_;
+		CoapPacket<OsModel_P, Radio_P> *message_;
 		bool ack_;
 		bool response_;
 	};
@@ -75,7 +75,7 @@ template<typename OsModel_P,
 		Timer *timer_;
 		Debug *debug_;
 		int recv_callback_id_; // callback for receive function
-		list_static<OsModel, CoapPacket<OsModel>, COAPRADIO_LIST_SIZE> message_buffer;
+		list_static<OsModel, CoapPacket<OsModel, Radio>, COAPRADIO_LIST_SIZE> message_buffer;
 
 		uint32_t msg_id_;
 		COAP_TOKEN_TYPE token_;
@@ -93,6 +93,9 @@ template<typename OsModel_P,
 			typename Debug_P>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::init(Radio& radio, Timer& timer, Debug& debug)
 	{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::init\n");
+#endif
 		radio_ = &radio;
 		timer_ = &timer;
 		debug_ = &debug;
@@ -100,7 +103,9 @@ template<typename OsModel_P,
 		// random initial message ID and token
 		msg_id_ = rand();
 		token_ = rand();
-
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::init> initial msg_id %i, initial token %i\n", msg_id, token);
+#endif
 	}
 
 	template<typename OsModel_P,
@@ -127,6 +132,9 @@ template<typename OsModel_P,
 			typename Debug_P>
 	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::disable_radio()
 	{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::disable\n");
+#endif
 		radio_->unreg_recv_callback(recv_callback_id_);
 		return SUCCESS;
 	}
