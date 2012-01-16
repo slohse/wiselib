@@ -1314,7 +1314,7 @@ namespace wiselib
 		uint8_t delta_and_size = 0;
 		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
 
-		delta_and_size = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 );
+		delta_and_size = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 ));
 		//write<OsModel , block_data_t , uint8_t >( ( block_data_t* ) datastream + offset, ;
 
 		size_t length = 0;
@@ -1329,8 +1329,11 @@ namespace wiselib
 			}
 		}
 		delta_and_size |= (length & 0x0f);
-		write<OsModel , block_data_t , uint8_t >( ( block_data_t* ) datastream + offset, delta_and_size );
+		write<OsModel , block_data_t , uint8_t >( ( block_data_t* ) datastream + offset, delta_and_size);
 		++offset;
+		// The network byte order is big endian. and according to
+		// http://stackoverflow.com/questions/1041554/bitwise-operators-and-endianness
+		// the bitwise operator abstract endianness away. So.... this should work... I think
 		for( int i = length; i > 0; --i)
 		{
 			datastream[offset] = opt.value() >> (( ( i - 1) * 8 ) & 0xff);
@@ -1345,22 +1348,11 @@ namespace wiselib
 	uint32_t CoapPacket<OsModel_P, Radio_P>::deserialize_uint( block_data_t *datastream, size_t length)
 	{
 		uint32_t result = 0;
-		switch( length )
+		// same as in the serialize_option for uints: because bitwise operators abstract endianness away, this should work,
+		// even thoug I'm not using read from utils/serialization
+		for(size_t i = 0; i < length; ++i)
 		{
-		case 1:
-			result = (uint32_t) read<OsModel , block_data_t , uint8_t >( datastream );
-			break;
-		case 2:
-			result = (uint32_t) read<OsModel , block_data_t , uint16_t >( datastream );
-			break;
-		case 3:
-			// TODO: FUCKING ENDIANNESS!!!!! Whoever came up with anything but Big Endian should be shot!
-		case 4:
-			result = read<OsModel , block_data_t , uint32_t >( datastream );
-			break;
-		default:
-			//do nothing
-			break;
+			result = (result << 8) | datastream[i];
 		}
 		return result;
 	}
