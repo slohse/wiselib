@@ -87,6 +87,8 @@ namespace wiselib
 		typedef Radio_P Radio;
 		typedef typename Radio::block_data_t block_data_t;
 		
+		typedef uint16_t coap_msg_id_t;
+
 		///@name Construction / Destruction
 		///@{
 		CoapPacket();
@@ -205,7 +207,7 @@ namespace wiselib
 		 * @param pointer to where the serialized packet will be written.
 		 * @return length of the packet
 		 */
-		size_t serialize( uint8_t *datastream );
+		size_t serialize( block_data_t *datastream );
 
 		uint32_t what_options_are_set();
 
@@ -346,11 +348,12 @@ namespace wiselib
 		// can this possible be a coap packet?
 		if(length > 3)
 		{
-			version_ = ( read<OsModel , block_data_t , uint8_t >( datastream ) ) >> 6 ;
-			type_ = ( datastream[0] & 0x30 ) >> 4;
-			size_t option_count = datastream[0] & 0x0f;
-			code_ = datastream[1];
-			msg_id_ = ( datastream[2] << 8 ) | datastream[3];
+			uint8_t coap_first_byte = read<OsModel , block_data_t , uint8_t >( datastream );
+			version_ = coap_first_byte >> 6 ;
+			type_ = ( coap_first_byte & 0x30 ) >> 4;
+			size_t option_count = coap_first_byte & 0x0f;
+			code_ = read<OsModel , block_data_t , uint8_t >( datastream +1 );
+			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
 
 			uint8_t parsed_options = 0;
 			uint8_t previous_option_number = 0;
@@ -363,12 +366,12 @@ namespace wiselib
 			// rausläuft
 			while( parsed_options < option_count && i < length )
 			{
-				option_number = previous_option_number + ( datastream[i] >> 4 );
-				length_of_option = datastream[i] & 0x0f;
+				option_number = previous_option_number + ( read<OsModel , block_data_t , coap_msg_id_t >( datastream + i ) >> 4 );
+				length_of_option = read<OsModel , block_data_t , coap_msg_id_t >( datastream + i ) & 0x0f;
 				if( length_of_option == COAP_LONG_OPTION && i + 1 < length )
 				{
 					++i;
-					length_of_option = datastream[i] + 15;
+					length_of_option = read<OsModel , block_data_t , coap_msg_id_t >( datastream + i ) + 15;
 				}
 				else if ( i + 1 >= length )
 				{
@@ -657,7 +660,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	size_t CoapPacket<OsModel_P, Radio_P>::serialize( uint8_t *datastream )
+	size_t CoapPacket<OsModel_P, Radio_P>::serialize( block_data_t *datastream )
 	{
 		datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | (option_count() & 0x0f);
 		datastream[1] = code();
