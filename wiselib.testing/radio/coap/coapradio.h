@@ -157,7 +157,7 @@ template<typename OsModel_P,
 		// do not receive own messages
 		if (radio_->id() == from) {
 #ifdef DEBUG_COAPRADIO
-			debug_->debug( "own message received\n");
+			debug_->debug( "Node %h: own message received\n", radio_->id());
 #endif
 			return;
 		}
@@ -167,7 +167,7 @@ template<typename OsModel_P,
 			if( msg_id == CoapMsgId )
 			{
 #ifdef DEBUG_COAPRADIO
-				debug_->debug( "received coap message!\n");
+				debug_->debug( "Node %h: received coap message!\n", radio_->id());
 #endif
 
 			}

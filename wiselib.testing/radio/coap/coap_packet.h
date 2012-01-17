@@ -1314,8 +1314,7 @@ namespace wiselib
 		uint8_t delta_and_size = 0;
 		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
 
-		delta_and_size = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 ));
-		//write<OsModel , block_data_t , uint8_t >( ( block_data_t* ) datastream + offset, ;
+		delta_and_size = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 );
 
 		size_t length = 0;
 		// the maximum size of the integer is 32bit or 4 byte
@@ -1333,7 +1332,7 @@ namespace wiselib
 		++offset;
 		// The network byte order is big endian. and according to
 		// http://stackoverflow.com/questions/1041554/bitwise-operators-and-endianness
-		// the bitwise operator abstract endianness away. So.... this should work... I think
+		// the bitwise operator abstract endianness. So.... this should work... I think
 		for( int i = length; i > 0; --i)
 		{
 			datastream[offset] = opt.value() >> (( ( i - 1) * 8 ) & 0xff);

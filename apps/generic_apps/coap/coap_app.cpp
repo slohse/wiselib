@@ -22,6 +22,7 @@ class ExampleApplication
          debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 //
          debug_->debug( "Example Application booting!\n" );
+         debug_->debug( "Node %i present\n", radio_->id() );
 //
 //         radio_->reg_recv_callback<ExampleApplication,
 //                                   &ExampleApplication::receive_radio_message>( this );
