@@ -86,8 +86,6 @@ namespace wiselib
 		typedef typename OsModel_P::Debug Debug;
 		typedef Radio_P Radio;
 		typedef typename Radio::block_data_t block_data_t;
-		
-		typedef uint16_t coap_msg_id_t;
 
 		///@name Construction / Destruction
 		///@{

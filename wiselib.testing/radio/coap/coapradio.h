@@ -57,6 +57,7 @@ template<typename OsModel_P,
 		
 		typedef CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P> self_t;
 
+
 		void init( Radio& radio, Timer& timer, Debug& debug , Rand& rand );
 		int enable_radio();
 		int disable_radio();
@@ -81,10 +82,10 @@ template<typename OsModel_P,
 		list_static<OsModel, CoapPacket<OsModel, Radio>, COAPRADIO_LIST_SIZE> message_buffer;
 
 		uint32_t msg_id_;
-		COAP_TOKEN_TYPE token_;
+		coap_token_t token_;
 
 		uint32_t msg_id();
-		COAP_TOKEN_TYPE token();
+		coap_token_t token();
 
 	};
 
@@ -217,7 +218,7 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P>
-	COAP_TOKEN_TYPE CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::token()
+	coap_token_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::token()
 	{
 		return(token_++);
 	}

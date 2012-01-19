@@ -111,6 +111,8 @@ class ExampleApplication
 
          cradio_.init( *radio_, *timer_, *debug_,  wiselib::FacetProvider<Os, Os::Rand>::get_facet(value));
 
+         cradio_.enable_radio();
+
          timer_->set_timer<ExampleApplication,
                            &ExampleApplication::broadcast_loop>( 5000, this, 0 );
       }
