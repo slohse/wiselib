@@ -7,9 +7,10 @@
 namespace wiselib {
 
 template<typename OsModel_P,
-	typename Radio_P,
-	typename Timer_P,
-	typename Debug_P>
+	typename Radio_P = typename OsModel_P::Radio,
+	typename Timer_P = typename OsModel_P::Timer,
+	typename Debug_P = typename OsModel_P::Debug,
+	typename Rand_P = typename OsModel_P::Rand>
 	class CoapRadio
 	: public RadioBase<OsModel_P,
 		typename Radio_P::node_id_t,
@@ -46,6 +47,7 @@ template<typename OsModel_P,
 
 		typedef Debug_P Debug;
 		typedef Timer_P Timer;
+		typedef Rand_P Rand;
 
 		typedef typename Radio::node_id_t node_id_t;
 		typedef typename Radio::size_t size_t;
@@ -53,9 +55,9 @@ template<typename OsModel_P,
 		typedef typename Radio::message_id_t message_id_t;
 		typedef typename Radio::self_pointer_t self_pointer_t;
 		
-		typedef CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P> self_t;
+		typedef CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P> self_t;
 
-		void init( Radio& radio, Timer& timer, Debug& debug );
+		void init( Radio& radio, Timer& timer, Debug& debug , Rand& rand );
 		int enable_radio();
 		int disable_radio();
 		node_id_t id ();
@@ -74,6 +76,7 @@ template<typename OsModel_P,
 		Radio *radio_;
 		Timer *timer_;
 		Debug *debug_;
+		Rand *rand_;
 		int recv_callback_id_; // callback for receive function
 		list_static<OsModel, CoapPacket<OsModel, Radio>, COAPRADIO_LIST_SIZE> message_buffer;
 
@@ -90,8 +93,12 @@ template<typename OsModel_P,
 	template<typename OsModel_P,
 			typename Radio_P,
 			typename Timer_P,
-			typename Debug_P>
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::init(Radio& radio, Timer& timer, Debug& debug)
+			typename Debug_P,
+			typename Rand_P>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::init(Radio& radio,
+				Timer& timer,
+				Debug& debug,
+				Rand& rand )
 	{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::init\n");
@@ -99,20 +106,24 @@ template<typename OsModel_P,
 		radio_ = &radio;
 		timer_ = &timer;
 		debug_ = &debug;
+		rand_ = &rand;
+
+		rand_->srand( radio_->id() );
 
 		// random initial message ID and token
-		msg_id_ = rand();
-		token_ = rand();
+		msg_id_ = (*rand_)();
+		token_ = (*rand_)();
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapRadio::init> initial msg_id %i, initial token %i\n", msg_id, token);
+		debug_->debug("CoapRadio::init> initial msg_id %i, initial token %i\n", msg_id_, token_);
 #endif
 	}
 
 	template<typename OsModel_P,
 			typename Radio_P,
 			typename Timer_P,
-			typename Debug_P>
-	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::enable_radio()
+			typename Debug_P,
+			typename Rand_P>
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::enable_radio()
 	{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::enable\n");
@@ -129,8 +140,9 @@ template<typename OsModel_P,
 	template<typename OsModel_P,
 			typename Radio_P,
 			typename Timer_P,
-			typename Debug_P>
-	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::disable_radio()
+			typename Debug_P,
+			typename Rand_P>
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::disable_radio()
 	{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::disable\n");
@@ -142,8 +154,9 @@ template<typename OsModel_P,
 	template<typename OsModel_P,
 			typename Radio_P,
 			typename Timer_P,
-			typename Debug_P>
-	typename Radio_P::node_id_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::id ()
+			typename Debug_P,
+			typename Rand_P>
+	typename Radio_P::node_id_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::id ()
 	{
 		return radio_->id();
 	}
@@ -151,8 +164,21 @@ template<typename OsModel_P,
 	template<typename OsModel_P,
 			typename Radio_P,
 			typename Timer_P,
-			typename Debug_P>
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::receive(node_id_t from, size_t len, block_data_t * data)
+			typename Debug_P,
+			typename Rand_P>
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::send (node_id_t receiver, size_t len, block_data_t *data )
+	{
+		radio_->send(receiver, len, data);
+
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::receive(node_id_t from, size_t len, block_data_t * data)
 	{
 		// do not receive own messages
 		if (radio_->id() == from) {
@@ -179,8 +205,9 @@ template<typename OsModel_P,
 	template<typename OsModel_P,
 			typename Radio_P,
 			typename Timer_P,
-			typename Debug_P>
-	uint32_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::msg_id()
+			typename Debug_P,
+			typename Rand_P>
+	uint32_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::msg_id()
 	{
 		return(msg_id_++);
 	}
@@ -188,8 +215,9 @@ template<typename OsModel_P,
 	template<typename OsModel_P,
 			typename Radio_P,
 			typename Timer_P,
-			typename Debug_P>
-	COAP_TOKEN_TYPE CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P>::token()
+			typename Debug_P,
+			typename Rand_P>
+	COAP_TOKEN_TYPE CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::token()
 	{
 		return(token_++);
 	}

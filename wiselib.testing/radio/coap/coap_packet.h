@@ -365,12 +365,12 @@ namespace wiselib
 			// rausläuft
 			while( parsed_options < option_count && i < length )
 			{
-				option_number = previous_option_number + ( read<OsModel , block_data_t , coap_msg_id_t >( datastream + i ) >> 4 );
-				length_of_option = read<OsModel , block_data_t , coap_msg_id_t >( datastream + i ) & 0x0f;
+				option_number = previous_option_number + ( read<OsModel , block_data_t , uint8_t >( datastream + i ) >> 4 );
+				length_of_option = read<OsModel , block_data_t , uint8_t >( datastream + i ) & 0x0f;
 				if( length_of_option == COAP_LONG_OPTION && i + 1 < length )
 				{
 					++i;
-					length_of_option = read<OsModel , block_data_t , coap_msg_id_t >( datastream + i ) + 15;
+					length_of_option = read<OsModel , block_data_t , uint8_t >( datastream + i ) + 15;
 				}
 				else if ( i + 1 >= length )
 				{

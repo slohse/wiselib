@@ -109,6 +109,8 @@ class ExampleApplication
         	 }
          }
 
+         cradio_.init( *radio_, *timer_, *debug_,  wiselib::FacetProvider<Os, Os::Rand>::get_facet(value));
+
          timer_->set_timer<ExampleApplication,
                            &ExampleApplication::broadcast_loop>( 5000, this, 0 );
       }
@@ -133,6 +135,8 @@ class ExampleApplication
       Os::Radio::self_pointer_t radio_;
       Os::Timer::self_pointer_t timer_;
       Os::Debug::self_pointer_t debug_;
+
+      wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand> cradio_;
 };
 // --------------------------------------------------------------------------
 wiselib::WiselibApplication<Os, ExampleApplication> example_app;
