@@ -140,7 +140,7 @@ namespace wiselib
 		 * For details refer to the CoAP Code Registry section of the CoAP draft.
 		 * @return code of the message
 		 */
-		uint8_t code();
+		CoapCode code();
 
 		/**
 		 * Returns whether the packet is a request
@@ -160,7 +160,7 @@ namespace wiselib
 		 * For details refer to the CoAP Code Registry section of the CoAP draft.
 		 * @param code code of the packet
 		 */
-		void set_code( uint8_t code );
+		void set_code( CoapCode code );
 
 		/**
 		 * Returns the message ID by which message duplication can be detected and request/response matching can be done.
@@ -234,7 +234,7 @@ namespace wiselib
 		bool opt_if_none_match();
 		void set_opt_if_none_match( bool opt_if_none_match );
 
-		int error_response( bool needs_to_be_CON, uint8_t error_code, char *error_description_format, size_t len );
+		int error_response( bool needs_to_be_CON, CoapCode error_code, char *error_description_format, size_t len );
 
 		enum error_codes
 		{
@@ -257,7 +257,7 @@ namespace wiselib
 
 		uint8_t version_;
 		uint8_t type_;
-		uint8_t code_;
+		CoapCode code_;
 		coap_msg_id_t msg_id_;
 
 		// options
@@ -349,7 +349,7 @@ namespace wiselib
 			version_ = coap_first_byte >> 6 ;
 			type_ = ( coap_first_byte & 0x30 ) >> 4;
 			size_t option_count = coap_first_byte & 0x0f;
-			code_ = read<OsModel , block_data_t , uint8_t >( datastream +1 );
+			code_ = (CoapCode) read<OsModel , block_data_t , uint8_t >( datastream +1 );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
 
 			uint8_t parsed_options = 0;
@@ -513,14 +513,14 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	uint8_t CoapPacket<OsModel_P, Radio_P>::code()
+	CoapCode CoapPacket<OsModel_P, Radio_P>::code()
 	{
 		return code_;
 	}
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	void CoapPacket<OsModel_P, Radio_P>::set_code( uint8_t code )
+	void CoapPacket<OsModel_P, Radio_P>::set_code( CoapCode code )
 	{
 		code_ = code;
 	}
@@ -1033,7 +1033,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::error_response( bool needs_to_be_CON, uint8_t error_code, char *error_description, size_t len )
+	int CoapPacket<OsModel_P, Radio_P>::error_response( bool needs_to_be_CON, CoapCode error_code, char *error_description, size_t len )
 	{
 		init();
 		if( needs_to_be_CON )

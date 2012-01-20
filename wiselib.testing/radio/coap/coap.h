@@ -95,7 +95,7 @@ enum CoapOptions
 #define COAP_REQUEST_CODE_RANGE_MIN			1
 #define COAP_REQUEST_CODE_RANGE_MAX			31
 
-enum CoapCodes
+enum CoapCode
 {
 	COAP_CODE_EMPTY = 0,
 	COAP_CODE_GET = 1,
