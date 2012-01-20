@@ -81,10 +81,10 @@ template<typename OsModel_P,
 		int recv_callback_id_; // callback for receive function
 		list_static<OsModel, CoapPacket<OsModel, Radio>, COAPRADIO_LIST_SIZE> message_buffer;
 
-		uint32_t msg_id_;
+		coap_msg_id_t msg_id_;
 		coap_token_t token_;
 
-		uint32_t msg_id();
+		coap_msg_id_t msg_id();
 		coap_token_t token();
 
 	};
@@ -212,7 +212,17 @@ template<typename OsModel_P,
 #endif
 		}
 	}
+/*
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	coap_token_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::get(node_id_t receiver, )
+	{
 
+	}
+*/
 
 // private
 	template<typename OsModel_P,
@@ -220,7 +230,7 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P>
-	uint32_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::msg_id()
+	coap_msg_id_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::msg_id()
 	{
 		return(msg_id_++);
 	}
