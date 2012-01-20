@@ -169,7 +169,13 @@ template<typename OsModel_P,
 			typename Rand_P>
 	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::send (node_id_t receiver, size_t len, block_data_t *data )
 	{
-		radio_->send(receiver, len, data);
+#ifdef DEBUG_COAPRADIO
+			debug_->debug( "CoapRadio::send");
+#endif
+		block_data_t buf[len+1];
+		buf[0] = CoapMsgId;
+		memcpy( buf + 1, data, len );
+		radio_->send(receiver, len + 1, buf);
 
 		return SUCCESS;
 	}
@@ -184,7 +190,7 @@ template<typename OsModel_P,
 		// do not receive own messages
 		if (radio_->id() == from) {
 #ifdef DEBUG_COAPRADIO
-			debug_->debug( "Node %h: own message received\n", radio_->id());
+			debug_->debug( "CoapRadio::receive> Node %i: own message received\n", radio_->id());
 #endif
 			return;
 		}
@@ -194,10 +200,16 @@ template<typename OsModel_P,
 			if( msg_id == CoapMsgId )
 			{
 #ifdef DEBUG_COAPRADIO
-				debug_->debug( "Node %h: received coap message!\n", radio_->id());
+				debug_->debug( "CoapRadio::receive> Node %i: received coap message!\n", radio_->id());
 #endif
 
 			}
+#ifdef DEBUG_COAPRADIO
+			else
+			{
+				debug_->debug( "CoapRadio::receive> Node %i: received message that was not coap!\n", radio_->id());
+			}
+#endif
 		}
 	}
 

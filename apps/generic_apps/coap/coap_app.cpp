@@ -15,6 +15,10 @@ typedef wiselib::OSMODEL Os;
 class ExampleApplication
 {
    public:
+
+	typedef Os::Radio::node_id_t node_id_t;
+	typedef Os::Radio::block_data_t block_data_t;
+
       void init( Os::AppMainParameter& value )
       {
          radio_ = &wiselib::FacetProvider<Os, Os::Radio>::get_facet( value );
@@ -112,6 +116,13 @@ class ExampleApplication
          cradio_.init( *radio_, *timer_, *debug_,  wiselib::FacetProvider<Os, Os::Rand>::get_facet(value));
 
          cradio_.enable_radio();
+
+         if( radio_->id() == 0 )
+         {
+        	 block_data_t sendbuf[10] = { 0x33 };
+        	 cradio_.send( 1, 1, sendbuf );
+         }
+
 
          timer_->set_timer<ExampleApplication,
                            &ExampleApplication::broadcast_loop>( 5000, this, 0 );
