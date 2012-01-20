@@ -35,10 +35,13 @@ enum CoapMsgIds
 #define COAP_VERSION	1
 #define COAP_STD_PORT	5683
 
-#define COAP_MSG_TYPE_CON	0
-#define COAP_MSG_TYPE_NON	1
-#define COAP_MSG_TYPE_ACK	2
-#define COAP_MSG_TYPE_RST	3
+enum CoapType
+{
+	COAP_MSG_TYPE_CON = 0,
+	COAP_MSG_TYPE_NON = 1,
+	COAP_MSG_TYPE_ACK = 2,
+	COAP_MSG_TYPE_RST = 3
+};
 
 #define COAP_LONG_OPTION	15
 
