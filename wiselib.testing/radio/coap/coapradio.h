@@ -233,6 +233,27 @@ template<typename OsModel_P,
 				debug_->debug( "CoapRadio::receive> Node %i: received coap message!\n", radio_->id());
 #endif
 
+				// notify those who want raw data
+				notify_receivers( from, len - sizeof( message_id_t ), data + sizeof( message_id_t ) );
+
+				CoapPacket<OsModel, Radio> packet;
+				int err_code = packet.parse_message( data + sizeof( message_id_t ), len - sizeof( message_id_t ) );
+				if( err_code == SUCCESS )
+				{
+					// TODO
+				}
+				else if ( err_code == CoapPacket<OsModel, Radio>::ERR_CON_RESPONSE || err_code == CoapPacket<OsModel, Radio>::ERR_RST )
+				{
+					// TODO
+//					packet.
+//					send( from, )
+				}
+				// every other case, including CoapPacket<OsModel, Radio>::ERR_IGNORE_MSG
+				else
+				{
+					// ignore
+					return;
+				}
 			}
 #ifdef DEBUG_COAPRADIO
 			else

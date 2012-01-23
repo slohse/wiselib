@@ -71,10 +71,9 @@ namespace wiselib
 			OpaqueOption( uint8_t option_number, uint8_t* value, int length ) { set(option_number, value, length); }
 			virtual ~OpaqueOption() {}
 			uint8_t option_number() const {return option_number_;}
-			size_t length() const { return value_.length(); }
-			uint8_t *value() { return value_.value(); }
-			uint8_t const *value() const { return value_.value(); }
+			OpaqueData value() { return value_; }
 			void set( uint8_t option_number, uint8_t* value, size_t length) { option_number_ = option_number; value_.set(value, length); }
+			void set( uint8_t option_number, OpaqueData value) { option_number_ = option_number; value_ = value; }
 
 		private:
 			uint8_t option_number_;
@@ -627,7 +626,7 @@ namespace wiselib
 			// länger als 8 byte, klären ob das so bleibt, oder ob man wie bei
 			// String optionen damit rechnen muss, dass die Optionen länger als 14
 			// byte werden können
-			length += ( *oit ).length();
+			length += ( *oit ).value().length();
 			optnums |= 1 << ( *oit ).option_number();
 		}
 
@@ -850,8 +849,8 @@ namespace wiselib
 		{
 			return ERR_WRONG_TYPE;
 		}
-		OpaqueOption oopt(option_number, value);
-		set_option(opaque_options_, oopt, length );
+		OpaqueOption oopt(option_number, value, length);
+		set_option(opaque_options_, oopt );
 		return SUCCESS;
 	}
 
@@ -948,7 +947,13 @@ namespace wiselib
 		{
 			return ERR_WRONG_TYPE;
 		}
-		return get_option(option_number, value, opaque_options_);
+		OpaqueOption tmp;
+		int err_code = get_option(option_number, tmp, opaque_options_);
+		if( err_code == SUCCESS )
+		{
+			value = tmp.value();
+		}
+		return err_code;
 	}
 
 	template<typename OsModel_P,
@@ -1035,14 +1040,20 @@ namespace wiselib
 		typename Radio_P>
 	int CoapPacket<OsModel_P, Radio_P>::error_response( bool needs_to_be_CON, CoapCode error_code, char *error_description, size_t len )
 	{
+		OpaqueData token_tmp;
+		int tokenget = get_option( COAP_OPT_TOKEN, token_tmp );
+		coap_msg_id_t msg_id_tmp = msg_id();
 		init();
 		if( needs_to_be_CON )
 		{
 			set_type( COAP_MSG_TYPE_CON );
+			if( tokenget == SUCCESS )
+				set_option( COAP_OPT_TOKEN, token_tmp.value(), token_tmp.length() );
 		}
 		else
 		{
 			set_type( COAP_MSG_TYPE_RST );
+			set_msg_id( msg_id_tmp );
 		}
 		set_code( error_code );
 		set_data( (uint8_t*) error_description, len );
@@ -1284,9 +1295,9 @@ namespace wiselib
 		size_t offset = 0;
 		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
 		datastream[offset] = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 );
-		optlength( opt.length(), datastream, offset );
-		memcpy( datastream + offset, opt.value(), opt.length());
-		offset += opt.length();
+		optlength( opt.value().length(), datastream, offset );
+		memcpy( datastream + offset, opt.value().value(), opt.value().length());
+		offset += opt.value().length();
 		return offset;
 	}
 
