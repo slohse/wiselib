@@ -234,9 +234,9 @@ namespace wiselib
 		bool opt_if_none_match();
 		void set_opt_if_none_match( bool opt_if_none_match );
 
-		int error_response( bool needs_to_be_CON, CoapCode error_code, char *error_description_format, size_t len );
+		int error_response( bool needs_to_be_CON, CoapCode error_code, char *error_description, size_t len );
 
-		enum error_codes
+		enum error_code
 		{
 			// inherited from concepts::BasicReturnValues_concept
 			SUCCESS = OsModel::SUCCESS,
