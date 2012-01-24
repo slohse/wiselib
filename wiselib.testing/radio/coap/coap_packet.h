@@ -266,9 +266,6 @@ namespace wiselib
 			block_data_t buf[ rhs.serialize_length() ];
 			size_t len = rhs.serialize(buf);
 			int error_code = parse_message( buf, len );
-#ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapPacket::operator=> parse_message error code %i\n", error_code );
-#endif
 		}
 		return *this;
 	}
@@ -322,10 +319,6 @@ namespace wiselib
 			code_ = (CoapCode) read<OsModel , block_data_t , uint8_t >( datastream +1 );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
 
-#ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapPacket::parse_message> length %i, option_count %i\n", length, option_count);
-#endif
-
 			uint8_t parsed_options = 0;
 			uint8_t previous_option_number = 0;
 
@@ -358,9 +351,6 @@ namespace wiselib
 							return ERR_IGNORE_MSG;
 					}
 				}
-#ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapPacket::parse_message> option %i, length %i\n", option_number, length_of_option);
-#endif
 
 				// check for unknown options
 				if ( ( option_number > COAP_LARGEST_OPTION_NUMBER ) || ( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_UNKNOWN ) )
@@ -412,9 +402,6 @@ namespace wiselib
 				if( i + length_of_option - 1 < length )
 				{
 					int option_parse_status = parse_option(option_number, length_of_option, datastream+i);
-#ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapPacket::parse_message> option_parse_status %i\n", option_parse_status );
-#endif
 					if ( option_parse_status == SUCCESS )
 					{
 						++parsed_options;
@@ -1123,9 +1110,6 @@ namespace wiselib
 	{
 		uint8_t num_fenceposts = 0;
 		uint32_t optnums = what_options_are_set();
-#ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapPacket::fenceposts_needed> set options are 0x%x\n ", optnums );
-#endif
 		uint8_t next_option_number = 0;
 		for( int i = COAP_LARGEST_OPTION_NUMBER; i > 0 ; --i)
 		{
@@ -1141,9 +1125,6 @@ namespace wiselib
 				next_option_number = COAP_OPT_FENCEPOST * ( (uint8_t) ( next_option_number / (uint8_t) COAP_OPT_FENCEPOST ) );
 			}
 		}
-#ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapPacket::fenceposts_needed> %i\n", num_fenceposts );
-#endif
 		return num_fenceposts;
 	}
 
