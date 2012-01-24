@@ -222,9 +222,10 @@ namespace wiselib
 		size_t data_length_;
 
 		// methods:
-		int parse_option( uint8_t option_number, uint16_t option_length, block_data_t* value);
-		inline uint8_t next_fencepost(uint8_t previous_opt_number) const;
+		int parse_option( uint8_t option_number, size_t option_length, block_data_t* value);
+		inline uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
 		inline void fenceposting( uint8_t option_number, uint8_t &previous_opt_number, block_data_t *datastream, size_t &offset ) const;
+		uint8_t fenceposts_needed() const;
 		inline void optlength( size_t length, block_data_t *datastream, size_t &offset ) const;
 		inline uint8_t is_critical( uint8_t option_number );
 
@@ -264,7 +265,10 @@ namespace wiselib
 			// I know this is bad form... but it was the simplest way...
 			block_data_t buf[ rhs.serialize_length() ];
 			size_t len = rhs.serialize(buf);
-			parse_message( buf, len );
+			int error_code = parse_message( buf, len );
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::operator=> parse_message error code %i\n", error_code );
+#endif
 		}
 		return *this;
 	}
@@ -318,6 +322,10 @@ namespace wiselib
 			code_ = (CoapCode) read<OsModel , block_data_t , uint8_t >( datastream +1 );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
 
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::parse_message> length %i, option_count %i\n", length, option_count);
+#endif
+
 			uint8_t parsed_options = 0;
 			uint8_t previous_option_number = 0;
 
@@ -331,22 +339,28 @@ namespace wiselib
 			{
 				option_number = previous_option_number + ( read<OsModel , block_data_t , uint8_t >( datastream + i ) >> 4 );
 				length_of_option = read<OsModel , block_data_t , uint8_t >( datastream + i ) & 0x0f;
-				if( length_of_option == COAP_LONG_OPTION && i + 1 < length )
+				if( length_of_option == COAP_LONG_OPTION )
 				{
-					++i;
-					length_of_option = read<OsModel , block_data_t , uint8_t >( datastream + i ) + 15;
-				}
-				else if ( i + 1 >= length )
-				{
-					if( type() == COAP_MSG_TYPE_CON )
+					if( i + 1 < length )
 					{
-						char error_description[35];
-						int len = sprintf(error_description, "Options exceed packet length.");
-						return error_response( is_a_request(), COAP_CODE_BAD_REQUEST, error_description, len );
+						++i;
+						length_of_option = read<OsModel , block_data_t , uint8_t >( datastream + i ) + 15;
 					}
 					else
-						return ERR_IGNORE_MSG;
+					{
+						if( type() == COAP_MSG_TYPE_CON )
+						{
+							char error_description[35];
+							int len = sprintf(error_description, "Options exceed packet length.");
+							return error_response( is_a_request(), COAP_CODE_BAD_REQUEST, error_description, len );
+						}
+						else
+							return ERR_IGNORE_MSG;
+					}
 				}
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::parse_message> option %i, length %i\n", option_number, length_of_option);
+#endif
 
 				// check for unknown options
 				if ( ( option_number > COAP_LARGEST_OPTION_NUMBER ) || ( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_UNKNOWN ) )
@@ -393,12 +407,14 @@ namespace wiselib
 					}
 				}
 
-
 				previous_option_number = option_number;
 				++i;
 				if( i + length_of_option - 1 < length )
 				{
 					int option_parse_status = parse_option(option_number, length_of_option, datastream+i);
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::parse_message> option_parse_status %i\n", option_parse_status );
+#endif
 					if ( option_parse_status == SUCCESS )
 					{
 						++parsed_options;
@@ -545,9 +561,6 @@ namespace wiselib
 		typename Radio_P>
 	const size_t CoapPacket<OsModel_P, Radio_P>::serialize_length() const
 	{
-		// save all option numbers to see if fenceposting is needed (which would increase the length)
-		uint32_t optnums = 0;
-
 		// the header is 4 bytes long
 		size_t length = 4;
 
@@ -561,7 +574,6 @@ namespace wiselib
 				++length;
 			}
 			length += ( *sit ).value().length();
-			optnums |= 1 << ( *sit ).option_number();
 		}
 
 		typename list_static<OsModel, CoapOption<uint32_t>, COAP_LIST_SIZE_UINT>::iterator uit = uint_options_.begin();
@@ -582,7 +594,6 @@ namespace wiselib
 					break;
 				}
 			}
-			optnums |= 1 << ( *uit ).option_number();
 		}
 
 		typename list_static<OsModel, CoapOption<OpaqueData>, COAP_LIST_SIZE_OPAQUE>::iterator oit = opaque_options_.begin();
@@ -595,29 +606,13 @@ namespace wiselib
 			// String optionen damit rechnen muss, dass die Optionen länger als 14
 			// byte werden können
 			length += ( *oit ).value().length();
-			optnums |= 1 << ( *oit ).option_number();
 		}
+
+		length += fenceposts_needed();
 
 		length += opt_if_none_match();
 
 		length += data_length();
-
-		// determine the need for fenceposts
-		uint8_t previous_option_number = 0;
-		for( int i = 1; i <= COAP_LARGEST_OPTION_NUMBER; ++i)
-		{
-			if( optnums & ( 1 << i) )
-			{
-				previous_option_number = i;
-				continue;
-			}
-			// 0xf is the largest number describable by a nibble (I've always wanted to use that term :D).
-			if( i - previous_option_number > 0xf )
-			{
-				++length;
-				previous_option_number = COAP_OPT_FENCEPOST * ( 1 + (previous_option_number / (uint8_t) COAP_OPT_FENCEPOST ) );
-			}
-		}
 
 		return length;
 	}
@@ -626,7 +621,7 @@ namespace wiselib
 		typename Radio_P>
 	size_t CoapPacket<OsModel_P, Radio_P>::serialize( block_data_t *datastream ) const
 	{
-		datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | (option_count() & 0x0f);
+		datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | (( option_count() + fenceposts_needed() ) & 0x0f);
 		datastream[1] = code();
 		datastream[2] = (this->msg_id() & 0xff00) >> 8;
 		datastream[3] = (this->msg_id() & 0x00ff);
@@ -1028,7 +1023,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::parse_option( uint8_t option_number, uint16_t option_length, block_data_t* value)
+	int CoapPacket<OsModel_P, Radio_P>::parse_option( uint8_t option_number, size_t option_length, block_data_t* value)
 	{
 		if( option_number <= COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1103,7 +1098,7 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	inline uint8_t CoapPacket<OsModel_P, Radio_P>::next_fencepost(uint8_t previous_opt_number) const
+	inline uint8_t CoapPacket<OsModel_P, Radio_P>::next_fencepost_delta(uint8_t previous_opt_number) const
 	{
 		return ( COAP_OPT_FENCEPOST - ( (previous_opt_number) % COAP_OPT_FENCEPOST ) );
 	}
@@ -1115,11 +1110,41 @@ namespace wiselib
 		int fencepost_delta = 0;
 		while( option_number - previous_opt_number > 15 )
 		{
-			fencepost_delta = next_fencepost(previous_opt_number);
+			fencepost_delta = next_fencepost_delta(previous_opt_number);
 			datastream[offset] =  fencepost_delta << 4;
 			previous_opt_number = previous_opt_number + fencepost_delta;
 			++offset;
 		}
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P>
+	uint8_t CoapPacket<OsModel_P, Radio_P>::fenceposts_needed() const
+	{
+		uint8_t num_fenceposts = 0;
+		uint32_t optnums = what_options_are_set();
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::fenceposts_needed> set options are 0x%x\n ", optnums );
+#endif
+		uint8_t next_option_number = 0;
+		for( int i = COAP_LARGEST_OPTION_NUMBER; i > 0 ; --i)
+		{
+			if( optnums & ( 1 << i) )
+			{
+				next_option_number = i;
+				continue;
+			}
+			// 0xf is the largest number describable by a nibble (I've always wanted to use that term :D).
+			if( (next_option_number > 0 ) && ( ( next_option_number - i ) >= 0xf ) )
+			{
+				++num_fenceposts;
+				next_option_number = COAP_OPT_FENCEPOST * ( (uint8_t) ( next_option_number / (uint8_t) COAP_OPT_FENCEPOST ) );
+			}
+		}
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::fenceposts_needed> %i\n", num_fenceposts );
+#endif
+		return num_fenceposts;
 	}
 
 	template<typename OsModel_P,

@@ -105,8 +105,8 @@ class ExampleApplication
 
 
          uint8_t expected_result[15] = {
-        		 // Version 1, Type NON, OC= 2;Code: GET; Msg ID 0xbeef
-        		 0x52, 0x01, 0xbe, 0xef,
+        		 // Version 1, Type NON, OC= 3;Code: GET; Msg ID 0xbeef
+        		 0x53, 0x01, 0xbe, 0xef,
         		// Delta 5, length 8; C, o, a, p, H, o, s, t
         		 0x58, 0x43, 0x6f, 0x61, 0x70, 0x48, 0x6f, 0x73, 0x74,
         		 // fencepost
