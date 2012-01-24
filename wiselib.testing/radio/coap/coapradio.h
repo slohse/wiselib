@@ -245,8 +245,6 @@ template<typename OsModel_P,
 				else if ( err_code == CoapPacket<OsModel, Radio>::ERR_CON_RESPONSE || err_code == CoapPacket<OsModel, Radio>::ERR_RST )
 				{
 					// TODO
-//					packet.
-//					send( from, )
 				}
 				// every other case, including CoapPacket<OsModel, Radio>::ERR_IGNORE_MSG
 				else

@@ -19,6 +19,8 @@ using namespace std;
 #define COAP_LIST_SIZE_STRING		16
 // TODO: Sinnvollen Default finden
 #define COAP_LIST_SIZE_OPAQUE		8
+// size of the payload in bytes. Keep in mind, that this is multiplied by the number of coap messages the coap radio keeps in its buffer
+#define COAP_DATA_SIZE		250
 
 // Size of message buffer that saves sent and received messages for a while
 #define COAPRADIO_LIST_SIZE		25

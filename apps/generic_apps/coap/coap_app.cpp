@@ -85,6 +85,25 @@ class ExampleApplication
 
          debug_->debug( "setting stuff worked\n");
 
+         debug_->debug( "getting type: %i\n", testpacket2.type() );
+         debug_->debug( "getting msg id: %i\n", testpacket2.msg_id());
+         debug_->debug( "getting code: %i\n", testpacket2.code());
+         wiselib::StaticString tp2_uri_host;
+         testpacket2.get_option(COAP_OPT_URI_HOST, tp2_uri_host);
+         debug_->debug( "getting uri host: %s\n", tp2_uri_host.c_str() );
+         debug_->debug( "getting if_none_match: %i\n", testpacket2.opt_if_none_match() );
+
+         wiselib::CoapPacket<Os, Os::Radio> testpacket_copy;
+         testpacket_copy = testpacket2;
+         debug_->debug( "getting type: %i\n", testpacket_copy.type() );
+         debug_->debug( "getting msg id: %i\n", testpacket_copy.msg_id());
+         debug_->debug( "getting code: %i\n", testpacket_copy.code());
+         wiselib::StaticString tp2_copy_uri_host;
+         testpacket2.get_option(COAP_OPT_URI_HOST, tp2_copy_uri_host);
+         debug_->debug( "getting uri host: %s\n", tp2_copy_uri_host.c_str() );
+         debug_->debug( "getting if_none_match: %i\n", testpacket_copy.opt_if_none_match() );
+
+
          uint8_t expected_result[15] = {
         		 // Version 1, Type NON, OC= 2;Code: GET; Msg ID 0xbeef
         		 0x52, 0x01, 0xbe, 0xef,
