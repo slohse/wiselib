@@ -23,7 +23,8 @@ using namespace std;
 #define COAP_DATA_SIZE		250
 
 // Size of message buffer that saves sent and received messages for a while
-#define COAPRADIO_LIST_SIZE		25
+#define COAPRADIO_SENT_LIST_SIZE		25
+#define COAPRADIO_RECEIVED_LIST_SIZE		25
 
 
 enum CoapMsgIds

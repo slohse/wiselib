@@ -265,7 +265,7 @@ namespace wiselib
 			// I know this is bad form... but it was the simplest way...
 			block_data_t buf[ rhs.serialize_length() ];
 			size_t len = rhs.serialize(buf);
-			int error_code = parse_message( buf, len );
+			parse_message( buf, len );
 		}
 		return *this;
 	}

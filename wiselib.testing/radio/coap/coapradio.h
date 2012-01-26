@@ -17,28 +17,6 @@ template<typename OsModel_P,
 		typename Radio_P::size_t,
 		typename Radio_P::block_data_t> {
 
-
-	struct SentMessage
-	{
-		CoapPacket<OsModel_P, Radio_P> *message_;
-		uint8_t retransmit_count_;
-	};
-
-	struct ReceivedMessage
-	{
-		CoapPacket<OsModel_P, Radio_P> *message_;
-		bool ack_;
-		bool response_;
-	};
-
-	struct coapreceiver
-	{
-		// TODO:
-		// Typ des Receivers (bekommt der nur die Daten, oder das ganze Paket?)
-		// Callback Pointer oder sowas
-		// string der die Resource bezeichnet
-	};
-
 	public:
 		// Type definitions
 		typedef OsModel_P OsModel;
@@ -75,18 +53,46 @@ template<typename OsModel_P,
 		};
 
 	private:
+		struct SentMessage
+		{
+			CoapPacket<OsModel_P, Radio_P> message_;
+			node_id_t receiver;
+			uint8_t retransmit_count_;
+			bool ack_received;
+		};
+
+		struct ReceivedMessage
+		{
+			CoapPacket<OsModel_P, Radio_P> message_;
+			node_id_t sender;
+			bool ack_;
+			bool response_;
+			// TODO: empfangszeit? (Freshness)
+		};
+
+		struct coapreceiver
+		{
+			// TODO:
+			// Typ des Receivers (bekommt der nur die Daten, oder das ganze Paket?)
+			// Callback Pointer oder sowas
+			// string der die Resource bezeichnet
+		};
+
 		Radio *radio_;
 		Timer *timer_;
 		Debug *debug_;
 		Rand *rand_;
 		int recv_callback_id_; // callback for receive function
-		list_static<OsModel, CoapPacket<OsModel, Radio>, COAPRADIO_LIST_SIZE> message_buffer;
+		list_static<OsModel, SentMessage, COAPRADIO_SENT_LIST_SIZE> sent_;
+		list_static<OsModel, ReceivedMessage, COAPRADIO_RECEIVED_LIST_SIZE> received_;
 
 		coap_msg_id_t msg_id_;
 		coap_token_t token_;
 
 		coap_msg_id_t msg_id();
 		coap_token_t token();
+
+
 
 	};
 
