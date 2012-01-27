@@ -3,6 +3,7 @@
 
 #include "coap.h"
 #include "coap_packet.h"
+#include "util/delegates/delegate.hpp"
 
 namespace wiselib {
 
@@ -34,8 +35,9 @@ template<typename OsModel_P,
 		typedef typename Radio::self_pointer_t self_pointer_t;
 		
 		typedef CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P> self_t;
+		typedef CoapPacket<OsModel_P, Radio_P> coap_packet_t;
 
-		typedef delegate2<void, node_id_t, CoapPacket<OsModel_P, Radio_P> > coapreceiver_delegate_t;
+		typedef delegate2<void, node_id_t, coap_packet_t> coapreceiver_delegate_t;
 
 		int init();
 		int destruct();
@@ -44,6 +46,8 @@ template<typename OsModel_P,
 		int disable_radio();
 		node_id_t id ();
 		int send (node_id_t receiver, size_t len, block_data_t *data );
+		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
+		int send_coap(node_id_t receiver, coap_packet_t, T *callback);
 		void receive(node_id_t from, size_t len, block_data_t * data);
 		
 		enum error_codes
@@ -57,7 +61,7 @@ template<typename OsModel_P,
 	private:
 		struct SentMessage
 		{
-			CoapPacket<OsModel_P, Radio_P> message_;
+			coap_packet_t message_;
 			node_id_t receiver;
 			uint8_t retransmit_count_;
 			bool ack_received;
@@ -66,7 +70,7 @@ template<typename OsModel_P,
 
 		struct ReceivedMessage
 		{
-			CoapPacket<OsModel_P, Radio_P> message_;
+			coap_packet_t message_;
 			node_id_t sender;
 			bool ack_;
 			bool response_;
@@ -215,6 +219,18 @@ template<typename OsModel_P,
 		buf[0] = CoapMsgId;
 		memcpy( buf + 1, data, len );
 		radio_->send(receiver, len + 1, buf);
+
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, wiselib::CoapPacket<OsModel_P, Radio_P> ) >
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::send_coap(node_id_t receiver, coap_packet_t, T *callback)
+	{
 
 		return SUCCESS;
 	}
