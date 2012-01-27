@@ -35,6 +35,8 @@ template<typename OsModel_P,
 		
 		typedef CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P> self_t;
 
+		typedef delegate2<void, node_id_t, CoapPacket<OsModel_P, Radio_P> > coapreceiver_delegate_t;
+
 		int init();
 		int destruct();
 		int init( Radio& radio, Timer& timer, Debug& debug , Rand& rand );
@@ -59,6 +61,7 @@ template<typename OsModel_P,
 			node_id_t receiver;
 			uint8_t retransmit_count_;
 			bool ack_received;
+			coapreceiver_delegate_t sender_callback;
 		};
 
 		struct ReceivedMessage
