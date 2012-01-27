@@ -46,8 +46,17 @@ template<typename OsModel_P,
 		int disable_radio();
 		node_id_t id ();
 		int send (node_id_t receiver, size_t len, block_data_t *data );
+
+		// TODO: comment!!
+		/**
+		 * Sends the Message passed AS IT IS. That means: no sanity checks, no message ID or token generation.
+		 * Most likely this is NOT what you want, use TODO instead
+		 * @param receiver node ID of the receiver
+		 * @param message Coap Packet to send
+		 * @param callback delegate for responses from the receiver
+		 */
 		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
-		int send_coap(node_id_t receiver, coap_packet_t, T *callback);
+		int send_coap_as_is(node_id_t receiver, coap_packet_t &message, T *callback);
 		void receive(node_id_t from, size_t len, block_data_t * data);
 		
 		enum error_codes
@@ -59,19 +68,132 @@ template<typename OsModel_P,
 		};
 
 	private:
-		struct SentMessage
+		class SentMessage
 		{
+		public:
+			SentMessage()
+			{
+				retransmit_count_ = 0;
+				ack_received_ = false;
+			}
+
+			coap_packet_t& message() const
+			{
+				return message;
+			}
+
+			void set_message(coap_packet_t &message)
+			{
+				message_ = message;
+			}
+
+			node_id_t correspondent() const
+			{
+				return correspondent();
+			}
+
+			void set_correspondent( node_id_t correspondent)
+			{
+				correspondent_ = correspondent;
+			}
+
+			uint8_t retransmit_count() const
+			{
+				return retransmit_count_;
+			}
+
+			void set_retransmit_count(uint8_t retransmit_count)
+			{
+				retransmit_count_ = retransmit_count;
+			}
+
+			uint8_t increase_retransmit_count()
+			{
+				return ++retransmit_count_;
+			}
+
+			bool ack_received() const
+			{
+				return ack_received_;
+			}
+
+			void set_ack_received(bool ack_received)
+			{
+				ack_received_ = ack_received;
+			}
+
+			const coapreceiver_delegate_t& sender_callback() const
+			{
+				return sender_callback_;
+			}
+
+			void set_sender_callback( coapreceiver_delegate_t &callback )
+			{
+				sender_callback_ = callback;
+			}
+
+		private:
 			coap_packet_t message_;
-			node_id_t receiver;
+			// in this case the receiver
+			node_id_t correspondent_;
 			uint8_t retransmit_count_;
-			bool ack_received;
-			coapreceiver_delegate_t sender_callback;
+			bool ack_received_;
+			coapreceiver_delegate_t sender_callback_;
 		};
 
-		struct ReceivedMessage
+		class ReceivedMessage
 		{
+		public:
+			ReceivedMessage()
+			{
+				ack_ = false;
+				response_ = false;
+			}
+
+			const coap_packet_t& message() const
+			{
+				return message;
+			}
+
+			void set_message(coap_packet_t &message)
+			{
+				message_ = message;
+			}
+
+			node_id_t correspondent() const
+			{
+				return correspondent();
+			}
+
+			void set_correspondent( node_id_t correspondent)
+			{
+				correspondent_ = correspondent;
+			}
+
+			bool ack() const
+			{
+				return ack_;
+			}
+
+			void set_ack(bool ack)
+			{
+				ack_ = ack;
+			}
+
+			bool response() const
+			{
+				return response_;
+			}
+
+			void set_response(bool response)
+			{
+				response_ = response;
+			}
+
+		private:
 			coap_packet_t message_;
-			node_id_t sender;
+			// in this case the sender
+			node_id_t correspondent_;
 			bool ack_;
 			bool response_;
 			// TODO: empfangszeit? (Freshness)
@@ -99,7 +221,13 @@ template<typename OsModel_P,
 		coap_msg_id_t msg_id();
 		coap_token_t token();
 
+		template <typename T, list_size_t N>
+		void queue_message(T message, list_static<OsModel_P, T, N> &queue);
 
+		template <typename T, list_size_t N>
+		T* find_message_by_id (node_id_t correspondent, coap_msg_id_t id, list_static<OsModel_P, T, N> &queue);
+		template <typename T, list_size_t N>
+		T* find_message_by_token (node_id_t correspondent, OpaqueData id, list_static<OsModel_P, T, N> &queue);
 
 	};
 
@@ -229,8 +357,20 @@ template<typename OsModel_P,
 			typename Debug_P,
 			typename Rand_P>
 	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, wiselib::CoapPacket<OsModel_P, Radio_P> ) >
-	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::send_coap(node_id_t receiver, coap_packet_t, T *callback)
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::send_coap_as_is(node_id_t receiver, coap_packet_t &message, T *callback)
 	{
+		block_data_t buf[message.serialize_length()];
+
+		message.serialize(buf);
+		int status = send(receiver, message.serialize_length(), buf);
+
+		if(status != SUCCESS )
+			return status;
+
+		SentMessage sent;
+		sent.set_correspondent( receiver );
+		sent.set_message( message );
+		queue_message(sent, sent_);
 
 		return SUCCESS;
 	}
@@ -317,6 +457,67 @@ template<typename OsModel_P,
 	coap_token_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::token()
 	{
 		return(token_++);
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	template <typename T, list_size_t N>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::queue_message(T message, list_static<OsModel_P, T, N> &queue)
+	{
+		if( queue.full() )
+		{
+			queue.pop_back();
+		}
+		queue.push_front( message );
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	template <typename T, list_size_t N>
+	T* CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::find_message_by_id
+			(node_id_t correspondent, coap_msg_id_t id, list_static<OsModel_P, T, N> &queue)
+	{
+		typename list_static<OsModel_P, T, N>::iterator it = queue.begin();
+		for(; it != queue.end(); ++it)
+		{
+			if( (*it).message().id() == id && (*it).correspondent_ == correspondent )
+				return &(*it);
+		}
+
+		return NULL;
+
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	template <typename T, list_size_t N>
+	T* CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::find_message_by_token
+		(node_id_t correspondent, OpaqueData token, list_static<OsModel_P, T, N> &queue)
+	{
+		OpaqueData current_token;
+		typename list_static<OsModel_P, T, N>::iterator it = queue.begin();
+		for(; it != queue.end(); ++it)
+		{
+			if( (*it).correspondent() == correspondent && (*it).message().get_option( COAP_OPT_TOKEN, current_token ) == SUCCESS )
+			{
+				if( current_token == token )
+				{
+					return &(*it);
+				}
+			}
+		}
+
+		return NULL;
+
 	}
 
 }

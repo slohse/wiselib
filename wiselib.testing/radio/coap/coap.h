@@ -203,7 +203,7 @@ namespace wiselib
 	class OpaqueData
 	{
 	public:
-		OpaqueData& operator=(const OpaqueData &rhs)
+		OpaqueData& operator=( const OpaqueData &rhs )
 		{
 			// avoid self-assignemnt
 			if(this != &rhs)
@@ -211,6 +211,25 @@ namespace wiselib
 				set( rhs.value(), rhs.length() );
 			}
 			return *this;
+		}
+
+		bool operator==( const OpaqueData &other ) const
+		{
+			if( this->length() == other.length() )
+			{
+				for( size_t i = 0; i < this->length(); ++i )
+				{
+					if( *( this->value() + i ) != *( other.value() + i ) )
+						return false;
+				}
+				return true;
+			}
+			return false;
+		}
+
+		bool operator!=( const OpaqueData &other ) const
+		{
+			return !( *this == other );
 		}
 
 		OpaqueData()
