@@ -377,8 +377,8 @@ template<typename OsModel_P,
 		SentMessage sent;
 		sent.set_correspondent( receiver );
 		sent.set_message( message );
-		coapreceiver_delegate_t delegate = coapreceiver_delegate_t::from_method<T, TMethod>( callback );
-//		sent.sender_callback( delegate );
+		coapreceiver_delegate_t delegate = coapreceiver_delegate_t::template from_method<T, TMethod>( callback );
+		sent.sender_callback( delegate );
 		queue_message(sent, sent_);
 
 		// TODO: Timer starten für CON-Retransmits
