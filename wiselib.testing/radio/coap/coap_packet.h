@@ -99,13 +99,13 @@ namespace wiselib
 		 * Returns whether the packet is a request
 		 * @return true if packet is a request, false otherwise
 		 */
-		bool is_a_request() const;
+		bool is_request() const;
 
 		/**
 		 * Returns whether the packet is a response
 		 * @return true if packet is a response, false otherwise
 		 */
-		bool is_a_response() const;
+		bool is_response() const;
 
 		/**
 		 * Sets the code of the packet. Can be a request (1-31), response (64-191) or empty (0). (all other values are reserved)
@@ -345,7 +345,7 @@ namespace wiselib
 						{
 							char error_description[35];
 							int len = sprintf(error_description, "Options exceed packet length.");
-							return error_response( is_a_request(), COAP_CODE_BAD_REQUEST, error_description, len );
+							return error_response( is_request(), COAP_CODE_BAD_REQUEST, error_description, len );
 						}
 						else
 							return ERR_IGNORE_MSG;
@@ -362,7 +362,7 @@ namespace wiselib
 						{
 							char error_description[35];
 							int len = sprintf(error_description, "Unknown critical option %i.", option_number);
-							return error_response( is_a_request(), COAP_CODE_BAD_OPTION , error_description, len );
+							return error_response( is_request(), COAP_CODE_BAD_OPTION , error_description, len );
 						}
 						else
 						{
@@ -385,7 +385,7 @@ namespace wiselib
 							{
 								char error_description[50];
 								int len = sprintf(error_description, "Multiple occurences of critical option %i.", option_number);
-								return error_response( is_a_request(), COAP_CODE_BAD_OPTION , error_description, len );
+								return error_response( is_request(), COAP_CODE_BAD_OPTION , error_description, len );
 							}
 							else
 							{
@@ -418,7 +418,7 @@ namespace wiselib
 					{
 						char error_description[35];
 						int len = sprintf(error_description, "Options exceed packet length.");
-						return error_response( is_a_request(), COAP_CODE_BAD_OPTION, error_description, len );
+						return error_response( is_request(), COAP_CODE_BAD_OPTION, error_description, len );
 					}
 					else
 					{
@@ -496,14 +496,14 @@ namespace wiselib
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	bool CoapPacket<OsModel_P, Radio_P>::is_a_request() const
+	bool CoapPacket<OsModel_P, Radio_P>::is_request() const
 	{
 		return( code() >= COAP_REQUEST_CODE_RANGE_MIN && code() <= COAP_REQUEST_CODE_RANGE_MAX );
 	}
 
 	template<typename OsModel_P,
 		typename Radio_P>
-	bool CoapPacket<OsModel_P, Radio_P>::is_a_response() const
+	bool CoapPacket<OsModel_P, Radio_P>::is_response() const
 	{
 		return( code() >= COAP_RESPONSE_CODE_RANGE_MIN && code() <= COAP_RESPONSE_CODE_RANGE_MAX );
 	}
@@ -1045,7 +1045,7 @@ namespace wiselib
 						{
 							char error_description[50];
 							int len = sprintf(error_description, "String option %i out of bounds.", option_number );
-							return error_response( is_a_request(), COAP_CODE_BAD_OPTION, error_description, len );
+							return error_response( is_request(), COAP_CODE_BAD_OPTION, error_description, len );
 						}
 						else
 						{

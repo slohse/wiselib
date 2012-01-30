@@ -32,8 +32,10 @@ template<typename OsModel_P,
 		typedef typename Radio::size_t size_t;
 		typedef typename Radio::block_data_t block_data_t;
 		typedef typename Radio::message_id_t message_id_t;
-		typedef typename Radio::self_pointer_t self_pointer_t;
 		
+		typedef CoapRadio<OsModel, Radio, Timer, Debug, Rand> self_type;
+		typedef self_type* self_pointer_t;
+
 		typedef CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P> self_t;
 		typedef CoapPacket<OsModel_P, Radio_P> coap_packet_t;
 
@@ -46,6 +48,7 @@ template<typename OsModel_P,
 		int disable_radio();
 		node_id_t id ();
 		int send (node_id_t receiver, size_t len, block_data_t *data );
+		void receive(node_id_t from, size_t len, block_data_t * data);
 
 		// TODO: comment!!
 		/**
@@ -57,8 +60,11 @@ template<typename OsModel_P,
 		 */
 		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
 		int send_coap_as_is(node_id_t receiver, coap_packet_t &message, T *callback);
-		void receive(node_id_t from, size_t len, block_data_t * data);
 		
+		int rst( node_id_t receiver, coap_msg_id_t id );
+
+		void receive_coap(node_id_t from, coap_packet_t message);
+
 		enum error_codes
 		{
 			// inherited from concepts::BasicReturnValues_concept
@@ -77,9 +83,9 @@ template<typename OsModel_P,
 				ack_received_ = false;
 			}
 
-			coap_packet_t& message() const
+			coap_packet_t message() const
 			{
-				return message;
+				return message_;
 			}
 
 			void set_message(coap_packet_t &message)
@@ -304,7 +310,7 @@ template<typename OsModel_P,
 		radio_->enable_radio();
 		// register receive callback to normal radio
 		recv_callback_id_ = radio_->template reg_recv_callback<self_t,
-			&self_t::receive > ( this);
+			&self_t::receive > ( this );
 
 		return SUCCESS;
 	}
@@ -372,6 +378,8 @@ template<typename OsModel_P,
 		sent.set_message( message );
 		queue_message(sent, sent_);
 
+		// TODO: Timer starten für CON-Retransmits
+
 		return SUCCESS;
 	}
 
@@ -405,7 +413,25 @@ template<typename OsModel_P,
 				int err_code = packet.parse_message( data + sizeof( message_id_t ), len - sizeof( message_id_t ) );
 				if( err_code == SUCCESS )
 				{
-					// TODO
+					switch( packet.type() )
+					{
+					case COAP_MSG_TYPE_ACK:
+						SentMessage *request = find_message_by_id( from, packet.msg_id(), sent_ );
+						if ( request != NULL )
+						{
+
+						}
+						else
+						{
+							rst( from, packet.msg_id() );
+						}
+
+// TODO: nachdenken ob man hier einigen Code gemeinsam nutzen kann
+/*						if( !packet.is_response() )
+							break;
+						// otherwise it's a piggy-backed response and can be handled like a
+*/
+					}
 				}
 				else if ( err_code == CoapPacket<OsModel, Radio>::ERR_CON_RESPONSE || err_code == CoapPacket<OsModel, Radio>::ERR_RST )
 				{
@@ -426,6 +452,30 @@ template<typename OsModel_P,
 #endif
 		}
 	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::rst( node_id_t receiver, coap_msg_id_t id )
+	{
+		coap_packet_t rstp;
+		rstp.set_type( COAP_MSG_TYPE_RST );
+		rstp.set_msg_id( id );
+		return send_coap_as_is<self_type, &self_type::receive_coap>( receiver, rstp, this );
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::receive_coap(node_id_t from, coap_packet_t message)
+	{
+
+	}
+
 /*
 	template<typename OsModel_P,
 			typename Radio_P,
@@ -486,7 +536,7 @@ template<typename OsModel_P,
 		typename list_static<OsModel_P, T, N>::iterator it = queue.begin();
 		for(; it != queue.end(); ++it)
 		{
-			if( (*it).message().id() == id && (*it).correspondent_ == correspondent )
+			if( (*it).message().msg_id() == id && (*it).correspondent() == correspondent )
 				return &(*it);
 		}
 
