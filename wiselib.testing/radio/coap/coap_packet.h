@@ -130,6 +130,18 @@ namespace wiselib
 		void set_msg_id( coap_msg_id_t msg_id );
 
 		/**
+		 * Returns the token by which request/response matching can be done.
+		 * @return the message token
+		 */
+		int token( OpaqueData &token );
+
+		/**
+		 * Sets the token by which request/response matching can be done.
+		 * @param token new message ID
+		 */
+		void set_token( OpaqueData token );
+
+		/**
 		 * Returns a pointer to the payload section of the packet
 		 * @return pointer to payload
 		 */
@@ -523,6 +535,20 @@ namespace wiselib
 	void CoapPacket<OsModel_P, Radio_P>::set_msg_id( uint16_t msg_id )
 	{
 		msg_id_ = msg_id;
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P>
+	int CoapPacket<OsModel_P, Radio_P>::token( OpaqueData &token )
+	{
+		return get_option( COAP_OPT_TOKEN, token );
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P>
+	void CoapPacket<OsModel_P, Radio_P>::set_token( OpaqueData token )
+	{
+		set_option( COAP_OPT_TOKEN, token );
 	}
 
 	template<typename OsModel_P,

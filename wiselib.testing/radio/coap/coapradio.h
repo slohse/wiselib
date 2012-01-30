@@ -234,7 +234,9 @@ template<typename OsModel_P,
 		template <typename T, list_size_t N>
 		T* find_message_by_id (node_id_t correspondent, coap_msg_id_t id, list_static<OsModel_P, T, N> &queue);
 		template <typename T, list_size_t N>
-		T* find_message_by_token (node_id_t correspondent, OpaqueData id, list_static<OsModel_P, T, N> &queue);
+		T* find_message_by_token (node_id_t correspondent, OpaqueData token, list_static<OsModel_P, T, N> &queue);
+
+		void handle_response( node_id_t from, coap_packet_t message, SentMessage *request = NULL );
 
 	};
 
@@ -377,8 +379,7 @@ template<typename OsModel_P,
 		SentMessage sent;
 		sent.set_correspondent( receiver );
 		sent.set_message( message );
-		coapreceiver_delegate_t delegate = coapreceiver_delegate_t::template from_method<T, TMethod>( callback );
-		sent.sender_callback( delegate );
+		sent.sender_callback( coapreceiver_delegate_t::template from_method<T, TMethod>( callback ) );
 		queue_message(sent, sent_);
 
 		// TODO: Timer starten für CON-Retransmits
@@ -416,28 +417,44 @@ template<typename OsModel_P,
 				int err_code = packet.parse_message( data + sizeof( message_id_t ), len - sizeof( message_id_t ) );
 				if( err_code == SUCCESS )
 				{
+					SentMessage *request;
 					switch( packet.type() )
 					{
 					case COAP_MSG_TYPE_ACK:
-						SentMessage *request = find_message_by_id( from, packet.msg_id(), sent_ );
+						request = find_message_by_id( from, packet.msg_id(), sent_ );
 
 						if ( request != NULL )
 						{
 							(*request).set_ack_received( true );
-							// piggy-backed response
+							// piggy-backed response, give it to whoever sent the request
 							if( packet.is_response() )
-							{
-
-							}
+								handle_response( from, packet, request );
 						}
 						break;
-
-
 // TODO: nachdenken ob man hier einigen Code gemeinsam nutzen kann
-/*						if( !packet.is_response() )
-							break;
-						// otherwise it's a piggy-backed response and can be handled like a
-*/
+					case COAP_MSG_TYPE_CON:
+						if( packet.is_request() )
+						{
+							// TODO
+						}
+						else if ( packet.is_response() )
+						{
+							handle_response( from, packet );
+							// TODO
+						}
+						else
+						{
+							// TODO: unknown code, send 5.01 Not Implemented
+						}
+						break;
+					case COAP_MSG_TYPE_NON:
+
+						break;
+					case COAP_MSG_TYPE_RST:
+
+						break;
+					default:
+						break;
 					}
 				}
 				else if ( err_code == CoapPacket<OsModel, Radio>::ERR_CON_RESPONSE || err_code == CoapPacket<OsModel, Radio>::ERR_RST )
@@ -572,11 +589,30 @@ template<typename OsModel_P,
 				}
 			}
 		}
-
 		return NULL;
-
 	}
 
+	// the request-pointer can be a candidate for a matching request, determined by a previous search by message id.
+	// If it doesn't turn out to be matching, find_message_by_token has to be called
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_response( node_id_t from, coap_packet_t message, SentMessage *request )
+	{
+		//TODO
+/*		if( request != NULL )
+		{
+
+		}
+
+		packet.token() == (*request).message().token() )
+		{
+			request->sender_callback()( from, packet );
+		}
+*/
+	}
 }
 
 
