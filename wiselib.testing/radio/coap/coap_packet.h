@@ -37,6 +37,9 @@ namespace wiselib
 		typedef Radio_P Radio;
 		typedef typename Radio::block_data_t block_data_t;
 
+		typedef CoapPacket<OsModel_P, Radio_P> self_type;
+		typedef self_type* self_pointer_t;
+		typedef self_type coap_packet_t;
 
 		CoapPacket<OsModel_P, Radio_P>& operator=(const CoapPacket<OsModel_P, Radio_P> &rhs);
 

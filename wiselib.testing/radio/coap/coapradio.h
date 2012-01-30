@@ -37,7 +37,8 @@ template<typename OsModel_P,
 		typedef self_type* self_pointer_t;
 
 		typedef CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P> self_t;
-		typedef CoapPacket<OsModel_P, Radio_P> coap_packet_t;
+
+		typedef typename CoapPacket<OsModel, Radio>::coap_packet_t coap_packet_t;
 
 		typedef delegate2<void, node_id_t, coap_packet_t> coapreceiver_delegate_t;
 
@@ -176,22 +177,22 @@ template<typename OsModel_P,
 				correspondent_ = correspondent;
 			}
 
-			bool ack() const
+			bool ack_sent() const
 			{
 				return ack_;
 			}
 
-			void set_ack(bool ack)
+			void set_ack_sent(bool ack)
 			{
 				ack_ = ack;
 			}
 
-			bool response() const
+			bool response_sent() const
 			{
 				return response_;
 			}
 
-			void set_response(bool response)
+			void set_response_sent(bool response)
 			{
 				response_ = response;
 			}
@@ -362,7 +363,7 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P>
-	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, wiselib::CoapPacket<OsModel_P, Radio_P> ) >
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P>::coap_packet_t ) >
 	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::send_coap_as_is(node_id_t receiver, coap_packet_t &message, T *callback)
 	{
 		block_data_t buf[message.serialize_length()];
@@ -376,6 +377,8 @@ template<typename OsModel_P,
 		SentMessage sent;
 		sent.set_correspondent( receiver );
 		sent.set_message( message );
+		coapreceiver_delegate_t delegate = coapreceiver_delegate_t::from_method<T, TMethod>( callback );
+//		sent.sender_callback( delegate );
 		queue_message(sent, sent_);
 
 		// TODO: Timer starten für CON-Retransmits
@@ -417,14 +420,18 @@ template<typename OsModel_P,
 					{
 					case COAP_MSG_TYPE_ACK:
 						SentMessage *request = find_message_by_id( from, packet.msg_id(), sent_ );
+
 						if ( request != NULL )
 						{
+							(*request).set_ack_received( true );
+							// piggy-backed response
+							if( packet.is_response() )
+							{
 
+							}
 						}
-						else
-						{
-							rst( from, packet.msg_id() );
-						}
+						break;
+
 
 // TODO: nachdenken ob man hier einigen Code gemeinsam nutzen kann
 /*						if( !packet.is_response() )
@@ -473,7 +480,7 @@ template<typename OsModel_P,
 			typename Rand_P>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::receive_coap(node_id_t from, coap_packet_t message)
 	{
-
+		//TODO
 	}
 
 /*
