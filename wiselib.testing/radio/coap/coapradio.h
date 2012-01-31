@@ -134,7 +134,7 @@ template<typename OsModel_P,
 				return sender_callback_;
 			}
 
-			void set_sender_callback( coapreceiver_delegate_t &callback )
+			void set_sender_callback( coapreceiver_delegate_t callback )
 			{
 				sender_callback_ = callback;
 			}
@@ -379,7 +379,7 @@ template<typename OsModel_P,
 		SentMessage sent;
 		sent.set_correspondent( receiver );
 		sent.set_message( message );
-		sent.sender_callback( coapreceiver_delegate_t::template from_method<T, TMethod>( callback ) );
+		sent.set_sender_callback( coapreceiver_delegate_t::template from_method<T, TMethod>( callback ) );
 		queue_message(sent, sent_);
 
 		// TODO: Timer starten für CON-Retransmits
@@ -601,17 +601,37 @@ template<typename OsModel_P,
 			typename Rand_P>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_response( node_id_t from, coap_packet_t message, SentMessage *request )
 	{
-		//TODO
-/*		if( request != NULL )
-		{
+		OpaqueData request_token, response_token;
 
+		// No token --> can't match response
+		if( message.token( response_token ) != SUCCESS )
+		{
+			if( message.type() == COAP_MSG_TYPE_CON )
+			{
+				rst( from, message.msg_id() );
+			}
+			return;
 		}
 
-		packet.token() == (*request).message().token() )
+		// see if the given request candidate is the matching request, otherwise find the matching request by token
+		if( !( request != NULL  && (*request).message().token(request_token) == SUCCESS  && request_token == response_token ) )
 		{
-			request->sender_callback()( from, packet );
+			request = find_message_by_token( from, response_token, sent_ );
 		}
-*/
+
+		if( ( request != NULL  && (*request).message().token(request_token) == SUCCESS  && request_token == response_token ) )
+		{
+			(*request).sender_callback()( from, message );
+		}
+		else
+		{
+			if( message.type() == COAP_MSG_TYPE_CON )
+			{
+				rst( from, message.msg_id() );
+			}
+			return;
+		}
+
 	}
 }
 
