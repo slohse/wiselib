@@ -440,7 +440,6 @@ template<typename OsModel_P,
 						else if ( packet.is_response() )
 						{
 							handle_response( from, packet );
-							// TODO
 						}
 						else
 						{
@@ -448,10 +447,20 @@ template<typename OsModel_P,
 						}
 						break;
 					case COAP_MSG_TYPE_NON:
-
+						if( packet.is_request() )
+						{
+							// TODO
+						}
+						else if ( packet.is_response() )
+						{
+							handle_response( from, packet );
+						}
+						// drop unknown codes silently
 						break;
 					case COAP_MSG_TYPE_RST:
-
+						request = find_message_by_id( from, packet.msg_id(), sent_ );
+						if( request != NULL )
+							(*request).sender_callback()( from, packet );
 						break;
 					default:
 						break;
@@ -625,6 +634,7 @@ template<typename OsModel_P,
 		}
 		else
 		{
+			// can't match response
 			if( message.type() == COAP_MSG_TYPE_CON )
 			{
 				rst( from, message.msg_id() );

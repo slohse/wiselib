@@ -173,6 +173,8 @@ namespace wiselib
 		 */
 		size_t serialize( block_data_t *datastream ) const;
 
+
+
 		uint32_t what_options_are_set() const;
 
 		int set_option( uint8_t option_number, uint32_t value );
@@ -442,6 +444,15 @@ namespace wiselib
 				}
 			}
 
+/* TODO: OR CAN THEY?
+			// responses can't have a proxy option
+			uint32_t options_present = what_options_are_set();
+			if( is_response() && options_present & ( 1 << COAP_OPT_PROXY_URI ))
+			{
+
+			}
+			// TODO: check for other contradictory options
+*/
 			// if there is no data we just leave it at (NULL, 0)
 			if(i < length)
 			{
