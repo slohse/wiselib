@@ -78,6 +78,7 @@ template<typename OsModel_P,
 					StaticString uri_path,
 					StaticString uri_query,
 					T *callback,
+					bool confirmable = false,
 					uint16 uri_port = COAP_STD_PORT);
 
 		enum error_codes
@@ -143,7 +144,7 @@ template<typename OsModel_P,
 				ack_received_ = ack_received;
 			}
 
-			const coapreceiver_delegate_t& sender_callback() const
+			coapreceiver_delegate_t sender_callback() const
 			{
 				return sender_callback_;
 			}
@@ -167,16 +168,24 @@ template<typename OsModel_P,
 		public:
 			ReceivedMessage()
 			{
+				message_ = coap_packet_t();
 				ack_ = false;
 				response_ = false;
 			}
 
-			const coap_packet_t& message() const
+			ReceivedMessage( coap_packet_t packet )
 			{
-				return message;
+				message_ = packet;
+				ack_ = false;
+				response_ = false;
 			}
 
-			void set_message(coap_packet_t &message)
+			coap_packet_t message() const
+			{
+				return message_;
+			}
+
+			void set_message(coap_packet_t message)
 			{
 				message_ = message;
 			}
@@ -293,9 +302,9 @@ template<typename OsModel_P,
 		template <typename T, list_size_t N>
 		T* find_message_by_token (node_id_t correspondent, OpaqueData token, list_static<OsModel_P, T, N> &queue);
 
-		void handle_response( node_id_t from, coap_packet_t message, SentMessage *request = NULL );
+		void handle_response( node_id_t from, ReceivedMessage message, SentMessage *request = NULL );
 
-		void handle_request( node_id_t from, coap_packet_t message );
+		void handle_request( node_id_t from, ReceivedMessage message );
 
 	};
 
@@ -476,6 +485,8 @@ template<typename OsModel_P,
 				int err_code = packet.parse_message( data + sizeof( message_id_t ), len - sizeof( message_id_t ) );
 				if( err_code == SUCCESS )
 				{
+					ReceivedMessage received_message(packet);
+					queue_message( received_message, received_ );
 					SentMessage *request;
 					switch( packet.type() )
 					{
@@ -487,18 +498,18 @@ template<typename OsModel_P,
 							(*request).set_ack_received( true );
 							// piggy-backed response, give it to whoever sent the request
 							if( packet.is_response() )
-								handle_response( from, packet, request );
+								handle_response( from, received_message, request );
 						}
 						break;
 // TODO: nachdenken ob man hier einigen Code gemeinsam nutzen kann
 					case COAP_MSG_TYPE_CON:
 						if( packet.is_request() )
 						{
-							handle_request( from, packet );
+							handle_request( from, received_message );
 						}
 						else if ( packet.is_response() )
 						{
-							handle_response( from, packet );
+							handle_response( from, received_message );
 						}
 						else
 						{
@@ -508,11 +519,11 @@ template<typename OsModel_P,
 					case COAP_MSG_TYPE_NON:
 						if( packet.is_request() )
 						{
-							handle_request( from, packet );
+							handle_request( from, received_message );
 						}
 						else if ( packet.is_response() )
 						{
-							handle_response( from, packet );
+							handle_response( from, received_message );
 						}
 						// drop unknown codes silently
 						break;
@@ -615,6 +626,7 @@ template<typename OsModel_P,
 			StaticString uri_path,
 			StaticString uri_query,
 			T *callback,
+			bool confirmable,
 			uint16 uri_port)
 	{
 
@@ -708,16 +720,17 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P>
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_response( node_id_t from, coap_packet_t message, SentMessage *request )
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_response( node_id_t from, ReceivedMessage message, SentMessage *request )
 	{
 		OpaqueData request_token, response_token;
 
 		// No token --> can't match response
-		if( message.token( response_token ) != SUCCESS )
+		if( (message.message()).token( response_token ) != SUCCESS )
 		{
-			if( message.type() == COAP_MSG_TYPE_CON )
+			if( message.message().type() == COAP_MSG_TYPE_CON )
 			{
-				rst( from, message.msg_id() );
+				rst( from, message.message().msg_id() );
+				message.set_response_sent(true);
 			}
 			return;
 		}
@@ -730,14 +743,15 @@ template<typename OsModel_P,
 
 		if( ( request != NULL  && (*request).message().token(request_token) == SUCCESS  && request_token == response_token ) )
 		{
-			(*request).sender_callback()( from, message );
+			(*request).sender_callback()( from, message.message() );
 		}
 		else
 		{
 			// can't match response
-			if( message.type() == COAP_MSG_TYPE_CON )
+			if( message.message().type() == COAP_MSG_TYPE_CON )
 			{
-				rst( from, message.msg_id() );
+				rst( from, message.message().msg_id() );
+				message.set_response_sent(true);
 			}
 			return;
 		}
@@ -749,10 +763,10 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P>
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_request( node_id_t from, coap_packet_t message )
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_request( node_id_t from, ReceivedMessage message )
 	{
 		StaticString available_res;
-		StaticString request_res = message.uri_path();
+		StaticString request_res = message.message().uri_path();
 		for(size_t i = 0; i < resources_.size(); ++i )
 		{
 			if( resources_.at(i) != CoapResource() )
@@ -766,7 +780,7 @@ template<typename OsModel_P,
 						&& strncmp(available_res.c_str(), request_res.c_str(), available_res.length()) == 0
 						&& strncmp(request_res.c_str() + available_res.length(), "/", 1)) )
 				{
-					resources_.at(i).callback()( from, message );
+					resources_.at(i).callback()( from, message.message() );
 				}
 			}
 		}
