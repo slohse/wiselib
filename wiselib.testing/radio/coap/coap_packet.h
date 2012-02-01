@@ -141,6 +141,8 @@ namespace wiselib
 		 */
 		void set_token( OpaqueData token );
 
+		StaticString uri_path();
+
 		/**
 		 * Returns a pointer to the payload section of the packet
 		 * @return pointer to payload
@@ -560,6 +562,25 @@ namespace wiselib
 	void CoapPacket<OsModel_P, Radio_P>::set_token( OpaqueData token )
 	{
 		set_option( COAP_OPT_TOKEN, token );
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P>
+	StaticString CoapPacket<OsModel_P, Radio_P>::uri_path()
+	{
+		StaticString path;
+		list_static<OsModel_P, StaticString, COAP_LIST_SIZE_STRING> segments;
+		if ( get_options( COAP_OPT_URI_PATH, segments ) == SUCCESS )
+		{
+			typename list_static<OsModel, StaticString, COAP_LIST_SIZE_STRING>::iterator sit = segments.begin();
+			path.append( (*sit) );
+			for(; sit != segments.end(); ++sit)
+			{
+				path.append("/");
+				path.append( (*sit) );
+			}
+		}
+		return path;
 	}
 
 	template<typename OsModel_P,

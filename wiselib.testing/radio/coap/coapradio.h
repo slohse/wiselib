@@ -4,6 +4,8 @@
 #include "coap.h"
 #include "coap_packet.h"
 #include "util/delegates/delegate.hpp"
+#include "util/pstl/vector_static.h"
+#include "string.h"
 
 namespace wiselib {
 
@@ -64,7 +66,19 @@ template<typename OsModel_P,
 		
 		int rst( node_id_t receiver, coap_msg_id_t id );
 
+		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
+		int reg_resource_callback( StaticString resource_path, T *callback );
+
+		int unreg_recv_callback( int idx );
+
 		void receive_coap(node_id_t from, coap_packet_t message);
+
+		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
+		void get(node_id_t receiver,
+					StaticString uri_path,
+					StaticString uri_query,
+					T *callback,
+					uint16 uri_port = COAP_STD_PORT);
 
 		enum error_codes
 		{
@@ -206,12 +220,54 @@ template<typename OsModel_P,
 			// TODO: empfangszeit? (Freshness)
 		};
 
-		struct coapreceiver
+		class CoapResource
 		{
-			// TODO:
-			// Typ des Receivers (bekommt der nur die Daten, oder das ganze Paket?)
-			// Callback Pointer oder sowas
-			// string der die Resource bezeichnet
+		public:
+			bool operator==( const CoapResource &other ) const
+			{
+				return ( this->resource_path() == other.resource_path() && this->callback() == other.callback() );
+			}
+
+			bool operator!=( const CoapResource &other ) const
+			{
+				return !( *this == other );
+			}
+
+			CoapResource()
+			{
+				resource_path_ = StaticString();
+				callback_ = coapreceiver_delegate_t();
+			}
+
+			CoapResource( StaticString path, coapreceiver_delegate_t callback)
+			{
+				set_resource_path( path );
+				set_callback( callback );
+			}
+
+			void set_resource_path( StaticString path)
+			{
+				resource_path_ = path;
+			}
+
+			StaticString resource_path() const
+			{
+				return resource_path_;
+			}
+
+			void set_callback( coapreceiver_delegate_t callback )
+			{
+				callback_ = callback;
+			}
+
+			coapreceiver_delegate_t callback() const
+			{
+				return callback_;
+			}
+
+		private:
+			StaticString resource_path_;
+			coapreceiver_delegate_t callback_;
 		};
 
 		Radio *radio_;
@@ -221,6 +277,7 @@ template<typename OsModel_P,
 		int recv_callback_id_; // callback for receive function
 		list_static<OsModel, SentMessage, COAPRADIO_SENT_LIST_SIZE> sent_;
 		list_static<OsModel, ReceivedMessage, COAPRADIO_RECEIVED_LIST_SIZE> received_;
+		vector_static<OsModel, CoapResource, COAPRADIO_RESOURCES_SIZE> resources_;
 
 		coap_msg_id_t msg_id_;
 		coap_token_t token_;
@@ -237,6 +294,8 @@ template<typename OsModel_P,
 		T* find_message_by_token (node_id_t correspondent, OpaqueData token, list_static<OsModel_P, T, N> &queue);
 
 		void handle_response( node_id_t from, coap_packet_t message, SentMessage *request = NULL );
+
+		void handle_request( node_id_t from, coap_packet_t message );
 
 	};
 
@@ -435,7 +494,7 @@ template<typename OsModel_P,
 					case COAP_MSG_TYPE_CON:
 						if( packet.is_request() )
 						{
-							// TODO
+							handle_request( from, packet );
 						}
 						else if ( packet.is_response() )
 						{
@@ -449,7 +508,7 @@ template<typename OsModel_P,
 					case COAP_MSG_TYPE_NON:
 						if( packet.is_request() )
 						{
-							// TODO
+							handle_request( from, packet );
 						}
 						else if ( packet.is_response() )
 						{
@@ -509,17 +568,58 @@ template<typename OsModel_P,
 		//TODO
 	}
 
-/*
 	template<typename OsModel_P,
 			typename Radio_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P>
-	coap_token_t CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::get(node_id_t receiver, )
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P>::coap_packet_t ) >
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::reg_resource_callback( StaticString resource_path, T *callback )
+	{
+
+		if ( resources_.empty() )
+			resources_.assign( COAPRADIO_RESOURCES_SIZE, CoapResource() );
+
+		for ( unsigned int i = 0; i < resources_.size(); ++i )
+		{
+			if ( resources_.at(i) == CoapResource() )
+			{
+				resources_.at(i).set_resource_path( resource_path );
+				resources_.at(i).set_callback( coapreceiver_delegate_t::template from_method<T, TMethod>( callback ) );
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::unreg_recv_callback( int idx )
+	{
+		resources_.at(idx) = CoapResource();
+		return SUCCESS;
+	}
+
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P>::coap_packet_t ) >
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::get(node_id_t receiver,
+			StaticString uri_path,
+			StaticString uri_query,
+			T *callback,
+			uint16 uri_port)
 	{
 
 	}
-*/
+
 
 // private
 	template<typename OsModel_P,
@@ -642,6 +742,34 @@ template<typename OsModel_P,
 			return;
 		}
 
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_request( node_id_t from, coap_packet_t message )
+	{
+		StaticString available_res;
+		StaticString request_res = message.uri_path();
+		for(size_t i = 0; i < resources_.size(); ++i )
+		{
+			if( resources_.at(i) != CoapResource() )
+			{
+				available_res = resources_.at(i).resource_path();
+				// in order to match a resource, the requested uri must match a resource, or it must be a sub-element of a resource,
+				// which means the next symbol in the request must be a slash
+				if( ( available_res.length() == request_res.length()
+						&& strncmp(available_res.c_str(), request_res.c_str(), available_res.length()) == 0 )
+					|| (available_res.length() < request_res.length()
+						&& strncmp(available_res.c_str(), request_res.c_str(), available_res.length()) == 0
+						&& strncmp(request_res.c_str() + available_res.length(), "/", 1)) )
+				{
+					resources_.at(i).callback()( from, message );
+				}
+			}
+		}
 	}
 }
 
