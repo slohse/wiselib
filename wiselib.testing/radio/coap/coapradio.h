@@ -302,9 +302,9 @@ template<typename OsModel_P,
 		template <typename T, list_size_t N>
 		T* find_message_by_token (node_id_t correspondent, OpaqueData token, list_static<OsModel_P, T, N> &queue);
 
-		void handle_response( node_id_t from, ReceivedMessage message, SentMessage *request = NULL );
+		void handle_response( node_id_t from, ReceivedMessage& message, SentMessage *request = NULL );
 
-		void handle_request( node_id_t from, ReceivedMessage message );
+		void handle_request( node_id_t from, ReceivedMessage& message );
 
 	};
 
@@ -720,7 +720,7 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P>
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_response( node_id_t from, ReceivedMessage message, SentMessage *request )
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_response( node_id_t from, ReceivedMessage& message, SentMessage *request )
 	{
 		OpaqueData request_token, response_token;
 
@@ -763,7 +763,7 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P>
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_request( node_id_t from, ReceivedMessage message )
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::handle_request( node_id_t from, ReceivedMessage& message )
 	{
 		StaticString available_res;
 		StaticString request_res = message.message().uri_path();
