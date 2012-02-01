@@ -306,6 +306,8 @@ template<typename OsModel_P,
 
 		void handle_request( node_id_t from, ReceivedMessage& message );
 
+		void ack(ReceivedMessage& message );
+
 	};
 
 
@@ -485,55 +487,66 @@ template<typename OsModel_P,
 				int err_code = packet.parse_message( data + sizeof( message_id_t ), len - sizeof( message_id_t ) );
 				if( err_code == SUCCESS )
 				{
-					ReceivedMessage received_message(packet);
-					queue_message( received_message, received_ );
-					SentMessage *request;
-					switch( packet.type() )
+					ReceivedMessage *deduplication;
+					// Only act if this message hasn't been received yet, otherwise ignore
+					if( (deduplication = find_message_by_id(from, packet.msg_id(), received_)) != NULL )
 					{
-					case COAP_MSG_TYPE_ACK:
-						request = find_message_by_id( from, packet.msg_id(), sent_ );
+						ReceivedMessage received_message(packet);
+						queue_message( received_message, received_ );
+						SentMessage *request;
+						switch( packet.type() )
+						{
+						case COAP_MSG_TYPE_ACK:
+							request = find_message_by_id( from, packet.msg_id(), sent_ );
 
-						if ( request != NULL )
-						{
-							(*request).set_ack_received( true );
-							// piggy-backed response, give it to whoever sent the request
-							if( packet.is_response() )
-								handle_response( from, received_message, request );
+							if ( request != NULL )
+							{
+								(*request).set_ack_received( true );
+								// piggy-backed response, give it to whoever sent the request
+								if( packet.is_response() )
+									handle_response( from, received_message, request );
+							}
+							break;
+							// TODO: nachdenken ob man hier einigen Code gemeinsam nutzen kann
+						case COAP_MSG_TYPE_CON:
+							if( packet.is_request() )
+							{
+								handle_request( from, received_message );
+							}
+							else if ( packet.is_response() )
+							{
+								handle_response( from, received_message );
+							}
+							else
+							{
+								// TODO: unknown code, send 5.01 Not Implemented
+							}
+							break;
+						case COAP_MSG_TYPE_NON:
+							if( packet.is_request() )
+							{
+								handle_request( from, received_message );
+							}
+							else if ( packet.is_response() )
+							{
+								handle_response( from, received_message );
+							}
+							// drop unknown codes silently
+							break;
+						case COAP_MSG_TYPE_RST:
+							request = find_message_by_id( from, packet.msg_id(), sent_ );
+							if( request != NULL )
+								(*request).sender_callback()( from, packet );
+							break;
+						default:
+							break;
 						}
-						break;
-// TODO: nachdenken ob man hier einigen Code gemeinsam nutzen kann
-					case COAP_MSG_TYPE_CON:
-						if( packet.is_request() )
-						{
-							handle_request( from, received_message );
-						}
-						else if ( packet.is_response() )
-						{
-							handle_response( from, received_message );
-						}
-						else
-						{
-							// TODO: unknown code, send 5.01 Not Implemented
-						}
-						break;
-					case COAP_MSG_TYPE_NON:
-						if( packet.is_request() )
-						{
-							handle_request( from, received_message );
-						}
-						else if ( packet.is_response() )
-						{
-							handle_response( from, received_message );
-						}
-						// drop unknown codes silently
-						break;
-					case COAP_MSG_TYPE_RST:
-						request = find_message_by_id( from, packet.msg_id(), sent_ );
-						if( request != NULL )
-							(*request).sender_callback()( from, packet );
-						break;
-					default:
-						break;
+					}
+					else
+					{
+						// if it's confirmable we might want to hurry sending an ACK
+						if( packet.type() == COAP_MSG_TYPE_CON )
+							ack( *deduplication );
 					}
 				}
 				else if ( err_code == CoapPacket<OsModel, Radio>::ERR_CON_RESPONSE || err_code == CoapPacket<OsModel, Radio>::ERR_RST )
@@ -784,6 +797,19 @@ template<typename OsModel_P,
 				}
 			}
 		}
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::ack(ReceivedMessage& message )
+	{
+		coap_packet_t ackp;
+		ackp.set_type( COAP_MSG_TYPE_ACK );
+		ackp.set_msg_id( message.message().msg_id() );
+		send_coap_as_is<self_type, &self_type::receive_coap>(message.correspondent(), ackp, this );
 	}
 }
 
