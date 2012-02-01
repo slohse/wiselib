@@ -2,6 +2,10 @@
 #ifndef STRING_DYNAMIC_H
 #define STRING_DYNAMIC_H
 
+#ifndef assert
+	#define assert(X)
+#endif
+
 namespace wiselib {
 	
 	/**
@@ -68,7 +72,8 @@ namespace wiselib {
 			
 			~string_dynamic() {
 				if(buffer_ && !weak_) {
-					allocator_->template free_array<Char>(buffer_.raw());
+					//allocator_->template free_array<Char>(buffer_.raw());
+					allocator_->template free_array<Char>(buffer_);
 					buffer_ = 0;
 					size_ = 0;
 				}
@@ -102,8 +107,11 @@ namespace wiselib {
 				if(n == size_) { return; }
 				size_ = n;
 				
-				if(buffer_) { allocator_->template free_array<Char>(buffer_); }
+				if(buffer_) {
+					allocator_->template free_array<Char>(buffer_);
+				}
 				buffer_ = allocator_->template allocate_array<Char>(size_ + 1);
+				assert(buffer_);
 				buffer_[size_] = '\0';
 			}
 			
@@ -127,6 +135,7 @@ namespace wiselib {
 			bool operator>=(const string_dynamic& other) const { return cmp(other) >= 0; }
 			bool operator==(const string_dynamic& other) const { return cmp(other) == 0; }
 			bool operator!=(const string_dynamic& other) const { return cmp(other) != 0; }
+                        char operator[] (const size_t pos) const {return (pos >= size_) ? 0 : buffer_[pos]; }
 			
 			string_dynamic& append(const Char* other) {
 				return append(string_dynamic(other, allocator_));

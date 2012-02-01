@@ -37,7 +37,8 @@ namespace wiselib {
     public:
 
         typedef OsModel_P OsModel;
-        typedef delegate3<void, uint8_t, uint8_t, uint16> cluster_delegate_t;
+        typedef typename OsModel::Radio::node_id_t node_id_t;
+        typedef delegate3<void, uint8_t, uint8_t, node_id_t> cluster_delegate_t;
 
         // --------------------------------------------------------------------
         typedef vector_static<OsModel, cluster_delegate_t, MAX_RECEIVERS> CallbackVector;
@@ -49,7 +50,14 @@ namespace wiselib {
         };
         // --------------------------------------------------------------------
 
-        template<class T, void (T::*TMethod)(uint8_t, uint8_t, uint16) >
+        /**
+         * used to register a callback to the clustering algorithm's notifications
+         * @param obj_pnt
+         * Object of the class registering the callback
+         * @return
+         * integer pointing to the callback vector entry
+         */
+        template<class T, void (T::*TMethod)(uint8_t, uint8_t, node_id_t) >
         int reg_state_changed_callback(T *obj_pnt) {
             if (callbacks_.empty())
                 callbacks_.assign(MAX_RECEIVERS, cluster_delegate_t());
@@ -65,13 +73,29 @@ namespace wiselib {
         }
         // --------------------------------------------------------------------
 
+        /**
+         * used to unregister a callback to the clustering algorithm's notifications
+         * @param idx
+         * integer pointing to the callback vector entry
+         * @return
+         * SUCCESS
+         */
         int unreg_state_changed_callback(int idx) {
             callbacks_.at(idx) = cluster_delegate_t();
             return SUCCESS;
         }
         // --------------------------------------------------------------------
 
-        void state_changed(uint8_t event, uint8_t type, uint16 node) {
+        /**
+         * 
+         * @param event
+         * the event type described in clustering_types.h EventIds
+         * @param type
+         * type of the message 
+         * @param node
+         * the destination of the message
+         */
+        void state_changed(uint8_t event, uint8_t type, node_id_t node) {
             for (CallbackVectorIterator
                 it = callbacks_.begin();
                     it != callbacks_.end();

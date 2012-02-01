@@ -36,9 +36,13 @@ namespace wiselib
 		 *  This struct is used to return the value of all three
 		 *  axes of an accelerometer.
 		 */
-		struct AccelerationData { 	int16 x;
-											int16 y;
-											int16 z; };
+	struct AccelerationData
+        {
+            int16 x;
+            int16 y;
+            int16 z;
+            uint32 timestamp;
+        };
 	};
 	#endif // __ACCEL_DATA__
 	
@@ -57,7 +61,7 @@ namespace wiselib
 	template <typename OsModel_P>
 	class iSenseAccelerationCallbackSensor 
 		:  public SensorCallbackBase<OsModel_P, 
-					 wiselib::sensorData::AccelerationData, 5>,
+					 wiselib::sensorData::AccelerationData*, 5>,
 			public isense::BufferDataHandler
 	{			
 	public:								
@@ -100,31 +104,25 @@ namespace wiselib
 		*
 		*/
 		iSenseAccelerationCallbackSensor( isense::Os& os ) 
-			: os_( os ), curState_( INACTIVE )
+			: device_( os ), curState_( INACTIVE ),divider_(1)
 		{
-			device_ = new isense::LisAccelerometer( os );
+			// Set this as the accelerometer's data handler
+			device_.set_handler( this );
+		
+			// Switch sensor on
+			device_.enable();
 			
-			if( device_ != 0 )
-			{
-				// Set this as the accelerometer's data handler
-				device_->set_handler( this );
-				
-				// Switch Sensor on
-				device_->enable();
-				
-				// Set sensor mode: All axes are read
-				device_->set_axes( true, true, true );
-				
-				// Set Threshold = 0 so every measurement is propagated
-				device_->set_threshold( 0 );
-				
-				curState_ = NO_VALUE;
-			}
-			else 
-			{
-				os.fatal( "Could not allocate Accelerometer" );
-				curState_ = INACTIVE;
-			}
+			// Set sensor mode: All axes are read
+			device_.set_axes( true, true, true );
+			
+			// Set Threshold = 0 so every measurement is propagated
+			device_.set_threshold( 0 );
+
+                        device_.set_handler_threshold(40);
+
+                        device_.set_narrow_band(true);
+			
+			curState_ = NO_VALUE;
 			
 			thrX_ = 0;
 			thrY_ = 0;
@@ -158,8 +156,7 @@ namespace wiselib
 			*/
 		void set_extended_range( bool extRange )
 		{
-			if(device_ != 0)
-				device_->set_extended_range( extRange );
+			device_.set_extended_range( extRange );
 		}
 		
 		//------------------------------------------------------------------------
@@ -170,8 +167,8 @@ namespace wiselib
 			*/
 		void set_divider( uint8 divider )
 		{
-			if(device_ != 0)
-				device_->set_divider( divider );
+			device_.set_divider( divider );
+                        divider_ = divider;
 		}
 		
 		//------------------------------------------------------------------------
@@ -216,7 +213,7 @@ namespace wiselib
 			if( thresholdZ < thresholdX && thresholdZ < thresholdY )
 				minThr = thresholdZ;
 			
-			return device_->set_threshold(minThr);
+			return device_.set_threshold(minThr);
 		}
 		
 		//------------------------------------------------------------------------
@@ -263,13 +260,18 @@ namespace wiselib
 		{
 			if( data->count >= 1 )
 			{
-				value_.x = data->buf[ 0 + 3 * ( data->count - 1 ) ];
-				value_.y = data->buf[ 1 + 3 * ( data->count - 1 ) ];
-				value_.z = data->buf[ 2 + 3 * ( data->count - 1 ) ];
-				curState_ = READY;
+                            for(int i=0;i<data->count;++i){
+                                
+                                value_.timestamp = data->sec * 1000 + data->ms + i * divider_ * 25;
+                                
+                                value_.x = data->buf[ 0 + data->dim * i ];
+				value_.y = data->buf[ 1 + data->dim * i ];
+				value_.z = data->buf[ 2 + data->dim * i ];//3 * ( data->count - 1 )
 				
 				if( value_.x >= thrX_ || value_.y >= thrY_ || value_.z >= thrZ_ )
-					this->notify_receivers( value_ );
+					this->notify_receivers( &value_ );
+                            }
+                            curState_ = READY;
 			}
 		}
 		
@@ -281,7 +283,7 @@ namespace wiselib
 			*/
 		bool enable()
 		{
-			return device_->enable();
+			return device_.enable();
 		}
 		
 		//------------------------------------------------------------------------
@@ -291,10 +293,7 @@ namespace wiselib
 			*/
 		void disable() 
 		{
-			device_->set_handler( NULL );
-			device_->disable();		// Already done by set_handler(NULL) but 
-											//	just to be absolutly sure!
-			
+			device_.disable();
 			curState_ = INACTIVE;
 		}
 		
@@ -306,16 +305,14 @@ namespace wiselib
 		value_t value_;
 
 		/// Pointer to the actual device
-		isense::LisAccelerometer* device_;
-
-		/// Pointer to the OS
-		isense::Os& os_;
+		isense::LisAccelerometer device_;
 
 		/// Current State
 		StateData curState_;
 		
 		/// Thresholds for all axes
 		uint16 thrX_, thrY_, thrZ_;
+                uint8 divider_;
 	};
 };
 #endif

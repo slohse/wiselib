@@ -1,8 +1,6 @@
 #ifndef _GROUP_JD_H
 #define	_GROUP_JD_H
 
-
-
 #include "util/delegates/delegate.hpp"
 #include "util/pstl/vector_static.h"
 #include "util/pstl/map_static_vector.h"
@@ -13,7 +11,7 @@ namespace wiselib {
     /**
      * \ingroup jd_concept
      *
-     * Group join decision module.
+     * GroupJoinDecision
      */
     template<typename OsModel_P, typename Radio_P, typename Semantics_P >
 
@@ -46,10 +44,10 @@ namespace wiselib {
             node_id_t group_max_id_;
             node_id_t parent_;
             block_data_t data[30];
-            size_t size_;
+            uint8_t size_;
         };
         typedef struct groups_joined_entry groups_joined_entry_t;
-        typedef wiselib::vector_static<OsModel, groups_joined_entry_t, 10 > groupsVector_t;
+        typedef wiselib::vector_static<OsModel, groups_joined_entry_t, 6 > groupsVector_t;
         typedef typename groupsVector_t::iterator groupsVectorIterator_t;
 
 
@@ -59,7 +57,7 @@ namespace wiselib {
          * Constructor
          */
         GroupJoinDecision() :
-        cluster_id_(0xffff)
+        cluster_id_(Radio::NULL_NODE_ID)
         , hops_(200) {
         };
 
@@ -70,8 +68,13 @@ namespace wiselib {
         };
 
         /**
-         * INIT
-         * initializes the values of radio and debug
+         *
+         * @param radiot
+         * wiselib radio
+         * @param debugt
+         * wiselib debug
+         * @param semantics
+         * wiselib semantic storage
          */
         void init(Radio& radio, Debug& debug, Semantics_t &semantics) {
             radio_ = &radio;
@@ -80,19 +83,15 @@ namespace wiselib {
             groupsVector_.clear();
         };
 
-        /**
-         * SET functions
-         */
-
         void reset() {
             groupsVector_.clear();
         }
 
-        void became_head() {
-            hops_ = 0;
-            cluster_id_ = radio().id();
-        }
-
+        /**
+         *
+         * @return
+         * a SemaGroupMsg_t message ready to be sent using the radio
+         */
         SemaGroupsMsg_t get_join_payload() {
             //            debug_->debug("payload");
             SemaGroupsMsg_t msg;
@@ -100,7 +99,7 @@ namespace wiselib {
             group_container_t mygroups = semantics_->get_groups();
 
             for (typename group_container_t::iterator gi = mygroups.begin(); gi != mygroups.end(); ++gi) {
-                //                debug_->debug("adding semantic size - %d : to add size %d", msg.length(), sizeof (size_t) + gi->size());
+                //                                debug_->debug("adding semantic size - %d : to add size %d", msg.length(), sizeof (uint8_t) + gi->size());
                 msg.add_statement(gi->data(), gi->size(), group_id(*gi), group_parent(*gi));
             }
             msg.set_node_id(radio_->id());
@@ -110,6 +109,13 @@ namespace wiselib {
             return msg;
         }
 
+        /**
+         * 
+         * @param gi
+         * the group 
+         * @return
+         * the maximum id of the given group
+         */
         node_id_t group_id(group_entry_t gi) {
             if (!groupsVector_.empty()) {
                 for (typename groupsVector_t::iterator it = groupsVector_.begin(); it != groupsVector_.end(); ++it) {
@@ -117,7 +123,7 @@ namespace wiselib {
                     if (gi.size() == it->size_) {
                         bool same = true;
                         //byte to byte comparisson
-                        for (size_t i = 0; i < it->size_; i++) {
+                        for (uint8_t i = 0; i < it->size_; i++) {
                             if (it->data[i] != *(gi.data() + i)) {
                                 same = false;
                                 break;
@@ -139,6 +145,13 @@ namespace wiselib {
             return radio().id();
         }
 
+        /**
+         * 
+         * @param gi
+         * the group
+         * @return
+         * the parent id of the given group
+         */
         node_id_t group_parent(group_entry_t gi) {
             if (!groupsVector_.empty()) {
                 for (typename groupsVector_t::iterator it = groupsVector_.begin(); it != groupsVector_.end(); ++it) {
@@ -146,7 +159,7 @@ namespace wiselib {
                     if (gi.size() == it->size_) {
                         bool same = true;
                         //byte to byte comparisson
-                        for (size_t i = 0; i < it->size_; i++) {
+                        for (uint8_t i = 0; i < it->size_; i++) {
                             if (it->data[i] != *(gi.data() + i)) {
                                 same = false;
                                 break;
@@ -159,9 +172,30 @@ namespace wiselib {
                     }
                 }
             }
-            return 0xffff;
+            return Radio::NULL_NODE_ID;
         }
 
+        /**
+         *          
+         * @return
+         * the parent id of the given group
+         */
+        node_id_t group_parent() {
+            if (!groupsVector_.empty()) {
+                return groupsVector_.begin()->parent_;                     
+            }
+            return Radio::NULL_NODE_ID;
+        }
+
+        /**
+         * 
+         * @param gi
+         * the group entry
+         * @param group_id
+         * the groups max known id
+         * @param parent
+         * the parent of the node in the group
+         */
         void set_my_group_id(group_entry_t gi, node_id_t group_id, node_id_t parent) {
             if (!groupsVector_.empty()) {
                 for (typename groupsVector_t::iterator it = groupsVector_.begin(); it != groupsVector_.end(); ++it) {
@@ -169,7 +203,7 @@ namespace wiselib {
                     if (gi.size() == it->size_) {
                         bool same = true;
                         //byte to byte comparisson
-                        for (size_t i = 0; i < it->size_; i++) {
+                        for (uint8_t i = 0; i < it->size_; i++) {
                             if (it->data[i] != *(gi.data() + i)) {
                                 same = false;
                                 break;
@@ -185,6 +219,13 @@ namespace wiselib {
             }
         }
 
+        /**
+         *
+         * @param node
+         * the dropped node
+         * @return
+         * true if the event resulted in cluster changes
+         */
         bool node_lost(node_id_t node) {
             bool changed = false;
             if (!groupsVector_.empty()) {
@@ -202,29 +243,26 @@ namespace wiselib {
             return changed;
         }
 
-        bool has_semantic(int id, int value) {
-            if (id > 200) {
-                return true;
-            }
-            return false;
-            //            return semantics_->has_group(id, value);
-        }
-
         /**
-         * JOIN
          * respond to an JOIN message received
-         * either join to a cluster or not
+         * @param mess
+         * pointer to the message payload
+         * @param len
+         * size of the message payload
+         * @return
+         * true when joined any cluster else false
          */
         bool join(uint8_t * mess, size_t len) {
             bool joined_any = false;
             SemaGroupsMsg_t * msg = (SemaGroupsMsg_t *) mess;
-            size_t group_count = msg->contained();
+            uint8_t group_count = msg->contained();
             //            debug_->debug("contains %d ,len : %d", group_count, len);
 
-            for (size_t i = 0; i < group_count; i++) {
+            for (uint8_t i = 0; i < group_count; i++) {
+
                 group_entry_t gi = group_entry_t(msg->get_statement_data(i), msg->get_statement_size(i));
 
-                //                debug().debug("got a msg for %d nid %x", i, msg->get_statement_nodeid(i));
+                //                debug().debug("got a msg for %s nid %x", gi.c_str(), msg->get_statement_nodeid(i));
                 if (semantics_-> has_group(gi)) {
                     //                    debug().debug("Received;%s;{id:%x parent:%x};{id:%x parent:%x}", gi.c_str(), msg->get_statement_nodeid(i), msg->get_statement_parent(i), group_id(gi), group_parent(gi));
 
@@ -256,7 +294,6 @@ namespace wiselib {
                         //                        debug().debug("CLL;%x;%s-%x;%x", radio().id(), gi.c_str(), group_id(gi), msg->node_id());
                         joined_group(gi, msg->node_id());
                     }
-
                 }
             }
 
@@ -264,18 +301,14 @@ namespace wiselib {
         }
 
         /**
-         * ENABLE
-         * enables the module
-         * initializes values
+         * enables the module initializes values
          */
         void enable() {
 
         };
 
-        /**
-         * DISABLE
-         * disables this bfsclustering module
-         * unregisters callbacks
+        /**         
+         * disables this module unregisters callbacks
          */
         void disable() {
         };
@@ -320,6 +353,13 @@ namespace wiselib {
             }
         }
 
+        /**
+         *
+         * @param gi
+         * the group to check for its parent
+         * @return
+         * the parent of the group
+         */
         inline node_id_t parent(group_entry_t gi) {
             if (!groupsVector_.empty()) {
                 for (groupsVectorIterator_t it = groupsVector_.begin(); it != groupsVector_.end(); ++it) {
@@ -327,7 +367,7 @@ namespace wiselib {
                     if (gi.size() == it->size_) {
                         bool same = true;
                         //byte to byte comparisson
-                        for (size_t i = 0; i < it->size_; i++) {
+                        for (uint8_t i = 0; i < it->size_; i++) {
                             if (it->data[i] != *(gi.data() + i)) {
                                 same = false;
                                 break;
@@ -339,7 +379,7 @@ namespace wiselib {
                     }
                 }
             }
-            return 0xffff;
+            return Radio::NULL_NODE_ID;
         }
 
     private:
