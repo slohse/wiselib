@@ -804,12 +804,13 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P>
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::ack(ReceivedMessage& message )
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P>::ack( ReceivedMessage& message )
 	{
 		coap_packet_t ackp;
 		ackp.set_type( COAP_MSG_TYPE_ACK );
 		ackp.set_msg_id( message.message().msg_id() );
 		send_coap_as_is<self_type, &self_type::receive_coap>(message.correspondent(), ackp, this );
+		message.set_ack_sent( true );
 	}
 }
 
