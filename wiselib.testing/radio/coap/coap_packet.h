@@ -145,6 +145,8 @@ namespace wiselib
 
 		string_t uri_path();
 
+		int set_uri_path( string_t path );
+
 		/**
 		 * Returns a pointer to the payload section of the packet
 		 * @return pointer to payload
@@ -602,6 +604,39 @@ namespace wiselib
 			}
 		}
 		return path;
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_uri_path( string_t path )
+	{
+		remove_option( COAP_OPT_URI_PATH );
+		int segments = 0;
+		char * cstr = path.c_str();
+		size_t segment_start = 0;
+		if( cstr[0] == '/' )
+			segment_start = 1;
+		size_t position = segment_start;
+		size_t length = 0;
+
+		while( cstr[position] != '\0' )
+		{
+			if( cstr[position] == '/' )
+			{
+				if( (length = position - segment_start - 1) == 0)
+					return -1;
+
+				char buffer[length + 1];
+				memcpy( buffer, cstr + segment_start, length );
+				buffer[length] = '\0';
+				add_option( COAP_OPT_URI_PATH , string_t( buffer ));
+				++segments;
+				segment_start = position + 1;
+			}
+			++position;
+		}
+		return segments;
 	}
 
 	template<typename OsModel_P,

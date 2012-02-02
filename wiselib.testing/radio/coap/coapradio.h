@@ -693,6 +693,15 @@ template<typename OsModel_P,
 			uint16 uri_port)
 	{
 //		TODO: CONTINUE HERE!!!
+		coap_packet_t getp;
+		confirmable ? getp.set_type( COAP_MSG_TYPE_CON ) : getp.set_type( COAP_MSG_TYPE_NON );
+		getp.set_code( COAP_CODE_GET );
+		if( uri_host != string_t() )
+		{
+
+		}
+
+		getp.set_uri_path( uri_path );
 
 	}
 
