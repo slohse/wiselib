@@ -33,7 +33,7 @@ class ExampleApplication
 #define EXAMPLE_DATA	0x43, 0x01, 0xa4, 0xf2, 0x97, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65, 0x0b, 0x4b, 0xc3, 0x84, 0x53, 0x45, 0x4b, 0x55, 0x43, 0x48, 0x45, 0x4e, 0xc1, 0x00
 #define EXAMPLE_DATA_LEN	26
          uint8_t example_data[ EXAMPLE_DATA_LEN ] = { EXAMPLE_DATA };
-         wiselib::CoapPacket<Os, Os::Radio> testpacket;
+         wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> testpacket;
          testpacket.parse_message(example_data, EXAMPLE_DATA_LEN);
          debug_->debug( "set options are 0x%x\n ", testpacket.what_options_are_set() );
          size_t example_data_expected_length = testpacket.serialize_length();
@@ -71,7 +71,7 @@ class ExampleApplication
         	 }
          }
 
-         wiselib::CoapPacket<Os, Os::Radio> testpacket2;
+         wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> testpacket2;
          debug_->debug( "setting type\n");
          testpacket2.set_type( COAP_MSG_TYPE_NON );
          debug_->debug( "setting msg id\n");
@@ -93,7 +93,7 @@ class ExampleApplication
          debug_->debug( "getting uri host: %s\n", tp2_uri_host.c_str() );
          debug_->debug( "getting if_none_match: %i\n", testpacket2.opt_if_none_match() );
 
-         wiselib::CoapPacket<Os, Os::Radio> testpacket_copy;
+         wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> testpacket_copy;
          testpacket_copy = testpacket2;
          debug_->debug( "getting type: %i\n", testpacket_copy.type() );
          debug_->debug( "getting msg id: %i\n", testpacket_copy.msg_id());
@@ -168,7 +168,7 @@ class ExampleApplication
       Os::Timer::self_pointer_t timer_;
       Os::Debug::self_pointer_t debug_;
 
-      wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand> cradio_;
+      wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
 };
 // --------------------------------------------------------------------------
 wiselib::WiselibApplication<Os, ExampleApplication> example_app;

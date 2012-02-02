@@ -12,7 +12,8 @@
 namespace wiselib
 {
 	template<typename OsModel_P,
-		typename Radio_P>
+		typename Radio_P,
+		typename String_T>
 	class CoapPacket
 	{
 		template<typename T>
@@ -36,12 +37,13 @@ namespace wiselib
 		typedef typename OsModel_P::Debug Debug;
 		typedef Radio_P Radio;
 		typedef typename Radio::block_data_t block_data_t;
+		typedef String_T string_t;
 
-		typedef CoapPacket<OsModel_P, Radio_P> self_type;
+		typedef CoapPacket<OsModel_P, Radio_P, String_T> self_type;
 		typedef self_type* self_pointer_t;
 		typedef self_type coap_packet_t;
 
-		CoapPacket<OsModel_P, Radio_P>& operator=(const CoapPacket<OsModel_P, Radio_P> &rhs);
+		CoapPacket<OsModel_P, Radio_P, String_T>& operator=(const CoapPacket<OsModel_P, Radio_P, String_T> &rhs);
 
 		///@name Construction / Destruction
 		///@{
@@ -141,7 +143,7 @@ namespace wiselib
 		 */
 		void set_token( OpaqueData token );
 
-		StaticString uri_path();
+		string_t uri_path();
 
 		/**
 		 * Returns a pointer to the payload section of the packet
@@ -180,22 +182,22 @@ namespace wiselib
 		uint32_t what_options_are_set() const;
 
 		int set_option( uint8_t option_number, uint32_t value );
-		int set_option( uint8_t option_number, StaticString value );
+		int set_option( uint8_t option_number, string_t value );
 		int set_option( uint8_t option_number, OpaqueData value );
 
 		int add_option( uint8_t option_number, uint32_t value );
-		int add_option( uint8_t option_number, StaticString value );
+		int add_option( uint8_t option_number, string_t value );
 		int add_option( uint8_t option_number, OpaqueData value );
 
 		int get_option( uint8_t option_number, uint32_t &value );
-		int get_option( uint8_t option_number, StaticString &value );
+		int get_option( uint8_t option_number, string_t &value );
 		int get_option( uint8_t option_number, OpaqueData &value );
 
 		template <list_size_t N>
 		int get_options( uint8_t option_number, list_static<OsModel_P, uint32_t, N> &values );
 
 		template <list_size_t N>
-		int get_options( uint8_t option_number, list_static<OsModel_P, StaticString, N> &values );
+		int get_options( uint8_t option_number, list_static<OsModel_P, string_t, N> &values );
 
 		template <list_size_t N>
 		int get_options( uint8_t option_number, list_static<OsModel_P, OpaqueData, N> &values );
@@ -233,7 +235,7 @@ namespace wiselib
 
 		// options
 		list_static<OsModel, CoapOption<uint32_t>, COAP_LIST_SIZE_UINT> uint_options_;
-		list_static<OsModel, CoapOption<StaticString>, COAP_LIST_SIZE_STRING> string_options_;
+		list_static<OsModel, CoapOption<string_t>, COAP_LIST_SIZE_STRING> string_options_;
 		list_static<OsModel, CoapOption<OpaqueData>, COAP_LIST_SIZE_OPAQUE> opaque_options_;
 		bool opt_if_none_match_;
 
@@ -265,7 +267,7 @@ namespace wiselib
 		void remove_option( list_static<OsModel_P, CoapOption<T>, N> &options, uint8_t option_number );
 
 		size_t serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<OpaqueData> &opt ) const;
-		size_t serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<StaticString> &opt ) const;
+		size_t serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<string_t> &opt ) const;
 		size_t serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<uint32_t> &opt ) const;
 
 		uint32_t deserialize_uint( block_data_t *datastream, size_t length);
@@ -275,8 +277,9 @@ namespace wiselib
 
 // Implementation starts here
 	template<typename OsModel_P,
-			typename Radio_P>
-	CoapPacket<OsModel_P, Radio_P>& CoapPacket<OsModel_P, Radio_P>::operator=(const CoapPacket<OsModel_P, Radio_P> &rhs)
+			typename Radio_P,
+		typename String_T>
+	CoapPacket<OsModel_P, Radio_P, String_T>& CoapPacket<OsModel_P, Radio_P, String_T>::operator=(const CoapPacket<OsModel_P, Radio_P, String_T> &rhs)
 	{
 		// avoid self-assignemnt
 		if(this != &rhs)
@@ -290,21 +293,24 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	CoapPacket<OsModel_P, Radio_P>::CoapPacket()
+		typename Radio_P,
+		typename String_T>
+	CoapPacket<OsModel_P, Radio_P, String_T>::CoapPacket()
 	{
 		init();
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	CoapPacket<OsModel_P, Radio_P>::~CoapPacket()
+		typename Radio_P,
+		typename String_T>
+	CoapPacket<OsModel_P, Radio_P, String_T>::~CoapPacket()
 	{
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	void CoapPacket<OsModel_P, Radio_P>::init()
+		typename Radio_P,
+		typename String_T>
+	void CoapPacket<OsModel_P, Radio_P, String_T>::init()
 	{
 //		debug_ = OsModel::;
 
@@ -322,8 +328,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::parse_message( block_data_t *datastream, size_t length )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::parse_message( block_data_t *datastream, size_t length )
 	{
 		// clear everything
 		init();
@@ -362,7 +369,7 @@ namespace wiselib
 					{
 						if( type() == COAP_MSG_TYPE_CON )
 						{
-							char error_description[35];
+							char error_description[MAX_STRING_LENGTH];
 							int len = sprintf(error_description, "Options exceed packet length.");
 							return error_response( is_request(), COAP_CODE_BAD_REQUEST, error_description, len );
 						}
@@ -379,7 +386,7 @@ namespace wiselib
 					{
 						if( type() == COAP_MSG_TYPE_CON )
 						{
-							char error_description[35];
+							char error_description[MAX_STRING_LENGTH];
 							int len = sprintf(error_description, "Unknown critical option %i.", option_number);
 							return error_response( is_request(), COAP_CODE_BAD_OPTION , error_description, len );
 						}
@@ -402,7 +409,7 @@ namespace wiselib
 						{
 							if( type() == COAP_MSG_TYPE_CON )
 							{
-								char error_description[50];
+								char error_description[MAX_STRING_LENGTH];
 								int len = sprintf(error_description, "Multiple occurences of critical option %i.", option_number);
 								return error_response( is_request(), COAP_CODE_BAD_OPTION , error_description, len );
 							}
@@ -435,7 +442,7 @@ namespace wiselib
 				{
 					if( type() == COAP_MSG_TYPE_CON )
 					{
-						char error_description[35];
+						char error_description[MAX_STRING_LENGTH];
 						int len = sprintf(error_description, "Options exceed packet length.");
 						return error_response( is_request(), COAP_CODE_BAD_OPTION, error_description, len );
 					}
@@ -471,36 +478,41 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	uint8_t CoapPacket<OsModel_P, Radio_P>::version() const
+		typename Radio_P,
+		typename String_T>
+	uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::version() const
 	{
 		return version_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	void CoapPacket<OsModel_P, Radio_P>::set_version( uint8_t version )
+		typename Radio_P,
+		typename String_T>
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_version( uint8_t version )
 	{
 		version_ = version & 0x03;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	uint8_t CoapPacket<OsModel_P, Radio_P>::type() const
+		typename Radio_P,
+		typename String_T>
+	uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::type() const
 	{
 		return type_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	void CoapPacket<OsModel_P, Radio_P>::set_type( uint8_t type )
+		typename Radio_P,
+		typename String_T>
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_type( uint8_t type )
 	{
 		type_ = type;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	uint8_t CoapPacket<OsModel_P, Radio_P>::option_count() const
+		typename Radio_P,
+		typename String_T>
+	uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::option_count() const
 	{
 		return ( string_options_.size()
 				+ uint_options_.size()
@@ -509,70 +521,79 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	CoapCode CoapPacket<OsModel_P, Radio_P>::code() const
+		typename Radio_P,
+		typename String_T>
+	CoapCode CoapPacket<OsModel_P, Radio_P, String_T>::code() const
 	{
 		return code_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	void CoapPacket<OsModel_P, Radio_P>::set_code( CoapCode code )
+		typename Radio_P,
+		typename String_T>
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_code( CoapCode code )
 	{
 		code_ = code;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	bool CoapPacket<OsModel_P, Radio_P>::is_request() const
+		typename Radio_P,
+		typename String_T>
+	bool CoapPacket<OsModel_P, Radio_P, String_T>::is_request() const
 	{
 		return( code() >= COAP_REQUEST_CODE_RANGE_MIN && code() <= COAP_REQUEST_CODE_RANGE_MAX );
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	bool CoapPacket<OsModel_P, Radio_P>::is_response() const
+		typename Radio_P,
+		typename String_T>
+	bool CoapPacket<OsModel_P, Radio_P, String_T>::is_response() const
 	{
 		return( code() >= COAP_RESPONSE_CODE_RANGE_MIN && code() <= COAP_RESPONSE_CODE_RANGE_MAX );
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	uint16_t CoapPacket<OsModel_P, Radio_P>::msg_id() const
+		typename Radio_P,
+		typename String_T>
+	uint16_t CoapPacket<OsModel_P, Radio_P, String_T>::msg_id() const
 	{
 		return msg_id_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	void CoapPacket<OsModel_P, Radio_P>::set_msg_id( uint16_t msg_id )
+		typename Radio_P,
+		typename String_T>
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_msg_id( uint16_t msg_id )
 	{
 		msg_id_ = msg_id;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::token( OpaqueData &token )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::token( OpaqueData &token )
 	{
 		return get_option( COAP_OPT_TOKEN, token );
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	void CoapPacket<OsModel_P, Radio_P>::set_token( OpaqueData token )
+		typename Radio_P,
+		typename String_T>
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_token( OpaqueData token )
 	{
 		set_option( COAP_OPT_TOKEN, token );
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	StaticString CoapPacket<OsModel_P, Radio_P>::uri_path()
+		typename Radio_P,
+		typename String_T>
+	String_T CoapPacket<OsModel_P, Radio_P, String_T>::uri_path()
 	{
-		StaticString path;
-		list_static<OsModel_P, StaticString, COAP_LIST_SIZE_STRING> segments;
+		string_t path;
+		list_static<OsModel_P, string_t, COAP_LIST_SIZE_STRING> segments;
 		if ( get_options( COAP_OPT_URI_PATH, segments ) == SUCCESS )
 		{
-			typename list_static<OsModel, StaticString, COAP_LIST_SIZE_STRING>::iterator sit = segments.begin();
+			typename list_static<OsModel, string_t, COAP_LIST_SIZE_STRING>::iterator sit = segments.begin();
 			path.append( (*sit) );
 			for(; sit != segments.end(); ++sit)
 			{
@@ -584,35 +605,39 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	void CoapPacket<OsModel_P, Radio_P>::set_data( block_data_t* data , size_t length)
+		typename Radio_P,
+		typename String_T>
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_data( block_data_t* data , size_t length)
 	{
 		memcpy(data_, data, length );
 		data_length_ = length;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	const uint8_t* CoapPacket<OsModel_P, Radio_P>::data() const
+		typename Radio_P,
+		typename String_T>
+	const uint8_t* CoapPacket<OsModel_P, Radio_P, String_T>::data() const
 	{
 		return data_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	size_t CoapPacket<OsModel_P, Radio_P>::data_length() const
+		typename Radio_P,
+		typename String_T>
+	size_t CoapPacket<OsModel_P, Radio_P, String_T>::data_length() const
 	{
 		return data_length_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	const size_t CoapPacket<OsModel_P, Radio_P>::serialize_length() const
+		typename Radio_P,
+		typename String_T>
+	const size_t CoapPacket<OsModel_P, Radio_P, String_T>::serialize_length() const
 	{
 		// the header is 4 bytes long
 		size_t length = 4;
 
-		typename list_static<OsModel, CoapOption<StaticString>, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
+		typename list_static<OsModel, CoapOption<string_t>, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
 		for(; sit != string_options_.end(); ++sit)
 		{
 			// Option header
@@ -666,8 +691,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	size_t CoapPacket<OsModel_P, Radio_P>::serialize( block_data_t *datastream ) const
+		typename Radio_P,
+		typename String_T>
+	size_t CoapPacket<OsModel_P, Radio_P, String_T>::serialize( block_data_t *datastream ) const
 	{
 		datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | (( option_count() + fenceposts_needed() ) & 0x0f);
 		datastream[1] = code();
@@ -677,7 +703,7 @@ namespace wiselib
 		size_t offset = COAP_START_OF_OPTIONS;
 
 		typename list_static<OsModel, CoapOption<uint32_t>, COAP_LIST_SIZE_UINT>::iterator uit = uint_options_.begin();
-		typename list_static<OsModel, CoapOption<StaticString>, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
+		typename list_static<OsModel, CoapOption<string_t>, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
 		typename list_static<OsModel, CoapOption<OpaqueData>, COAP_LIST_SIZE_OPAQUE>::iterator oit = opaque_options_.begin();
 
 		size_t sindex;
@@ -772,26 +798,29 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	bool CoapPacket<OsModel_P, Radio_P>::opt_if_none_match() const
+		typename Radio_P,
+		typename String_T>
+	bool CoapPacket<OsModel_P, Radio_P, String_T>::opt_if_none_match() const
 	{
 		return opt_if_none_match_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	void CoapPacket<OsModel_P, Radio_P>::set_opt_if_none_match( bool opt_if_none_match )
+		typename Radio_P,
+		typename String_T>
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_opt_if_none_match( bool opt_if_none_match )
 	{
 		opt_if_none_match_ = opt_if_none_match;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	uint32_t CoapPacket<OsModel_P, Radio_P>::what_options_are_set() const
+		typename Radio_P,
+		typename String_T>
+	uint32_t CoapPacket<OsModel_P, Radio_P, String_T>::what_options_are_set() const
 	{
 		uint32_t result = 0;
 		typename list_static<OsModel, CoapOption<uint32_t>, COAP_LIST_SIZE_UINT>::iterator uit = uint_options_.begin();
-		typename list_static<OsModel, CoapOption<StaticString>, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
+		typename list_static<OsModel, CoapOption<string_t>, COAP_LIST_SIZE_STRING>::iterator sit = string_options_.begin();
 		typename list_static<OsModel, CoapOption<OpaqueData>, COAP_LIST_SIZE_OPAQUE>::iterator oit = opaque_options_.begin();
 		for( ; uit != uint_options_.end(); ++uit )
 		{
@@ -815,8 +844,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::set_option( uint8_t option_number, uint32_t value )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, uint32_t value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -832,8 +862,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::set_option( uint8_t option_number, StaticString value )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, string_t value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -843,14 +874,15 @@ namespace wiselib
 		{
 			return ERR_WRONG_TYPE;
 		}
-		CoapOption<StaticString> sopt(option_number, value);
+		CoapOption<string_t> sopt(option_number, value);
 		set_option(string_options_, sopt);
 		return SUCCESS;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::set_option( uint8_t option_number, OpaqueData value )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, OpaqueData value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -866,8 +898,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::add_option( uint8_t option_number, uint32_t value )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, uint32_t value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -883,8 +916,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::add_option( uint8_t option_number, StaticString value )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, string_t value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -894,14 +928,15 @@ namespace wiselib
 		{
 			return ERR_WRONG_TYPE;
 		}
-		CoapOption<StaticString> sopt(option_number, value);
+		CoapOption<string_t> sopt(option_number, value);
 		add_option(string_options_, sopt);
 		return SUCCESS;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::add_option( uint8_t option_number, OpaqueData value)
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, OpaqueData value)
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -917,8 +952,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::get_option( uint8_t option_number, uint32_t &value )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::get_option( uint8_t option_number, uint32_t &value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -932,8 +968,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::get_option( uint8_t option_number, StaticString &value )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::get_option( uint8_t option_number, string_t &value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -947,8 +984,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::get_option( uint8_t option_number, OpaqueData &value )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::get_option( uint8_t option_number, OpaqueData &value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -962,9 +1000,10 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
+		typename Radio_P,
+		typename String_T>
 	template <list_size_t N>
-	int CoapPacket<OsModel_P, Radio_P>::get_options( uint8_t option_number, list_static<OsModel_P, uint32_t, N> &values )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::get_options( uint8_t option_number, list_static<OsModel_P, uint32_t, N> &values )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -978,9 +1017,10 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
+		typename Radio_P,
+		typename String_T>
 	template <list_size_t N>
-	int CoapPacket<OsModel_P, Radio_P>::get_options( uint8_t option_number, list_static<OsModel_P, StaticString, N> &values )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::get_options( uint8_t option_number, list_static<OsModel_P, string_t, N> &values )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -994,9 +1034,10 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
+		typename Radio_P,
+		typename String_T>
 	template <list_size_t N>
-	int CoapPacket<OsModel_P, Radio_P>::get_options( uint8_t option_number, list_static<OsModel_P, OpaqueData, N> &values )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::get_options( uint8_t option_number, list_static<OsModel_P, OpaqueData, N> &values )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1010,8 +1051,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::remove_option( uint8_t option_number )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::remove_option( uint8_t option_number )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1042,8 +1084,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::error_response( bool needs_to_be_CON, CoapCode error_code, char *error_description, size_t len )
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::error_response( bool needs_to_be_CON, CoapCode error_code, char *error_description, size_t len )
 	{
 		OpaqueData token_tmp;
 		int tokenget = get_option( COAP_OPT_TOKEN, token_tmp );
@@ -1070,8 +1113,9 @@ namespace wiselib
 	// private methods
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	int CoapPacket<OsModel_P, Radio_P>::parse_option( uint8_t option_number, size_t option_length, block_data_t* value)
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::parse_option( uint8_t option_number, size_t option_length, block_data_t* value)
 	{
 		if( option_number <= COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1104,7 +1148,7 @@ namespace wiselib
 					{
 						if( type() == COAP_MSG_TYPE_CON )
 						{
-							char error_description[50];
+							char error_description[MAX_STRING_LENGTH];
 							int len = sprintf(error_description, "String option %i out of bounds.", option_number );
 							return error_response( is_request(), COAP_CODE_BAD_OPTION, error_description, len );
 						}
@@ -1116,7 +1160,7 @@ namespace wiselib
 					// option is elective --> ignore
 					return 0;
 				}
-				CoapOption<StaticString> str_opt( option_number, StaticString( (char*) value, option_length ) );
+				CoapOption<string_t> str_opt( option_number, string_t( (char*) value, option_length ) );
 				if( str_opt.option_number() == COAP_OPT_URI_HOST )
 				{
 					set_option( string_options_, str_opt );
@@ -1145,15 +1189,17 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	inline uint8_t CoapPacket<OsModel_P, Radio_P>::next_fencepost_delta(uint8_t previous_opt_number) const
+		typename Radio_P,
+		typename String_T>
+	inline uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::next_fencepost_delta(uint8_t previous_opt_number) const
 	{
 		return ( COAP_OPT_FENCEPOST - ( (previous_opt_number) % COAP_OPT_FENCEPOST ) );
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	inline void CoapPacket<OsModel_P, Radio_P>::fenceposting( uint8_t option_number, uint8_t &previous_opt_number, block_data_t *datastream, size_t &offset ) const
+		typename Radio_P,
+		typename String_T>
+	inline void CoapPacket<OsModel_P, Radio_P, String_T>::fenceposting( uint8_t option_number, uint8_t &previous_opt_number, block_data_t *datastream, size_t &offset ) const
 	{
 		int fencepost_delta = 0;
 		while( option_number - previous_opt_number > 15 )
@@ -1166,8 +1212,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-			typename Radio_P>
-	uint8_t CoapPacket<OsModel_P, Radio_P>::fenceposts_needed() const
+			typename Radio_P,
+		typename String_T>
+	uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::fenceposts_needed() const
 	{
 		uint8_t num_fenceposts = 0;
 		uint32_t optnums = what_options_are_set();
@@ -1190,8 +1237,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	inline void CoapPacket<OsModel_P, Radio_P>::optlength( size_t length, block_data_t *datastream, size_t &offset ) const
+		typename Radio_P,
+		typename String_T>
+	inline void CoapPacket<OsModel_P, Radio_P, String_T>::optlength( size_t length, block_data_t *datastream, size_t &offset ) const
 	{
 		if( length > 14 )
 		{
@@ -1208,8 +1256,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	inline uint8_t CoapPacket<OsModel_P, Radio_P>::is_critical( uint8_t option_number )
+		typename Radio_P,
+		typename String_T>
+	inline uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::is_critical( uint8_t option_number )
 	{
 		// odd option numbers are critical
 		return( option_number & 0x01 );
@@ -1217,9 +1266,10 @@ namespace wiselib
 
 	// TODO: die Listen könnten voll sein, hier und in aufrufenden Funktionen abfangen!
 	template<typename OsModel_P,
-		typename Radio_P>
+		typename Radio_P,
+		typename String_T>
 	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P, Radio_P>::set_option(list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> option)
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_option(list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> option)
 	{
 		typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
 		for(;; ++it)
@@ -1248,9 +1298,10 @@ namespace wiselib
 
 	// TODO: die Listen könnten voll sein, hier und in aufrufenden Funktionen abfangen
 	template<typename OsModel_P,
-		typename Radio_P>
+		typename Radio_P,
+		typename String_T>
 	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P, Radio_P>::add_option(list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> option)
+	void CoapPacket<OsModel_P, Radio_P, String_T>::add_option(list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> option)
 	{
 		typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
 		while(it != options.end() && ( *it ).option_number() <= option.option_number() )
@@ -1261,9 +1312,10 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
+		typename Radio_P,
+		typename String_T>
 	template <typename T, list_size_t N>
-	int CoapPacket<OsModel_P, Radio_P>::get_option( uint8_t option_number, T &value, list_static<OsModel_P, CoapOption<T>, N> &options )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::get_option( uint8_t option_number, T &value, list_static<OsModel_P, CoapOption<T>, N> &options )
 	{
 		typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
 		while(it != options.end() && ( *it ).option_number() < option_number )
@@ -1279,9 +1331,10 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
+		typename Radio_P,
+		typename String_T>
 	template <typename T, list_size_t N, list_size_t M>
-	int CoapPacket<OsModel_P, Radio_P>::get_options( uint8_t option_number, list_static<OsModel_P, T, N> &values, list_static<OsModel_P, CoapOption<T>, M> &options )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::get_options( uint8_t option_number, list_static<OsModel_P, T, N> &values, list_static<OsModel_P, CoapOption<T>, M> &options )
 	{
 		typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
 		while(it != options.end() && ( *it ).option_number() < option_number )
@@ -1301,9 +1354,10 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
+		typename Radio_P,
+		typename String_T>
 	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P, Radio_P>::remove_option(list_static<OsModel_P, CoapOption<T>, N> &options, uint8_t option_number)
+	void CoapPacket<OsModel_P, Radio_P, String_T>::remove_option(list_static<OsModel_P, CoapOption<T>, N> &options, uint8_t option_number)
 	{
 		typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
 		while(it != options.end())
@@ -1319,8 +1373,9 @@ namespace wiselib
 
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	size_t CoapPacket<OsModel_P, Radio_P>::serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<OpaqueData> &opt ) const
+		typename Radio_P,
+		typename String_T>
+	size_t CoapPacket<OsModel_P, Radio_P, String_T>::serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<OpaqueData> &opt ) const
 	{
 		size_t offset = 0;
 		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
@@ -1332,8 +1387,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	size_t CoapPacket<OsModel_P, Radio_P>::serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<StaticString> &opt ) const
+		typename Radio_P,
+		typename String_T>
+	size_t CoapPacket<OsModel_P, Radio_P, String_T>::serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<string_t> &opt ) const
 	{
 		size_t offset = 0;
 		fenceposting( opt.option_number(), previous_option_number, datastream, offset );
@@ -1346,8 +1402,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	size_t CoapPacket<OsModel_P, Radio_P>::serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<uint32_t> &opt ) const
+		typename Radio_P,
+		typename String_T>
+	size_t CoapPacket<OsModel_P, Radio_P, String_T>::serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<uint32_t> &opt ) const
 	{
 		size_t offset = 0;
 		uint8_t delta_and_size = 0;
@@ -1382,8 +1439,9 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P>
-	uint32_t CoapPacket<OsModel_P, Radio_P>::deserialize_uint( block_data_t *datastream, size_t length)
+		typename Radio_P,
+		typename String_T>
+	uint32_t CoapPacket<OsModel_P, Radio_P, String_T>::deserialize_uint( block_data_t *datastream, size_t length)
 	{
 		uint32_t result = 0;
 		// same as in the serialize_option for uints: because bitwise operators abstract endianness away, this should work,
