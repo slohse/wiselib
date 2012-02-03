@@ -730,13 +730,22 @@ template<typename OsModel_P,
 				uint16 uri_port)
 	{
 		coap_packet_t pack;
-		confirmable ? pack.set_type( COAP_MSG_TYPE_CON ) : pack.set_type( COAP_MSG_TYPE_NON );
+
 		pack.set_code( code );
 		if( !pack.is_request() )
 		{
 			// TODO ordentlichen Fehler schmeißen?
 			return ERR_UNSPEC;
 		}
+
+		pack.set_uri_path( uri_path );
+		pack.set_uri_query( uri_query );
+
+		pack.set_data( payload, payload_length );
+
+		confirmable ? pack.set_type( COAP_MSG_TYPE_CON ) : pack.set_type( COAP_MSG_TYPE_NON );
+
+		// if no host is supplied the physical address of the node is used
 		if( uri_host == string_t() )
 		{
 			char buf[MAX_STRING_LENGTH];
@@ -744,9 +753,8 @@ template<typename OsModel_P,
 			uri_host = string_t( buf );
 		}
 		pack.set_option( COAP_OPT_URI_HOST, uri_host );
-		// TODO: CONTINUE HERE!!!
 
-		pack.set_uri_path( uri_path );
+		pack.set_port( uri_port );
 
 		return send_coap_gen_msg_id_token(receiver, pack, callback );
 	}

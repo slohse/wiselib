@@ -147,6 +147,8 @@ namespace wiselib
 
 		int set_uri_path( string_t path );
 
+		int set_uri_query( string_t path );
+
 		/**
 		 * Returns a pointer to the payload section of the packet
 		 * @return pointer to payload
@@ -273,6 +275,8 @@ namespace wiselib
 		size_t serialize_option( block_data_t *datastream, uint8_t previous_option_number, CoapOption<uint32_t> &opt ) const;
 
 		uint32_t deserialize_uint( block_data_t *datastream, size_t length);
+
+		int add_string_segments( char *cstr, char delimiter, CoapOptions optnum );
 
 	};
 
@@ -612,31 +616,28 @@ namespace wiselib
 	int CoapPacket<OsModel_P, Radio_P, String_T>::set_uri_path( string_t path )
 	{
 		remove_option( COAP_OPT_URI_PATH );
-		int segments = 0;
 		char * cstr = path.c_str();
 		size_t segment_start = 0;
 		if( cstr[0] == '/' )
 			segment_start = 1;
-		size_t position = segment_start;
-		size_t length = 0;
 
-		while( cstr[position] != '\0' )
-		{
-			if( cstr[position] == '/' )
-			{
-				if( (length = position - segment_start - 1) == 0)
-					return -1;
+		return add_string_segments( cstr + segment_start , '/', COAP_OPT_URI_PATH );
+	}
 
-				char buffer[length + 1];
-				memcpy( buffer, cstr + segment_start, length );
-				buffer[length] = '\0';
-				add_option( COAP_OPT_URI_PATH , string_t( buffer ));
-				++segments;
-				segment_start = position + 1;
-			}
-			++position;
-		}
-		return segments;
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_uri_query( string_t query )
+	{
+		remove_option( COAP_OPT_URI_QUERY );
+		char * cstr = query.c_str();
+		size_t segment_start = 0;
+		if( cstr[segment_start] == '/' )
+			++segment_start;
+		if( cstr[segment_start] == '?' )
+			++segment_start;
+
+		return add_string_segments( cstr + segment_start , '/', COAP_OPT_URI_QUERY );
 	}
 
 	template<typename OsModel_P,
@@ -1486,6 +1487,33 @@ namespace wiselib
 			result = (result << 8) | datastream[i];
 		}
 		return result;
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::add_string_segments( char *cstr, char delimiter, CoapOptions optnum )
+	{
+		size_t position = 0;
+		size_t segment_start = 0;
+		int segments = 0;
+		size_t length = 0;
+		while( cstr[position] != '\0' )
+		{
+			if( cstr[position] == '/' )
+			{
+				if( (length = position - segment_start - 1) == 0)
+					return -1;
+
+				char buffer[length + 1];
+				memcpy( buffer, cstr + segment_start, length );
+				buffer[length] = '\0';
+				add_option( optnum , string_t( buffer ));
+				++segments;
+				segment_start = position + 1;
+			}
+			++position;
+		}
 	}
 
 
