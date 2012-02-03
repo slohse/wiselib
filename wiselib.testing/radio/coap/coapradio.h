@@ -82,13 +82,27 @@ template<typename OsModel_P,
 		void receive_coap(node_id_t from, coap_packet_t message);
 
 		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
-		void get(node_id_t receiver,
+		int get(node_id_t receiver,
 					string_t uri_path,
 					string_t uri_query,
 					T *callback,
-					string_t uri_host = string_t(),
+					uint8_t* payload = NULL,
+					size_t payload_length = 0,
 					bool confirmable = false,
+					string_t uri_host = string_t(),
 					uint16 uri_port = COAP_STD_PORT);
+
+		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
+		int request(node_id_t receiver,
+					CoapCode code,
+					string_t uri_path,
+					string_t uri_query,
+					T *callback,
+					uint8_t* payload,
+					size_t payload_length,
+					bool confirmable,
+					string_t uri_host,
+					uint16 uri_port);
 
 		enum error_codes
 		{
@@ -684,25 +698,57 @@ template<typename OsModel_P,
 			typename Rand_P,
 			typename String_T>
 	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t ) >
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::get(node_id_t receiver,
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::get(node_id_t receiver,
 			string_t uri_path,
 			string_t uri_query,
 			T *callback,
-			string_t uri_host,
+			uint8_t* payload,
+			size_t payload_length,
 			bool confirmable,
+			string_t uri_host,
 			uint16 uri_port)
 	{
-//		TODO: CONTINUE HERE!!!
-		coap_packet_t getp;
-		confirmable ? getp.set_type( COAP_MSG_TYPE_CON ) : getp.set_type( COAP_MSG_TYPE_NON );
-		getp.set_code( COAP_CODE_GET );
-		if( uri_host != string_t() )
+		return request( receiver, COAP_CODE_GET ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
+	}
+
+	template<typename OsModel_P,
+				typename Radio_P,
+				typename Timer_P,
+				typename Debug_P,
+				typename Rand_P,
+				typename String_T>
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t ) >
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::request(node_id_t receiver,
+				CoapCode code,
+				string_t uri_path,
+				string_t uri_query,
+				T *callback,
+				uint8_t* payload,
+				size_t payload_length,
+				bool confirmable,
+				string_t uri_host,
+				uint16 uri_port)
+	{
+		coap_packet_t pack;
+		confirmable ? pack.set_type( COAP_MSG_TYPE_CON ) : pack.set_type( COAP_MSG_TYPE_NON );
+		pack.set_code( code );
+		if( !pack.is_request() )
 		{
-
+			// TODO ordentlichen Fehler schmeißen?
+			return ERR_UNSPEC;
 		}
+		if( uri_host == string_t() )
+		{
+			char buf[MAX_STRING_LENGTH];
+			sprintf( buf, "%i", id() );
+			uri_host = string_t( buf );
+		}
+		pack.set_option( COAP_OPT_URI_HOST, uri_host );
+		// TODO: CONTINUE HERE!!!
 
-		getp.set_uri_path( uri_path );
+		pack.set_uri_path( uri_path );
 
+		return send_coap_gen_msg_id_token(receiver, pack, callback );
 	}
 
 
