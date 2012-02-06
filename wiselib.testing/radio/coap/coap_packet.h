@@ -602,12 +602,16 @@ namespace wiselib
 		{
 			typename list_static<OsModel, string_t, COAP_LIST_SIZE_STRING>::iterator sit = segments.begin();
 			path.append( (*sit) );
+			++sit;
 			for(; sit != segments.end(); ++sit)
 			{
 				path.append("/");
 				path.append( (*sit) );
 			}
 		}
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::uri_path> path %s\n", path.c_str() );
+#endif
 		return path;
 	}
 
@@ -969,6 +973,9 @@ namespace wiselib
 		{
 			return ERR_WRONG_TYPE;
 		}
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::add_option(string)> string %s\n", value.c_str() );
+#endif
 		CoapOption<string_t> sopt(option_number, value);
 		add_option(string_options_, sopt);
 		return SUCCESS;
@@ -1201,7 +1208,17 @@ namespace wiselib
 					// option is elective --> ignore
 					return 0;
 				}
-				CoapOption<string_t> str_opt( option_number, string_t( (char*) value, option_length ) );
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::parse_option> adding string option, length %i\n", option_length );
+#endif
+				char str_buf[ option_length + 1];
+				memcpy( str_buf, value, option_length );
+				str_buf[option_length] = '\0';
+				CoapOption<string_t> str_opt( option_number, string_t( str_buf ) );
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::parse_option> adding string %s\n", str_opt.value().c_str() );
+#endif
+
 				if( str_opt.option_number() == COAP_OPT_URI_HOST )
 				{
 					set_option( string_options_, str_opt );
@@ -1500,7 +1517,7 @@ namespace wiselib
 	int CoapPacket<OsModel_P, Radio_P, String_T>::add_string_segments( char *cstr, char delimiter, CoapOptions optnum )
 	{
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("CoaPacket::add_string_segments> string %s, delimiter %c \n", cstr, delimiter );
+		debug_->debug("CoapPacket::add_string_segments> string %s, delimiter %c \n", cstr, delimiter );
 #endif
 
 		size_t position = 0;
@@ -1515,7 +1532,7 @@ namespace wiselib
 					return -1;
 
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("CoaPacket::add_string_segments> found segment at %i length %i \n", segment_start, length);
+		debug_->debug("CoapPacket::add_string_segments> found segment at %i length %i \n", segment_start, length);
 #endif
 				char buffer[length + 1];
 				memcpy( buffer, cstr + segment_start, length );
@@ -1529,13 +1546,13 @@ namespace wiselib
 		if( position > 0 && (length = position - segment_start ) > 0)
 		{
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("CoaPacket::add_string_segments> found segment at %i length %i \n", segment_start, length);
+		debug_->debug("CoapPacket::add_string_segments> found segment at %i length %i \n", segment_start, length);
 #endif
 			char buffer[length + 1];
 			memcpy( buffer, cstr + segment_start, length );
 			buffer[length] = '\0';
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("CoaPacket::add_string_segments> adding %s \n", buffer );
+		debug_->debug("CoapPacket::add_string_segments> adding %s \n", buffer );
 #endif
 			add_option( optnum , string_t( buffer ));
 			++segments;
