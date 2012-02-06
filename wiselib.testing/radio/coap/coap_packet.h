@@ -133,7 +133,8 @@ namespace wiselib
 
 		/**
 		 * Returns the token by which request/response matching can be done.
-		 * @return the message token
+		 * @param token reference to OpaqueData object, if SUCCESS is returned it will contain token afterwards
+		 * @return SUCCESS if the package has the token option set, ERR_OPT_NOT_SET otherwise
 		 */
 		int token( OpaqueData &token );
 
@@ -636,6 +637,10 @@ namespace wiselib
 			++segment_start;
 		if( cstr[segment_start] == '?' )
 			++segment_start;
+
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::set_uri_query> calling add_string_segments\n");
+#endif
 
 		return add_string_segments( cstr + segment_start , '/', COAP_OPT_URI_QUERY );
 	}
@@ -1400,7 +1405,7 @@ namespace wiselib
 		{
 			if( ( *it ).option_number() == option_number )
 			{
-				it = options.erase(it);
+				options.erase(it);
 				continue;
 			}
 			++it;
@@ -1494,6 +1499,10 @@ namespace wiselib
 		typename String_T>
 	int CoapPacket<OsModel_P, Radio_P, String_T>::add_string_segments( char *cstr, char delimiter, CoapOptions optnum )
 	{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoaPacket::add_string_segments> string %s, delimiter %c \n", cstr, delimiter );
+#endif
+
 		size_t position = 0;
 		size_t segment_start = 0;
 		int segments = 0;
@@ -1505,6 +1514,9 @@ namespace wiselib
 				if( (length = position - segment_start - 1) == 0)
 					return -1;
 
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoaPacket::add_string_segments> found segment at %i length %i \n", segment_start, length);
+#endif
 				char buffer[length + 1];
 				memcpy( buffer, cstr + segment_start, length );
 				buffer[length] = '\0';
@@ -1514,8 +1526,11 @@ namespace wiselib
 			}
 			++position;
 		}
-		if( (length = position - segment_start - 1) > 0)
+		if( position > 0 && (length = position - segment_start - 1) > 0)
 		{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoaPacket::add_string_segments> found segment at %i length %i \n", segment_start, length);
+#endif
 			char buffer[length + 1];
 			memcpy( buffer, cstr + segment_start, length );
 			buffer[length] = '\0';

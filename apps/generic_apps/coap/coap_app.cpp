@@ -27,6 +27,8 @@ class ExampleApplication
 //
          debug_->debug( "Example Application booting!\n" );
          debug_->debug( "Node %i present\n", radio_->id() );
+
+         plusone =  wiselib::StaticString("plusone");
 //
 //         radio_->reg_recv_callback<ExampleApplication,
 //                                   &ExampleApplication::receive_radio_message>( this );
@@ -142,25 +144,30 @@ class ExampleApplication
         	 cradio_.send( 1, 1, sendbuf );
          }
 
-         wiselib::StaticString plusone("plusone");
          if ( radio_->id() == 1 )
          {
-        	 cradio_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap>( plusone, this );
+        	 int coap_resource_id = cradio_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap>( plusone, this );
+        	 debug_->debug( "Node %i -- ExampleApp::init()> registered resource at index %i\n", radio_->id(), coap_resource_id );
          }
 
          timer_->set_timer<ExampleApplication,
-                           &ExampleApplication::broadcast_loop>( 5000, this, 0 );
+                           &ExampleApplication::broadcast_loop>( 1000, this, 0 );
       }
       // --------------------------------------------------------------------
       void broadcast_loop( void* )
       {
-         debug_->debug( "broadcast_loop\n" );
+         debug_->debug( "broadcast_loop> Node %i\n", radio_->id() );
+         if( radio_->id() == 0 )
+         {
+        	 wiselib::StaticString query("");
+        	 cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, plusone, query, this, NULL, 0 );
+         }
 //         Os::Radio::block_data_t message[] = "hello world!\0";
 //         radio_->send( Os::Radio::BROADCAST_ADDRESS, sizeof(message), message );
 //
 //         // following can be used for periodic messages to sink
-//         timer_->set_timer<ExampleApplication,
-//                           &ExampleApplication::broadcast_loop>( 5000, this, 0 );
+         timer_->set_timer<ExampleApplication,
+                           &ExampleApplication::broadcast_loop>( 1000, this, 0 );
       }
       // --------------------------------------------------------------------
       void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
@@ -171,12 +178,13 @@ class ExampleApplication
 
       void receive_coap( Os::Radio::node_id_t from, wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> packet )
       {
-    	  debug_->debug( "Node %i received CoapPacket from node %i\n", radio_->id(), from );
+    	  debug_->debug( "Node %i -- ExampleApp::receive_coap> received from node %i\n", radio_->id(), from );
       }
    private:
       Os::Radio::self_pointer_t radio_;
       Os::Timer::self_pointer_t timer_;
       Os::Debug::self_pointer_t debug_;
+      wiselib::StaticString plusone;
 
       wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
 };
