@@ -1514,6 +1514,16 @@ namespace wiselib
 			}
 			++position;
 		}
+		if( (length = position - segment_start - 1) > 0)
+		{
+			char buffer[length + 1];
+			memcpy( buffer, cstr + segment_start, length );
+			buffer[length] = '\0';
+			add_option( optnum , string_t( buffer ));
+			++segments;
+		}
+
+		return segments;
 	}
 
 

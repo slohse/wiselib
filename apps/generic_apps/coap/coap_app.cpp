@@ -145,9 +145,8 @@ class ExampleApplication
          wiselib::StaticString plusone("plusone");
          if ( radio_->id() == 1 )
          {
-        	 cradio_.reg_resource_callback<self_type, &self_type::receive_coap>( plusone );
+        	 cradio_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap>( plusone, this );
          }
-
 
          timer_->set_timer<ExampleApplication,
                            &ExampleApplication::broadcast_loop>( 5000, this, 0 );
@@ -170,7 +169,7 @@ class ExampleApplication
 //         debug_->debug( "message is %s\n", buf );
       }
 
-      void receive_coap( Os::Radio::node_id_t from, wiselib::CoapPacket packet )
+      void receive_coap( Os::Radio::node_id_t from, wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> packet )
       {
     	  debug_->debug( "Node %i received CoapPacket from node %i\n", radio_->id(), from );
       }
