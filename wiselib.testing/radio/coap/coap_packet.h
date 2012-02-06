@@ -1526,7 +1526,7 @@ namespace wiselib
 			}
 			++position;
 		}
-		if( position > 0 && (length = position - segment_start - 1) > 0)
+		if( position > 0 && (length = position - segment_start ) > 0)
 		{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoaPacket::add_string_segments> found segment at %i length %i \n", segment_start, length);
@@ -1534,6 +1534,9 @@ namespace wiselib
 			char buffer[length + 1];
 			memcpy( buffer, cstr + segment_start, length );
 			buffer[length] = '\0';
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoaPacket::add_string_segments> adding %s \n", buffer );
+#endif
 			add_option( optnum , string_t( buffer ));
 			++segments;
 		}
