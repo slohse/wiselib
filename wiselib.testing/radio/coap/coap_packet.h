@@ -155,7 +155,9 @@ namespace wiselib
 		 * Returns a pointer to the payload section of the packet
 		 * @return pointer to payload
 		 */
-		const uint8_t* data() const;
+		block_data_t* data();
+
+		const block_data_t* data() const;
 
 		/**
 		 * Returns the length of the payload
@@ -382,8 +384,8 @@ namespace wiselib
 		// clear everything
 		init();
 
-		// can this possible be a coap packet?
-		if(length > 3)
+		// can this possibly be a coap packet?
+		if( length >= COAP_START_OF_OPTIONS )
 		{
 			uint8_t coap_first_byte = read<OsModel , block_data_t , uint8_t >( datastream );
 			version_ = coap_first_byte >> 6 ;
@@ -686,7 +688,7 @@ namespace wiselib
 		debug_->debug("CoapPacket::set_uri_query> calling add_string_segments\n");
 #endif
 
-		return add_string_segments( cstr + segment_start , '/', COAP_OPT_URI_QUERY );
+		return add_string_segments( cstr + segment_start , '&', COAP_OPT_URI_QUERY );
 	}
 
 	template<typename OsModel_P,
@@ -701,7 +703,15 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	const uint8_t* CoapPacket<OsModel_P, Radio_P, String_T>::data() const
+	typename Radio_P::block_data_t * CoapPacket<OsModel_P, Radio_P, String_T>::data()
+	{
+		return data_;
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename String_T>
+	const typename Radio_P::block_data_t * CoapPacket<OsModel_P, Radio_P, String_T>::data() const
 	{
 		return data_;
 	}
@@ -1566,9 +1576,9 @@ namespace wiselib
 		size_t length = 0;
 		while( cstr[position] != '\0' )
 		{
-			if( cstr[position] == '/' )
+			if( cstr[position] == delimiter )
 			{
-				if( (length = position - segment_start - 1) == 0)
+				if( (length = position - segment_start ) == 0)
 					return -1;
 
 #ifdef DEBUG_COAPRADIO

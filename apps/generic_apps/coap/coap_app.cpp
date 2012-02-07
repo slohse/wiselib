@@ -9,7 +9,9 @@
 
 #include "util/pstl/static_string.h"
 
-#define DEBUG
+#include "stdlib.h"
+
+#define COAP_APP_DEBUG
 
 
 typedef wiselib::OSMODEL Os;
@@ -27,12 +29,16 @@ class ExampleApplication
          timer_ = &wiselib::FacetProvider<Os, Os::Timer>::get_facet( value );
          debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 //
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "Example Application booting!\n" );
          debug_->debug( "Node %i present\n", radio_->id() );
 #endif
          plusone =  wiselib::StaticString("plusone");
          math = wiselib::StaticString("really/long/path/that/does/math");
+         testnumber = 0;
+         num1 = 17;
+         num2 = 13;
+         op = '+';
 //
 //         radio_->reg_recv_callback<ExampleApplication,
 //                                   &ExampleApplication::receive_radio_message>( this );
@@ -41,20 +47,20 @@ class ExampleApplication
          uint8_t example_data[ EXAMPLE_DATA_LEN ] = { EXAMPLE_DATA };
          wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> testpacket;
          testpacket.parse_message(example_data, EXAMPLE_DATA_LEN);
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "set options are 0x%x\n ", testpacket.what_options_are_set() );
 #endif
          size_t example_data_expected_length = testpacket.serialize_length();
          uint8_t example_data_reserialized[50];
          size_t example_data_length;
          example_data_length = testpacket.serialize( example_data_reserialized );
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          if( example_data_expected_length != example_data_length )
          {
         	 debug_->debug( "serialize_length has bugs!" );
          }
 #endif
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          if( example_data_length < EXAMPLE_DATA_LEN )
          {
         	 debug_->debug( "reserialized length is smaller than input length (%i vs %i)\n", example_data_length, EXAMPLE_DATA_LEN );
@@ -82,27 +88,27 @@ class ExampleApplication
          }
 #endif
          wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> testpacket2;
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "setting type\n");
 #endif
          testpacket2.set_type( COAP_MSG_TYPE_NON );
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "setting msg id\n");
 #endif
          testpacket2.set_msg_id( 0xbeef );
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "setting code\n");
 #endif
          testpacket2.set_code( COAP_CODE_GET );
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "setting uri host\n");
 #endif
          testpacket2.set_option(COAP_OPT_URI_HOST, wiselib::StaticString("CoapHost"));
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "setting if_none_match\n");
 #endif
          testpacket2.set_opt_if_none_match(true);
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "setting stuff worked\n");
 
          debug_->debug( "getting type: %i\n", testpacket2.type() );
@@ -111,25 +117,25 @@ class ExampleApplication
 #endif
          wiselib::StaticString tp2_uri_host;
          testpacket2.get_option(COAP_OPT_URI_HOST, tp2_uri_host);
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "getting uri host: %s\n", tp2_uri_host.c_str() );
          debug_->debug( "getting if_none_match: %i\n", testpacket2.opt_if_none_match() );
 #endif
          wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> testpacket_copy;
          testpacket_copy = testpacket2;
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "getting type: %i\n", testpacket_copy.type() );
          debug_->debug( "getting msg id: %i\n", testpacket_copy.msg_id());
          debug_->debug( "getting code: %i\n", testpacket_copy.code());
 #endif
          wiselib::StaticString tp2_copy_uri_host;
          testpacket2.get_option(COAP_OPT_URI_HOST, tp2_copy_uri_host);
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "getting uri host: %s\n", tp2_copy_uri_host.c_str() );
          debug_->debug( "getting if_none_match: %i\n", testpacket_copy.opt_if_none_match() );
 #endif
 
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          uint8_t expected_result[15] = {
         		 // Version 1, Type NON, OC= 3;Code: GET; Msg ID 0xbeef
         		 0x53, 0x01, 0xbe, 0xef,
@@ -162,16 +168,14 @@ class ExampleApplication
 
          cradio_.enable_radio();
 
-         testnumber = 0;
-
          if ( radio_->id() == 1 )
          {
         	 int coap_resource_id = cradio_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap>( plusone, this );
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
         	 debug_->debug( "Node %i -- ExampleApp::init()> registered resource at index %i\n", radio_->id(), coap_resource_id );
 #endif
         	 coap_resource_id = cradio_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap>( math, this );
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
         	 debug_->debug( "Node %i -- ExampleApp::init()> registered resource at index %i\n", radio_->id(), coap_resource_id );
 #endif
          }
@@ -182,17 +186,43 @@ class ExampleApplication
       // --------------------------------------------------------------------
       void broadcast_loop( void* )
       {
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
          debug_->debug( "broadcast_loop> Node %i\n", radio_->id() );
 #endif
          if( radio_->id() == 0 )
          {
         	 wiselib::StaticString query("");
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
         	 debug_->debug( "Node %i -- ExampleApp::broadcast_loop()> sending request for plusone with number %i\n", radio_->id(), testnumber );
 #endif
         	 cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, plusone, query, this, &testnumber, 1 );
         	 testnumber += 2;
+
+        	 char uri_query[64];
+        	 sprintf( uri_query, "num1=%i&num2=%i&op=%c", num1, num2, op );
+        	 num1 += 7;
+        	 switch(op)
+        	 {
+        	 case '+':
+        		 op = '-';
+        		 break;
+        	 case '-':
+        		 op = '*';
+        		 break;
+        	 case '*':
+        		 op = '/';
+        		 break;
+        	 default:
+        		 op = '+';
+        		 break;
+        	 }
+
+        	 query = wiselib::StaticString(uri_query);
+#ifdef COAP_APP_DEBUG
+        	 debug_->debug( "Node %i -- ExampleApp::broadcast_loop()> requesting math with query %s\n", radio_->id(), uri_query );
+#endif
+        	 cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, math, query, this, NULL, 0 );
+
          }
 //         Os::Radio::block_data_t message[] = "hello world!\0";
 //         radio_->send( Os::Radio::BROADCAST_ADDRESS, sizeof(message), message );
@@ -210,53 +240,121 @@ class ExampleApplication
 
       void receive_coap( Os::Radio::node_id_t from, wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> packet )
       {
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
     	  debug_->debug( "Node %i -- ExampleApp::receive_coap> received from node %i\n", radio_->id(), from );
 #endif
     	  if( radio_->id() == 1 )
     	  {
     		  if( packet.is_request() && packet.uri_path() == plusone )
     		  {
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
     			  debug_->debug( "Node %i -- ExampleApp::receive_coap> request for resource %s\n", radio_->id(), plusone.c_str() );
 #endif
     			  if( packet.data_length() > 0 )
     			  {
-#ifdef DEBUG
+#ifdef COAP_APP_DEBUG
     				  debug_->debug( "Node %i -- ExampleApp::receive_coap> there is data\n", radio_->id() );
 #endif
     				  uint8_t result = packet.data()[0] + 1;
     				  cradio_.reply( packet, &result, 1 );
     			  }
     		  }
-/*    		  if( packet.is_request() && packet.uri_path() == math )
+
+    		  if( packet.is_request() && packet.uri_path() == math )
     		  {
-    			  list_static<Os, wiselib::StaticString, 10> query;
+#ifdef COAP_APP_DEBUG
+    			  debug_->debug( "Node %i -- ExampleApp::receive_coap> request for resource %s\n", radio_->id(), math.c_str() );
+#endif
+    			  wiselib::list_static<Os, wiselib::StaticString, 10> query;
     			  packet.get_options( COAP_OPT_URI_QUERY, query );
-    			  uint32_t operand1;
-    			  uint32_t operand2;
-    			  char op;
-    			  typename list_static<Os, wiselib::StaticString, 10>::iterator qit = query.begin();
-    			  for(; qit != query.end(), ++qit)
+    			  int32_t received_num1 = 0;
+    			  int32_t received_num2 = 0;
+    			  char received_op = '+';
+    			  wiselib::list_static<Os, wiselib::StaticString, 10>::iterator qit = query.begin();
+    			  for( ; qit != query.end(); ++qit )
     			  {
-
+#ifdef COAP_APP_DEBUG
+    			  debug_->debug( "Node %i -- ExampleApp::receive_coap> query %s\n", radio_->id(), (*qit).c_str() );
+#endif
+    				  if( strstr( (*qit).c_str(), "num1=" ) != NULL )
+    				  {
+    					  received_num1 = (int32_t) strtol( (*qit).c_str() + 5 , NULL, 0);
+#ifdef COAP_APP_DEBUG
+    				  debug_->debug( "Node %i -- ExampleApp::receive_coap> received_num1=%i\n", radio_->id(), received_num1 );
+#endif
+    				  }
+    				  if( strstr( (*qit).c_str(), "num2=" ) != NULL )
+    				  {
+    					  received_num2 = (int32_t) strtol( (*qit).c_str() + 5 , NULL, 0);
+#ifdef COAP_APP_DEBUG
+    				  debug_->debug( "Node %i -- ExampleApp::receive_coap> received_num1=%i\n", radio_->id(), received_num2 );
+#endif
+    				  }
+    				  if( strstr( (*qit).c_str(), "op=" ) != NULL )
+    				  {
+    					  received_op = (*qit).c_str()[3];
+#ifdef COAP_APP_DEBUG
+    				  debug_->debug( "Node %i -- ExampleApp::receive_coap> received_op=%c\n", radio_->id(), received_op );
+#endif
+    				  }
     			  }
+    			  int32_t result = 0;
+    			  switch( received_op )
+    			  {
+    			  case '+':
+    				  result = received_num1 + received_num2;
+    				  break;
+    			  case '-':
+    				  result = received_num1 - received_num2;
+    				  break;
+    			  case '/':
+    				  // clearly division by zero results in 42!
+    				  if(received_num2 == 0)
+    					  result = 42;
+    				  else
+    					  result = received_num1 / received_num2;
+    				  break;
+    			  case '*':
+    				  result = received_num1 * received_num2;
+    				  break;
+    			  default:
+    				  break;
+    				  // nop
+    			  }
+#ifdef COAP_APP_DEBUG
+    				  debug_->debug( "Node %i -- ExampleApp::receive_coap> %i %c %i = %i\n"
+    						  , radio_->id(), received_num1, received_op, received_num2, result );
+#endif
+    			  block_data_t result_ser[4];
+    			  wiselib::write<Os , block_data_t , int32_t >( result_ser, result );
+    			  cradio_.reply( packet, result_ser, 4 );
 
-    		  }*/
+    		  }
     	  }
 
     	  if( radio_->id() == 0 )
     	  {
     		  if( packet.is_response() )
     		  {
-#ifdef DEBUG
-    			  debug_->debug( "Node %i -- ExampleApp::receive_coap> received reply, code %i.%i, Payload length %i, Payload: "
-    					  	  , radio_->id(), ( ( packet.code() & 0xE0 ) >> 5 ), ( packet.code() & 0x1F ), packet.data_length() );
-    			  for( size_t i = 0; i < packet.data_length(); ++i )
+#ifdef COAP_APP_DEBUG
+
+    			  if( packet.data_length() == 4 )
     			  {
-    				  debug_->debug( "%i ", packet.data()[i] );
+    				  block_data_t *data = packet.data();
+    				  int32_t math_result = wiselib::read<Os , block_data_t , int32_t >( data );
+    				  debug_->debug( "Node %i -- ExampleApp::receive_coap> Result: %i\n", radio_->id(), math_result );
+    				  num2 = math_result;
     			  }
-    			  debug_->debug( "\n" );
+    			  else
+    			  {
+    				  debug_->debug( "Node %i -- ExampleApp::receive_coap> received reply, code %i.%i, Payload length %i, Payload: "
+    				      			, radio_->id(), ( ( packet.code() & 0xE0 ) >> 5 ), ( packet.code() & 0x1F ), packet.data_length() );
+    				  for( size_t i = 0; i < packet.data_length(); ++i )
+    				  {
+    					  debug_->debug( "%i ", packet.data()[i] );
+    				  }
+    				  debug_->debug( "\n" );
+    			  }
 #endif
     		  }
     	  }
@@ -268,6 +366,9 @@ class ExampleApplication
       wiselib::StaticString plusone;
       wiselib::StaticString math;
       uint8_t testnumber;
+      int32_t num1;
+      int32_t num2;
+      char op;
 
       wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
 };
