@@ -1,0 +1,1 @@
+nm --demangle --print-size --size-sort --reverse-sort -t d coap_app |grep wiselib::Coap* > codesize_2012_02_07
