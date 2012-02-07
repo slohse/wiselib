@@ -139,7 +139,7 @@ template<typename OsModel_P,
 
 			node_id_t correspondent() const
 			{
-				return correspondent();
+				return correspondent_;
 			}
 
 			void set_correspondent( node_id_t correspondent)
@@ -201,9 +201,10 @@ template<typename OsModel_P,
 				response_ = false;
 			}
 
-			ReceivedMessage( coap_packet_t packet )
+			ReceivedMessage( coap_packet_t packet, node_id_t from )
 			{
 				message_ = packet;
+				correspondent_ = from;
 				ack_ = false;
 				response_ = false;
 			}
@@ -220,7 +221,7 @@ template<typename OsModel_P,
 
 			node_id_t correspondent() const
 			{
-				return correspondent();
+				return correspondent_;
 			}
 
 			void set_correspondent( node_id_t correspondent)
@@ -486,7 +487,7 @@ template<typename OsModel_P,
 	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_as_is(node_id_t receiver, coap_packet_t &message, T *callback)
 	{
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapRadio::send_coap_as_is> receiver %i, type %i, code %i.%i, msg_id %i\n",
+		debug_->debug("CoapRadio::send_coap_as_is> receiver %i, type %i, code %i.%02i, msg_id %i\n",
 					receiver, message.type(), ( ( message.code() & 0xE0 ) >> 5 ), ( message.code() & 0x1F ), message.msg_id() );
 #endif
 		block_data_t buf[message.serialize_length()];
@@ -576,7 +577,7 @@ template<typename OsModel_P,
 				{
 #ifdef DEBUG_COAPRADIO
 				debug_->debug( "Node %i -- CoapRadio::receive> successfully parsed message: \n", radio_->id());
-				debug_->debug( "Node %i -- CoapRadio::receive> type %i, code %i.%i, msg_id %i \n",
+				debug_->debug( "Node %i -- CoapRadio::receive> type %i, code %i.%02i, msg_id %i \n",
 							radio_->id(), packet.type(), ( ( packet.code() & 0xE0 ) >> 5 ), ( packet.code() & 0x1F ), packet.msg_id() );
 #endif
 					ReceivedMessage *deduplication;
@@ -586,7 +587,7 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 				debug_->debug( "Node %i -- CoapRadio::receive> message is not duplicate!\n", radio_->id());
 #endif
-						ReceivedMessage received_message(packet);
+						ReceivedMessage received_message( packet, from );
 						queue_message( received_message, received_ );
 						SentMessage *request;
 						switch( packet.type() )
@@ -831,39 +832,59 @@ template<typename OsModel_P,
 				size_t payload_length,
 				CoapCode code )
 	{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::reply> \n");
+#endif
 		int sendstatus = SUCCESS;
 		ReceivedMessage *req_mes = NULL;
 		typename received_list_t::iterator it = received_.begin();
 		for(; it != received_.end(); ++it)
 		{
-			if( (*it).message() == request )
+			if( request == ( (coap_packet_t) (*it).message() ) )
 			{
-				req_mes = it;
+				req_mes = &(*it);
 				break;
 			}
 		}
+
 
 		// TODO: ordentlichen Fehler schmeissen?
 		if( req_mes == NULL )
 			return ERR_UNSPEC;
 
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::reply> found matching request\n");
+#endif
 		coap_packet_t reply;
 		OpaqueData token;
 		if ( request.token( token ) != SUCCESS )
 			return ERR_UNSPEC;
 
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::reply> found token\n");
+#endif
 		reply.set_token( token );
 		if( request.type() == COAP_MSG_TYPE_CON || request.type() == COAP_MSG_TYPE_NON )
 			reply.set_type( request.type() );
 		else
 			return ERR_UNSPEC;
-
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::reply> type is CON or NON\n");
+#endif
 		reply.set_code( code );
-
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::reply> setting payload\n");
+#endif
 		reply.set_data( payload, payload_length );
 
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::reply> setting payload\n");
+#endif
 		if( request.type() == COAP_MSG_TYPE_CON && !(*req_mes).ack_sent())
 		{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::reply> sending piggybacked response\n");
+#endif
 			reply.set_type( COAP_MSG_TYPE_ACK );
 			reply.set_msg_id( request.msg_id() );
 			sendstatus = send_coap_as_is<self_type, &self_type::receive_coap>( (*req_mes).correspondent(), reply, this );
@@ -875,6 +896,9 @@ template<typename OsModel_P,
 		}
 		else
 		{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::reply> sending seperate response\n");
+#endif
 			sendstatus = send_coap_gen_msg_id<self_type, &self_type::receive_coap>( (*req_mes).correspondent(), reply, this );
 			if( sendstatus == SUCCESS )
 			{

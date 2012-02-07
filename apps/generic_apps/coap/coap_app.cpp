@@ -29,6 +29,7 @@ class ExampleApplication
          debug_->debug( "Node %i present\n", radio_->id() );
 
          plusone =  wiselib::StaticString("plusone");
+         math = wiselib::StaticString("really/long/path/that/does/math");
 //
 //         radio_->reg_recv_callback<ExampleApplication,
 //                                   &ExampleApplication::receive_radio_message>( this );
@@ -138,15 +139,13 @@ class ExampleApplication
 
          cradio_.enable_radio();
 
-         if( radio_->id() == 0 )
-         {
-        	 block_data_t sendbuf[10] = { 0x33 };
-        	 cradio_.send( 1, 1, sendbuf );
-         }
+         testnumber = 0;
 
          if ( radio_->id() == 1 )
          {
         	 int coap_resource_id = cradio_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap>( plusone, this );
+        	 debug_->debug( "Node %i -- ExampleApp::init()> registered resource at index %i\n", radio_->id(), coap_resource_id );
+        	 coap_resource_id = cradio_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap>( math, this );
         	 debug_->debug( "Node %i -- ExampleApp::init()> registered resource at index %i\n", radio_->id(), coap_resource_id );
          }
 
@@ -160,7 +159,9 @@ class ExampleApplication
          if( radio_->id() == 0 )
          {
         	 wiselib::StaticString query("");
-        	 cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, plusone, query, this, NULL, 0 );
+        	 debug_->debug( "Node %i -- ExampleApp::broadcast_loop()> sending request for plusone with number %i\n", radio_->id(), testnumber );
+        	 cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, plusone, query, this, &testnumber, 1 );
+        	 testnumber += 2;
          }
 //         Os::Radio::block_data_t message[] = "hello world!\0";
 //         radio_->send( Os::Radio::BROADCAST_ADDRESS, sizeof(message), message );
@@ -179,12 +180,45 @@ class ExampleApplication
       void receive_coap( Os::Radio::node_id_t from, wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> packet )
       {
     	  debug_->debug( "Node %i -- ExampleApp::receive_coap> received from node %i\n", radio_->id(), from );
+    	  if( radio_->id() == 1 )
+    	  {
+    		  if( packet.is_request() && packet.uri_path() == plusone )
+    		  {
+    			  debug_->debug( "Node %i -- ExampleApp::receive_coap> request for resource %s\n", radio_->id(), plusone.c_str() );
+    			  if( packet.data_length() > 0 )
+    			  {
+    				  debug_->debug( "Node %i -- ExampleApp::receive_coap> there is data\n", radio_->id() );
+    				  uint8_t result = packet.data()[0] + 1;
+    				  cradio_.reply( packet, &result, 1 );
+    			  }
+    		  }
+    		  if( packet.is_request() && packet.uri_path() == math )
+    		  {
+    			  // TODO
+    		  }
+    	  }
+
+    	  if( radio_->id() == 0 )
+    	  {
+    		  if( packet.is_response() )
+    		  {
+    			  debug_->debug( "Node %i -- ExampleApp::receive_coap> received reply, code %i.%i, Payload length %i, Payload: "
+    					  	  , radio_->id(), ( ( packet.code() & 0xE0 ) >> 5 ), ( packet.code() & 0x1F ), packet.data_length() );
+    			  for( size_t i = 0; i < packet.data_length(); ++i )
+    			  {
+    				  debug_->debug( "%i ", packet.data()[i] );
+    			  }
+    			  debug_->debug( "\n" );
+    		  }
+    	  }
       }
    private:
       Os::Radio::self_pointer_t radio_;
       Os::Timer::self_pointer_t timer_;
       Os::Debug::self_pointer_t debug_;
       wiselib::StaticString plusone;
+      wiselib::StaticString math;
+      uint8_t testnumber;
 
       wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
 };

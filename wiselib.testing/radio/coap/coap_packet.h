@@ -43,7 +43,8 @@ namespace wiselib
 		typedef self_type* self_pointer_t;
 		typedef self_type coap_packet_t;
 
-		CoapPacket<OsModel_P, Radio_P, String_T>& operator=(const CoapPacket<OsModel_P, Radio_P, String_T> &rhs);
+		coap_packet_t& operator=(const coap_packet_t &rhs);
+		bool operator==(const coap_packet_t &rhs);
 
 		///@name Construction / Destruction
 		///@{
@@ -284,7 +285,7 @@ namespace wiselib
 
 // Implementation starts here
 	template<typename OsModel_P,
-			typename Radio_P,
+		typename Radio_P,
 		typename String_T>
 	CoapPacket<OsModel_P, Radio_P, String_T>& CoapPacket<OsModel_P, Radio_P, String_T>::operator=(const CoapPacket<OsModel_P, Radio_P, String_T> &rhs)
 	{
@@ -297,6 +298,45 @@ namespace wiselib
 			parse_message( buf, len );
 		}
 		return *this;
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename String_T>
+	bool CoapPacket<OsModel_P, Radio_P, String_T>::operator==(const coap_packet_t &rhs)
+	{
+/*		if( rhs.version() != this->version()
+				|| rhs.type() != this->type()
+				|| rhs.code() != this->code()
+				|| rhs.msg_id() != this->msg_id()
+				|| rhs.what_options_are_set() != this->what_options_are_set()
+				|| rhs.data_length() != this->data_length()
+			)
+			return false;
+		uint32_t set_options = this->what_options_are_set();
+		while( set_options > 0 )
+		{
+
+		}
+		return true;
+*/
+		// once again, the dirty, el-cheapo way of doing it
+		if( rhs.serialize_length() == this->serialize_length() )
+		{
+			block_data_t buf[this->serialize_length()];
+			block_data_t rbuf[this->serialize_length()];
+			rhs.serialize(rbuf);
+			this->serialize(buf);
+			for(size_t i = 0; i < this->serialize_length(); ++i )
+			{
+				if( rbuf[i] != buf[i] )
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 
 	template<typename OsModel_P,
