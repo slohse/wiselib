@@ -199,12 +199,12 @@ namespace wiselib
 		uint32_t what_options_are_set() const;
 
 		int set_option( uint8_t option_number, uint32_t value );
-		int set_option( uint8_t option_number, string_t value );
-		int set_option( uint8_t option_number, OpaqueData value );
+		int set_option( uint8_t option_number, string_t &value );
+		int set_option( uint8_t option_number, OpaqueData &value );
 
 		int add_option( uint8_t option_number, uint32_t value );
-		int add_option( uint8_t option_number, string_t value );
-		int add_option( uint8_t option_number, OpaqueData value );
+		int add_option( uint8_t option_number, string_t &value );
+		int add_option( uint8_t option_number, OpaqueData &value );
 
 		int get_option( uint8_t option_number, uint32_t &value );
 		int get_option( uint8_t option_number, string_t &value );
@@ -269,10 +269,10 @@ namespace wiselib
 
 		// methods dealing with Options
 		template <typename T, list_size_t N>
-		void set_option( list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> option );
+		void set_option( list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> &option );
 
 		template <typename T, list_size_t N>
-		void add_option( list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> option );
+		void add_option( list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> &option );
 
 		template <typename T, list_size_t N>
 		int get_option( uint8_t option_number, T &value, list_static<OsModel_P, CoapOption<T>, N> &options );
@@ -973,7 +973,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, string_t value )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, string_t &value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -991,7 +991,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, OpaqueData value )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, OpaqueData &value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1027,7 +1027,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, string_t value )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, string_t &value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1048,7 +1048,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, OpaqueData value)
+	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, OpaqueData &value)
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1391,9 +1391,9 @@ namespace wiselib
 		typename Radio_P,
 		typename String_T>
 	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P, Radio_P, String_T>::set_option(list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> option)
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_option(list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> &option)
 	{
-		typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
+/*		typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
 		for(;; ++it)
 		{
 			if(it == options.end())
@@ -1416,6 +1416,9 @@ namespace wiselib
 				break;
 			}
 		}
+		*/
+		remove_option( options, option.option_number() );
+		add_option( options, option );
 	}
 
 	// TODO: die Listen könnten voll sein, hier und in aufrufenden Funktionen abfangen
@@ -1423,7 +1426,7 @@ namespace wiselib
 		typename Radio_P,
 		typename String_T>
 	template <typename T, list_size_t N>
-	void CoapPacket<OsModel_P, Radio_P, String_T>::add_option(list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> option)
+	void CoapPacket<OsModel_P, Radio_P, String_T>::add_option(list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> &option)
 	{
 		typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
 		while(it != options.end() && ( *it ).option_number() <= option.option_number() )
@@ -1601,7 +1604,8 @@ namespace wiselib
 				char buffer[length + 1];
 				memcpy( buffer, cstr + segment_start, length );
 				buffer[length] = '\0';
-				add_option( optnum , string_t( buffer ));
+				string_t buffer_str( buffer );
+				add_option( optnum , buffer_str );
 				++segments;
 				segment_start = position + 1;
 			}
@@ -1618,7 +1622,8 @@ namespace wiselib
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapPacket::add_string_segments> adding %s \n", buffer );
 #endif
-			add_option( optnum , string_t( buffer ));
+			string_t buffer_str( buffer );
+			add_option( optnum , buffer_str );
 			++segments;
 		}
 

@@ -103,7 +103,8 @@ class ExampleApplication
 #ifdef COAP_APP_DEBUG
          debug_->debug( "setting uri host\n");
 #endif
-         testpacket2.set_option(COAP_OPT_URI_HOST, wiselib::StaticString("CoapHost"));
+         wiselib::StaticString coaphost("CoapHost");
+         testpacket2.set_option(COAP_OPT_URI_HOST, coaphost);
 #ifdef COAP_APP_DEBUG
          debug_->debug( "setting if_none_match\n");
 #endif
