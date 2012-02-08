@@ -20,11 +20,20 @@ namespace wiselib
 		class CoapOption
 		{
 		public:
+			CoapOption& operator=( const CoapOption & rhs )
+			{ // avoid self-assignemnt
+				if(this != &rhs)
+				{
+					set( rhs.option_number(), rhs.value() );
+				}
+				return *this;
+			}
+			bool operator==( const CoapOption &rhs ) const { return (this->option_number_ == rhs.option_number_ && this->value_ == rhs.value_); }
 			CoapOption() { option_number_ = 0; }
 			CoapOption( uint8_t option_number, T value) { set(option_number, value); }
 			virtual ~CoapOption() {}
-			uint8_t option_number() {return option_number_;}
-			T value() {return value_; }
+			uint8_t option_number() const {return option_number_;}
+			T value() const {return value_; }
 			void set( uint8_t option_number, T value ) { option_number_ = option_number; value_ = value; }
 
 		private:
@@ -294,10 +303,19 @@ namespace wiselib
 		// avoid self-assignemnt
 		if(this != &rhs)
 		{
-			// I know this is bad form... but it was the simplest way...
-			block_data_t buf[ rhs.serialize_length() ];
-			size_t len = rhs.serialize(buf);
-			parse_message( buf, len );
+			this->init();
+			this->version_ = rhs.version_;
+			this->type_ = rhs.type_;
+			this->code_ =  rhs.code_;
+			this->msg_id_ = rhs.msg_id_;
+
+			this->uint_options_ = rhs.uint_options_;
+			this->string_options_ = rhs.string_options_;
+			this->opaque_options_ = rhs.opaque_options_;
+			this->opt_if_none_match_ = rhs.opt_if_none_match_;
+
+			this->data_length_ = rhs.data_length_;
+			memcpy( this->data_, rhs.data_, rhs.data_length_ );
 		}
 		return *this;
 	}
@@ -307,36 +325,32 @@ namespace wiselib
 			typename String_T>
 	bool CoapPacket<OsModel_P, Radio_P, String_T>::operator==(const coap_packet_t &rhs)
 	{
-/*		if( rhs.version() != this->version()
-				|| rhs.type() != this->type()
-				|| rhs.code() != this->code()
-				|| rhs.msg_id() != this->msg_id()
-				|| rhs.what_options_are_set() != this->what_options_are_set()
-				|| rhs.data_length() != this->data_length()
+/*		if(rhs.version_ == this->version_
+				&& rhs.type_ == this->type_
+				&& rhs.code_ == this->code_
+				&& rhs.msg_id_ == this->msg_id_
+				&& rhs.data_length_ == this->data_length_
+				&& memcmp( this->data_, rhs.data_, this->data_length_) == 0
+				&& rhs.opt_if_none_match_ == this->opt_if_none_match_
+				&& rhs.uint_options_.size() == this->uint_options_.size()
+				&& rhs.string_options_.size() == this->string_options_.size()
+				&& rhs.opaque_options_.size() == this->opaque_options_.size()
 			)
-			return false;
-		uint32_t set_options = this->what_options_are_set();
-		while( set_options > 0 )
 		{
-
+			typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
+			for()
+			return true;
 		}
-		return true;
-*/
-		// once again, the dirty, el-cheapo way of doing it
+		return false;
+		*/
+		// the dirty, el-cheapo way of doing it. Saves Codesize though... (at the expense of running time I imagine)
 		if( rhs.serialize_length() == this->serialize_length() )
 		{
 			block_data_t buf[this->serialize_length()];
 			block_data_t rbuf[this->serialize_length()];
 			rhs.serialize(rbuf);
 			this->serialize(buf);
-			for(size_t i = 0; i < this->serialize_length(); ++i )
-			{
-				if( rbuf[i] != buf[i] )
-				{
-					return false;
-				}
-			}
-			return true;
+			return (memcmp( buf, rbuf, this->serialize_length()) == 0);
 		}
 		return false;
 	}
