@@ -300,7 +300,7 @@ namespace wiselib
 		typename String_T>
 	CoapPacket<OsModel_P, Radio_P, String_T>& CoapPacket<OsModel_P, Radio_P, String_T>::operator=(const CoapPacket<OsModel_P, Radio_P, String_T> &rhs)
 	{
-		// avoid self-assignemnt
+		// avoid self-assignment
 		if(this != &rhs)
 		{
 			this->init();

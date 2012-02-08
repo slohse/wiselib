@@ -162,9 +162,21 @@ template<typename OsModel_P,
 				retransmit_count_ = retransmit_count;
 			}
 
-			uint8_t increase_retransmit_count()
+			uint16_t retransmit_timeout() const
 			{
-				return ++retransmit_count_;
+				return retransmit_timeout_;
+			}
+
+			void set_retransmit_timeout( uint16_t retransmit_timeout )
+			{
+				retransmit_timeout_ = retransmit_timeout;
+			}
+
+			uint16_t increase_retransmit_count()
+			{
+				++retransmit_count_;
+				retransmit_timeout_ *= 2;
+				return retransmit_timeout_;
 			}
 
 			bool ack_received() const
@@ -192,6 +204,7 @@ template<typename OsModel_P,
 			// in this case the receiver
 			node_id_t correspondent_;
 			uint8_t retransmit_count_;
+			uint16_t retransmit_timeout_;
 			bool ack_received_;
 			coapreceiver_delegate_t sender_callback_;
 		};
@@ -318,15 +331,16 @@ template<typename OsModel_P,
 			coapreceiver_delegate_t callback_;
 		};
 
-		struct TimerPointer
+		class TimerAction
 		{
-			enum TimerType
-			{
-				Retransmit,
-				Ack
-			};
-			TimerType type;
-			void * message;
+		public:
+			TimerType type_;
+			void * message_;
+
+			TimerAction() { type_ = TIMER_NONE; message_ = NULL; }
+			~TimerAction() {}
+			bool operator==( const TimerAction &rhs ) { return ( this->type_ == rhs.type_ && this->message_ == rhs.message_ ); }
+			bool operator!=( const TimerAction &rhs ) { return !( *this == rhs ); }
 		};
 
 		typedef list_static<OsModel, ReceivedMessage, COAPRADIO_RECEIVED_LIST_SIZE> received_list_t;
@@ -340,6 +354,7 @@ template<typename OsModel_P,
 		sent_list_t sent_;
 		received_list_t received_;
 		vector_static<OsModel, CoapResource, COAPRADIO_RESOURCES_SIZE> resources_;
+		vector_static<OsModel, TimerAction, COAPRADIO_TIMER_ACTION_SIZE> timers_;
 
 		coap_msg_id_t msg_id_;
 		coap_token_t token_;
@@ -348,7 +363,7 @@ template<typename OsModel_P,
 		coap_token_t token();
 
 		template <typename T, list_size_t N>
-		void queue_message(T message, list_static<OsModel_P, T, N> &queue);
+		T * queue_message(T message, list_static<OsModel_P, T, N> &queue);
 
 		template <typename T, list_size_t N>
 		T* find_message_by_id (node_id_t correspondent, coap_msg_id_t id, list_static<OsModel_P, T, N> &queue);
@@ -362,6 +377,8 @@ template<typename OsModel_P,
 		void ack(ReceivedMessage& message );
 
 		void timeout ( void * action );
+
+		TimerAction * reg_timer_action( TimerAction *action );
 
 	};
 
@@ -525,9 +542,19 @@ template<typename OsModel_P,
 		sent.set_correspondent( receiver );
 		sent.set_message( message );
 		sent.set_sender_callback( coapreceiver_delegate_t::template from_method<T, TMethod>( callback ) );
-		queue_message(sent, sent_);
+		uint16_t response_timeout = (uint16_t) ((*rand_)( (COAP_MAX_RESPONSE_TIMEOUT - COAP_RESPONSE_TIMEOUT) ) + COAP_RESPONSE_TIMEOUT);
+		sent.set_retransmit_timeout( response_timeout );
+		SentMessage * sentp = queue_message(sent, sent_);
 
-		// TODO: Timer starten für CON-Retransmits
+		if( message.type() == COAP_MSG_TYPE_CON )
+		{
+			TimerAction action;
+			action.type_ = TIMER_RETRANSMIT;
+			action.message_ = (void*) sentp;
+			TimerAction * actionp = reg_timer_action( &action );
+
+			timer_->template set_timer<self_type, &self_type::timeout>( sent.retransmit_timeout(), this, actionp );
+		}
 
 		return sent.message_p();
 	}
@@ -964,13 +991,14 @@ template<typename OsModel_P,
 			typename Rand_P,
 			typename String_T>
 	template <typename T, list_size_t N>
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::queue_message(T message, list_static<OsModel_P, T, N> &queue)
+	T * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::queue_message(T message, list_static<OsModel_P, T, N> &queue)
 	{
 		if( queue.full() )
 		{
 			queue.pop_back();
 		}
 		queue.push_front( message );
+		return &(queue.front());
 	}
 
 	template<typename OsModel_P,
@@ -1129,8 +1157,72 @@ template<typename OsModel_P,
 			typename String_T>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::timeout ( void * action )
 	{
-		TimerPointer *act = (TimerPointer *) action;
+		TimerAction *act = (TimerAction *) action;
 
+		if ( act->type_ == TIMER_RETRANSMIT )
+		{
+			SentMessage *sent = ((SentMessage*) act->message_);
+			if( !sent->ack_received() )
+			{
+				size_t length = sent->message_p()->serialize_length();
+				block_data_t buf[length];
+				sent->message_p()->serialize(buf);
+				int status = send(sent->correspondent(), length, buf);
+
+				if(status != SUCCESS )
+				{
+					timer_->template set_timer<self_type, &self_type::timeout>( 1000, this, action );
+					return;
+				}
+
+				uint16_t retransmit_timeout = sent->increase_retransmit_count();
+				if(sent->retransmit_count() < COAP_MAX_RETRANSMIT )
+				{
+					timer_->template set_timer<self_type, &self_type::timeout>( retransmit_timeout, this, action );
+				}
+			}
+			else
+			{
+				(*act) = TimerAction();
+			}
+		}
+		else if ( act->type_ == TIMER_ACK )
+		{
+			ReceivedMessage *sent = ((ReceivedMessage*) act->message_);
+			if( sent->ack_sent() == NULL )
+			{
+				ack( (*sent) );
+			}
+			else
+			{
+				(*act) = TimerAction();
+			}
+		}
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename Timer_P,
+		typename Debug_P,
+		typename Rand_P,
+		typename String_T>
+	typename CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::TimerAction * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::reg_timer_action( TimerAction *action )
+	{
+		if ( timers_.empty() )
+		{
+			timers_.assign( COAPRADIO_TIMER_ACTION_SIZE, TimerAction() );
+		}
+
+		for ( unsigned int i = 0; i < timers_.size(); ++i )
+		{
+			if ( timers_.at(i) == TimerAction() )
+			{
+				timers_.at(i) = (*action);
+				return &(timers_.at(i));
+			}
+		}
+
+		return NULL;
 	}
 }
 
