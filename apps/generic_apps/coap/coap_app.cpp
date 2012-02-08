@@ -198,6 +198,7 @@ class ExampleApplication
         	 cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, plusone, query, this, &testnumber, 1 );
         	 testnumber += 2;
 
+#ifdef SHAWN
         	 char uri_query[64];
         	 sprintf( uri_query, "num1=%i&num2=%i&op=%c", num1, num2, op );
         	 num1 += 7;
@@ -222,7 +223,7 @@ class ExampleApplication
         	 debug_->debug( "Node %i -- ExampleApp::broadcast_loop()> requesting math with query %s\n", radio_->id(), uri_query );
 #endif
         	 cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, math, query, this, NULL, 0 );
-
+#endif // SHAWN
          }
 //         Os::Radio::block_data_t message[] = "hello world!\0";
 //         radio_->send( Os::Radio::BROADCAST_ADDRESS, sizeof(message), message );
@@ -260,6 +261,7 @@ class ExampleApplication
     			  }
     		  }
 
+#ifdef SHAWN
     		  if( packet.is_request() && packet.uri_path() == math )
     		  {
 #ifdef COAP_APP_DEBUG
@@ -330,6 +332,7 @@ class ExampleApplication
     			  cradio_.reply( packet, result_ser, 4 );
 
     		  }
+#endif // SHAWN
     	  }
 
     	  if( radio_->id() == 0 )

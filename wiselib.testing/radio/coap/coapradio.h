@@ -202,7 +202,7 @@ template<typename OsModel_P,
 			ReceivedMessage()
 			{
 				message_ = coap_packet_t();
-				ack_ = false;
+				ack_ = NULL;
 				response_ = false;
 			}
 
@@ -210,7 +210,7 @@ template<typename OsModel_P,
 			{
 				message_ = packet;
 				correspondent_ = from;
-				ack_ = false;
+				ack_ = NULL;
 				response_ = false;
 			}
 
@@ -239,12 +239,12 @@ template<typename OsModel_P,
 				correspondent_ = correspondent;
 			}
 
-			bool ack_sent() const
+			coap_packet_t * ack_sent() const
 			{
 				return ack_;
 			}
 
-			void set_ack_sent(bool ack)
+			void set_ack_sent( coap_packet_t *ack )
 			{
 				ack_ = ack;
 			}
@@ -263,7 +263,7 @@ template<typename OsModel_P,
 			coap_packet_t message_;
 			// in this case the sender
 			node_id_t correspondent_;
-			bool ack_;
+			coap_packet_t *ack_;
 			bool response_;
 			// TODO: empfangszeit? (Freshness)
 		};
@@ -318,6 +318,17 @@ template<typename OsModel_P,
 			coapreceiver_delegate_t callback_;
 		};
 
+		struct TimerPointer
+		{
+			enum TimerType
+			{
+				Retransmit,
+				Ack
+			};
+			TimerType type;
+			void * message;
+		};
+
 		typedef list_static<OsModel, ReceivedMessage, COAPRADIO_RECEIVED_LIST_SIZE> received_list_t;
 		typedef list_static<OsModel, SentMessage, COAPRADIO_SENT_LIST_SIZE> sent_list_t;
 
@@ -349,6 +360,8 @@ template<typename OsModel_P,
 		void handle_request( node_id_t from, ReceivedMessage& message );
 
 		void ack(ReceivedMessage& message );
+
+		void timeout ( void * action );
 
 	};
 
@@ -627,6 +640,7 @@ template<typename OsModel_P,
 							{
 								// TODO: unknown code, send 5.01 Not Implemented
 							}
+
 							break;
 						case COAP_MSG_TYPE_NON:
 							if( packet.is_request() )
@@ -890,7 +904,7 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> setting payload\n");
 #endif
-		if( request.type() == COAP_MSG_TYPE_CON && !(*req_mes).ack_sent())
+		if( request.type() == COAP_MSG_TYPE_CON && (*req_mes).ack_sent() == NULL )
 		{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> sending piggybacked response\n");
@@ -900,7 +914,7 @@ template<typename OsModel_P,
 			sendstatus = send_coap_as_is<self_type, &self_type::receive_coap>( (*req_mes).correspondent(), reply, this );
 			if( sendstatus != NULL )
 			{
-				(*req_mes).set_ack_sent( true );
+				(*req_mes).set_ack_sent( sendstatus );
 				(*req_mes).set_response_sent( true );
 			}
 		}
@@ -1103,8 +1117,20 @@ template<typename OsModel_P,
 		coap_packet_t ackp;
 		ackp.set_type( COAP_MSG_TYPE_ACK );
 		ackp.set_msg_id( message.message().msg_id() );
-		send_coap_as_is<self_type, &self_type::receive_coap>(message.correspondent(), ackp, this );
-		message.set_ack_sent( true );
+		coap_packet_t * sent = send_coap_as_is<self_type, &self_type::receive_coap>(message.correspondent(), ackp, this );
+		message.set_ack_sent( sent );
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P,
+			typename String_T>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::timeout ( void * action )
+	{
+		TimerPointer *act = (TimerPointer *) action;
+
 	}
 }
 
