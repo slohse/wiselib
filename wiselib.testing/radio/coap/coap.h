@@ -262,7 +262,7 @@ namespace wiselib
 
 		}
 
-		void set( const uint8_t *value, const size_t length)
+		void set( const uint8_t *value, size_t length)
 		{
 			//TODO: check if length exceeds COAP_OPT_MAXLEN_OPAQUE ?
 			memcpy(value_, value, length);

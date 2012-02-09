@@ -140,12 +140,7 @@ template<typename OsModel_P,
 				return message_;
 			}
 
-			coap_packet_t * message_p()
-			{
-				return &message_;
-			}
-
-			void set_message(coap_packet_t &message)
+			void set_message(const coap_packet_t &message)
 			{
 				message_ = message;
 			}
@@ -202,7 +197,7 @@ template<typename OsModel_P,
 				return sender_callback_;
 			}
 
-			void set_sender_callback( coapreceiver_delegate_t callback )
+			void set_sender_callback( const coapreceiver_delegate_t &callback )
 			{
 				sender_callback_ = callback;
 			}
@@ -227,7 +222,7 @@ template<typename OsModel_P,
 				response_ = false;
 			}
 
-			ReceivedMessage( coap_packet_t packet, node_id_t from )
+			ReceivedMessage( const coap_packet_t &packet, node_id_t from )
 			{
 				message_ = packet;
 				correspondent_ = from;
@@ -245,12 +240,7 @@ template<typename OsModel_P,
 				return message_;
 			}
 
-			coap_packet_t * message_p() const
-			{
-				return &message_;
-			}
-
-			void set_message(coap_packet_t message)
+			void set_message( const coap_packet_t &message)
 			{
 				message_ = message;
 			}
@@ -569,7 +559,7 @@ template<typename OsModel_P,
 			timer_->template set_timer<self_type, &self_type::timeout>( sent.retransmit_timeout(), this, actionp );
 		}
 
-		return sent.message_p();
+		return &(sent.message());
 	}
 
 	template<typename OsModel_P,
@@ -1165,9 +1155,9 @@ template<typename OsModel_P,
 			SentMessage *sent = ((SentMessage*) act->message_);
 			if( !sent->ack_received() )
 			{
-				size_t length = sent->message_p()->serialize_length();
+				size_t length = sent->message().serialize_length();
 				block_data_t buf[length];
-				sent->message_p()->serialize(buf);
+				sent->message().serialize(buf);
 				int status = send(sent->correspondent(), length, buf);
 
 				if(status != SUCCESS )
