@@ -158,9 +158,9 @@ namespace wiselib
 
 		string_t uri_path();
 
-		int set_uri_path( string_t path );
+		int set_uri_path( string_t &path );
 
-		int set_uri_query( string_t path );
+		int set_uri_query( string_t &query );
 
 		/**
 		 * Returns a pointer to the payload section of the packet
@@ -676,7 +676,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::set_uri_path( string_t path )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_uri_path( string_t &path )
 	{
 		remove_option( COAP_OPT_URI_PATH );
 		char * cstr = path.c_str();
@@ -690,7 +690,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::set_uri_query( string_t query )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_uri_query( string_t &query )
 	{
 		remove_option( COAP_OPT_URI_QUERY );
 		char * cstr = query.c_str();

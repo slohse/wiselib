@@ -8,6 +8,9 @@
 #include "radio/coap/coapradio.h"
 
 #include "util/pstl/static_string.h"
+#include "util/pstl/string_dynamic.h"
+
+#include "util/allocators/malloc_free_allocator.h"
 
 #include "stdlib.h"
 

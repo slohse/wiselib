@@ -653,9 +653,16 @@ template<typename OsModel_P,
 						ReceivedMessage received_message( packet, from );
 						queue_message( received_message, received_ );
 						SentMessage *request;
-						switch( packet.type() )
+
+						if ( packet.type() == COAP_MSG_TYPE_RST )
 						{
-						case COAP_MSG_TYPE_ACK:
+							request = find_message_by_id( from, packet.msg_id(), sent_ );
+							if( request != NULL )
+								(*request).sender_callback()( from, packet );
+							return;
+						}
+						else if( packet.type() == COAP_MSG_TYPE_ACK )
+						{
 							request = find_message_by_id( from, packet.msg_id(), sent_ );
 
 							if ( request != NULL )
@@ -665,9 +672,9 @@ template<typename OsModel_P,
 								if( packet.is_response() )
 									handle_response( from, received_message, request );
 							}
-							break;
-							// TODO: nachdenken ob man hier einigen Code gemeinsam nutzen kann
-						case COAP_MSG_TYPE_CON:
+						}
+						else
+						{
 							if( packet.is_request() )
 							{
 								handle_request( from, received_message );
@@ -676,30 +683,10 @@ template<typename OsModel_P,
 							{
 								handle_response( from, received_message );
 							}
-							else
+							else if( packet.type() == COAP_MSG_TYPE_CON )
 							{
 								// TODO: unknown code, send 5.01 Not Implemented
 							}
-
-							break;
-						case COAP_MSG_TYPE_NON:
-							if( packet.is_request() )
-							{
-								handle_request( from, received_message );
-							}
-							else if ( packet.is_response() )
-							{
-								handle_response( from, received_message );
-							}
-							// drop unknown codes silently
-							break;
-						case COAP_MSG_TYPE_RST:
-							request = find_message_by_id( from, packet.msg_id(), sent_ );
-							if( request != NULL )
-								(*request).sender_callback()( from, packet );
-							break;
-						default:
-							break;
 						}
 					}
 					else
