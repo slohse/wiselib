@@ -2,7 +2,7 @@
 #define COAP_H
 
 
-//#define DEBUG_COAPRADIO
+#define DEBUG_COAPRADIO
 
 
 #include "external_interface/external_interface.h"

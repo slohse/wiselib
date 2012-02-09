@@ -1040,7 +1040,8 @@ namespace wiselib
 			return ERR_WRONG_TYPE;
 		}
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapPacket::add_option(string)> string %s\n", value.c_str() );
+		string_t copy_of_value = value;
+		debug_->debug("CoapPacket::add_option(string)> string %s\n", copy_of_value.c_str() );
 #endif
 		CoapOption<string_t> sopt(option_number, value);
 		add_option(string_options_, sopt);

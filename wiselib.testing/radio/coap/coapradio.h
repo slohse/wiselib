@@ -1070,7 +1070,7 @@ template<typename OsModel_P,
 		}
 
 		if( ( request != NULL  && (*request).message().token(request_token) == SUCCESS
-				&& request_token == response_token ) && request->sender_callback() != coapreceiver_delegate_t() )
+				&& request_token == response_token ) && request->sender_callback() && request->sender_callback().obj_ptr() != NULL )
 		{
 			(*request).sender_callback()( from, message.message() );
 		}
@@ -1102,7 +1102,7 @@ template<typename OsModel_P,
 #endif
 		for(size_t i = 0; i < resources_.size(); ++i )
 		{
-			if( resources_.at(i) != CoapResource() && resources_.at(i).callback() != coapreceiver_delegate_t() )
+			if( resources_.at(i) != CoapResource() && resources_.at(i).callback() && resources_.at(i).callback().obj_ptr() != NULL )
 			{
 				available_res = resources_.at(i).resource_path();
 #ifdef DEBUG_COAPRADIO
