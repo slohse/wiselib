@@ -66,13 +66,13 @@ template<typename OsModel_P,
 		 * @param callback delegate for responses from the receiver
 		 */
 		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
-		coap_packet_t* send_coap_as_is(node_id_t receiver, coap_packet_t &message, T *callback);
+		coap_packet_t* send_coap_as_is(node_id_t receiver, const coap_packet_r message, T *callback);
 
 		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
-		coap_packet_t* send_coap_gen_msg_id(node_id_t receiver, coap_packet_t &message, T *callback);
+		coap_packet_t* send_coap_gen_msg_id(node_id_t receiver, coap_packet_r message, T *callback);
 
 		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
-		coap_packet_t* send_coap_gen_msg_id_token(node_id_t receiver, coap_packet_t &message, T *callback);
+		coap_packet_t* send_coap_gen_msg_id_token(node_id_t receiver, coap_packet_r message, T *callback);
 		
 		coap_packet_t* rst( node_id_t receiver, coap_msg_id_t id );
 
@@ -127,6 +127,7 @@ template<typename OsModel_P,
 			{
 				retransmit_count_ = 0;
 				ack_received_ = false;
+				sender_callback_ = coapreceiver_delegate_t();
 			}
 
 			coap_packet_r message() const
@@ -536,7 +537,7 @@ template<typename OsModel_P,
 			typename Rand_P,
 			typename String_T>
 	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
-	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_as_is(node_id_t receiver, coap_packet_t &message, T *callback)
+	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_as_is(node_id_t receiver, const coap_packet_r message, T *callback)
 	{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::send_coap_as_is> receiver %i, type %i, code %i.%02i, msg_id %i\n",
@@ -578,7 +579,7 @@ template<typename OsModel_P,
 			typename Rand_P,
 			typename String_T>
 	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
-	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_gen_msg_id(node_id_t receiver, coap_packet_t &message, T *callback)
+	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_gen_msg_id(node_id_t receiver, coap_packet_r message, T *callback)
 	{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::gen_msg_id> \n");
@@ -594,7 +595,7 @@ template<typename OsModel_P,
 			typename Rand_P,
 			typename String_T>
 	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
-	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_gen_msg_id_token(node_id_t receiver, coap_packet_t &message, T *callback)
+	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_gen_msg_id_token(node_id_t receiver, coap_packet_r message, T *callback)
 	{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::gen_msg_id_token> \n");
@@ -1091,7 +1092,8 @@ template<typename OsModel_P,
 			request = find_message_by_token( from, response_token, sent_ );
 		}
 
-		if( ( request != NULL  && (*request).message().token(request_token) == SUCCESS  && request_token == response_token ) )
+		if( ( request != NULL  && (*request).message().token(request_token) == SUCCESS
+				&& request_token == response_token ) && request->sender_callback() != coapreceiver_delegate_t() )
 		{
 			(*request).sender_callback()( from, message.message() );
 		}
@@ -1123,7 +1125,7 @@ template<typename OsModel_P,
 #endif
 		for(size_t i = 0; i < resources_.size(); ++i )
 		{
-			if( resources_.at(i) != CoapResource() )
+			if( resources_.at(i) != CoapResource() && resources_.at(i).callback() != coapreceiver_delegate_t() )
 			{
 				available_res = resources_.at(i).resource_path();
 #ifdef DEBUG_COAPRADIO
