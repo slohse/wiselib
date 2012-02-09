@@ -263,11 +263,11 @@ namespace wiselib
 
 		// methods:
 		int parse_option( uint8_t option_number, size_t option_length, block_data_t* value);
-		inline uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
-		inline void fenceposting( uint8_t option_number, uint8_t &previous_opt_number, block_data_t *datastream, size_t &offset ) const;
+		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
+		void fenceposting( uint8_t option_number, uint8_t &previous_opt_number, block_data_t *datastream, size_t &offset ) const;
 		uint8_t fenceposts_needed() const;
-		inline void optlength( size_t length, block_data_t *datastream, size_t &offset ) const;
-		inline uint8_t is_critical( uint8_t option_number );
+		void optlength( size_t length, block_data_t *datastream, size_t &offset ) const;
+		uint8_t is_critical( uint8_t option_number );
 
 		// methods dealing with Options
 		template <typename T, list_size_t N>
@@ -1316,7 +1316,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	inline uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::next_fencepost_delta(uint8_t previous_opt_number) const
+	uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::next_fencepost_delta(uint8_t previous_opt_number) const
 	{
 		return ( COAP_OPT_FENCEPOST - ( (previous_opt_number) % COAP_OPT_FENCEPOST ) );
 	}
@@ -1324,7 +1324,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	inline void CoapPacket<OsModel_P, Radio_P, String_T>::fenceposting( uint8_t option_number, uint8_t &previous_opt_number, block_data_t *datastream, size_t &offset ) const
+	void CoapPacket<OsModel_P, Radio_P, String_T>::fenceposting( uint8_t option_number, uint8_t &previous_opt_number, block_data_t *datastream, size_t &offset ) const
 	{
 		int fencepost_delta = 0;
 		while( option_number - previous_opt_number > 15 )
@@ -1364,7 +1364,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	inline void CoapPacket<OsModel_P, Radio_P, String_T>::optlength( size_t length, block_data_t *datastream, size_t &offset ) const
+	void CoapPacket<OsModel_P, Radio_P, String_T>::optlength( size_t length, block_data_t *datastream, size_t &offset ) const
 	{
 		if( length > 14 )
 		{
@@ -1383,7 +1383,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	inline uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::is_critical( uint8_t option_number )
+	uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::is_critical( uint8_t option_number )
 	{
 		// odd option numbers are critical
 		return( option_number & 0x01 );
