@@ -240,7 +240,7 @@ class ExampleApplication
 //         debug_->debug( "message is %s\n", buf );
       }
 
-      void receive_coap( Os::Radio::node_id_t from, wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString> packet )
+      void receive_coap( Os::Radio::node_id_t from, const wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_r packet )
       {
 #ifdef COAP_APP_DEBUG
     	  debug_->debug( "Node %i -- ExampleApp::receive_coap> received from node %i\n", radio_->id(), from );

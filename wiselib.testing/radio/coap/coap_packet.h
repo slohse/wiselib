@@ -51,6 +51,8 @@ namespace wiselib
 		typedef CoapPacket<OsModel_P, Radio_P, String_T> self_type;
 		typedef self_type* self_pointer_t;
 		typedef self_type coap_packet_t;
+		typedef self_type& coap_packet_r;
+		typedef self_type* coap_packet_p;
 
 		coap_packet_t& operator=(const coap_packet_t &rhs);
 		bool operator==(const coap_packet_t &rhs);

@@ -43,8 +43,10 @@ template<typename OsModel_P,
 		typedef CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T> self_t;
 
 		typedef typename CoapPacket<OsModel, Radio, string_t>::coap_packet_t coap_packet_t;
+		typedef typename CoapPacket<OsModel, Radio, string_t>::coap_packet_r coap_packet_r;
+		typedef typename CoapPacket<OsModel, Radio, string_t>::coap_packet_p coap_packet_p;
 
-		typedef delegate2<void, node_id_t, coap_packet_t> coapreceiver_delegate_t;
+		typedef delegate2<void, node_id_t, const coap_packet_r> coapreceiver_delegate_t;
 
 		int init();
 		int destruct();
@@ -63,25 +65,25 @@ template<typename OsModel_P,
 		 * @param message Coap Packet to send
 		 * @param callback delegate for responses from the receiver
 		 */
-		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
+		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
 		coap_packet_t* send_coap_as_is(node_id_t receiver, coap_packet_t &message, T *callback);
 
-		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
+		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
 		coap_packet_t* send_coap_gen_msg_id(node_id_t receiver, coap_packet_t &message, T *callback);
 
-		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
+		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
 		coap_packet_t* send_coap_gen_msg_id_token(node_id_t receiver, coap_packet_t &message, T *callback);
 		
 		coap_packet_t* rst( node_id_t receiver, coap_msg_id_t id );
 
-		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
+		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
 		int reg_resource_callback( string_t resource_path, T *callback );
 
 		int unreg_recv_callback( int idx );
 
-		void receive_coap(node_id_t from, coap_packet_t message);
+		void receive_coap(node_id_t from, const coap_packet_r message);
 
-		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
+		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
 		coap_packet_t* get(node_id_t receiver,
 					string_t uri_path,
 					string_t uri_query,
@@ -92,7 +94,7 @@ template<typename OsModel_P,
 					string_t uri_host = string_t(),
 					uint16_t uri_port = COAP_STD_PORT);
 
-		template<class T, void (T::*TMethod)(node_id_t, coap_packet_t)>
+		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
 		coap_packet_t* request(node_id_t receiver,
 					CoapCode code,
 					string_t uri_path,
@@ -127,7 +129,12 @@ template<typename OsModel_P,
 				ack_received_ = false;
 			}
 
-			coap_packet_t message() const
+			coap_packet_r message() const
+			{
+				return message_;
+			}
+
+			coap_packet_r message()
 			{
 				return message_;
 			}
@@ -227,7 +234,12 @@ template<typename OsModel_P,
 				response_ = false;
 			}
 
-			coap_packet_t message() const
+			coap_packet_r message() const
+			{
+				return message_;
+			}
+
+			coap_packet_r message()
 			{
 				return message_;
 			}
@@ -523,7 +535,7 @@ template<typename OsModel_P,
 			typename Debug_P,
 			typename Rand_P,
 			typename String_T>
-	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t ) >
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
 	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_as_is(node_id_t receiver, coap_packet_t &message, T *callback)
 	{
 #ifdef DEBUG_COAPRADIO
@@ -565,7 +577,7 @@ template<typename OsModel_P,
 			typename Debug_P,
 			typename Rand_P,
 			typename String_T>
-	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t ) >
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
 	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_gen_msg_id(node_id_t receiver, coap_packet_t &message, T *callback)
 	{
 #ifdef DEBUG_COAPRADIO
@@ -581,7 +593,7 @@ template<typename OsModel_P,
 			typename Debug_P,
 			typename Rand_P,
 			typename String_T>
-	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t ) >
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
 	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_gen_msg_id_token(node_id_t receiver, coap_packet_t &message, T *callback)
 	{
 #ifdef DEBUG_COAPRADIO
@@ -736,7 +748,7 @@ template<typename OsModel_P,
 			typename Debug_P,
 			typename Rand_P,
 			typename String_T>
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::receive_coap(node_id_t from, coap_packet_t message)
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::receive_coap(node_id_t from, const coap_packet_r message)
 	{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::receive_coap> received message from %i\n", from );
@@ -750,7 +762,7 @@ template<typename OsModel_P,
 			typename Debug_P,
 			typename Rand_P,
 			typename String_T>
-	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t ) >
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
 	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::reg_resource_callback( string_t resource_path, T *callback )
 	{
 
@@ -792,7 +804,7 @@ template<typename OsModel_P,
 			typename Debug_P,
 			typename Rand_P,
 			typename String_T>
-	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t ) >
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
 	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::get(node_id_t receiver,
 			string_t uri_path,
 			string_t uri_query,
@@ -815,7 +827,7 @@ template<typename OsModel_P,
 				typename Debug_P,
 				typename Rand_P,
 				typename String_T>
-	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t ) >
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
 	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::request(node_id_t receiver,
 				CoapCode code,
 				string_t uri_path,
