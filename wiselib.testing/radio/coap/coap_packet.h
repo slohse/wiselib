@@ -60,6 +60,7 @@ namespace wiselib
 		///@name Construction / Destruction
 		///@{
 		CoapPacket();
+		CoapPacket( const coap_packet_r rhs );
 		~CoapPacket();
 		///@}
 
@@ -91,13 +92,13 @@ namespace wiselib
 		 * Returns the type of the packet. Can be Confirmable, Non-Confirmable, Acknowledgement or Reset.
 		 * @return message type
 		 */
-		uint8_t type() const;
+		CoapType type() const;
 
 		/**
 		 * Sets the type of the packet. Can be COAP_MSG_TYPE_CON, COAP_MSG_TYPE_NON, COAP_MSG_TYPE_ACK or COAP_MSG_TYPE_RST.
 		 * @param type message type
 		 */
-		void set_type( uint8_t type );
+		void set_type( CoapType type );
 
 		/**
 		 * Returns the number of options that are set in this packet.
@@ -318,6 +319,12 @@ namespace wiselib
 
 			this->data_length_ = rhs.data_length_;
 			memcpy( this->data_, rhs.data_, rhs.data_length_ );
+
+			// doing this rather than the above would save 16 bytes
+/*			block_data_t buf[rhs.serialize_length()];
+			rhs.serialize(buf);
+			this->parse_message(buf, rhs.serialize_length());
+			*/
 		}
 		return *this;
 	}
@@ -363,6 +370,15 @@ namespace wiselib
 	CoapPacket<OsModel_P, Radio_P, String_T>::CoapPacket()
 	{
 		init();
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename String_T>
+	CoapPacket<OsModel_P, Radio_P, String_T>::CoapPacket( const coap_packet_r rhs)
+	{
+		init();
+		*this = rhs;
 	}
 
 	template<typename OsModel_P,
@@ -561,7 +577,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::type() const
+	CoapType CoapPacket<OsModel_P, Radio_P, String_T>::type() const
 	{
 		return type_;
 	}
@@ -569,7 +585,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	void CoapPacket<OsModel_P, Radio_P, String_T>::set_type( uint8_t type )
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_type( CoapType type )
 	{
 		type_ = type;
 	}
