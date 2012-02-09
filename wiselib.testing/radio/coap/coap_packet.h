@@ -30,11 +30,11 @@ namespace wiselib
 			}
 			bool operator==( const CoapOption &rhs ) const { return (this->option_number_ == rhs.option_number_ && this->value_ == rhs.value_); }
 			CoapOption() { option_number_ = 0; }
-			CoapOption( uint8_t option_number, T value) { set(option_number, value); }
+			CoapOption( uint8_t option_number, const T &value) { set(option_number, value); }
 			virtual ~CoapOption() {}
 			uint8_t option_number() const {return option_number_;}
 			T value() const {return value_; }
-			void set( uint8_t option_number, T value ) { option_number_ = option_number; value_ = value; }
+			void set( uint8_t option_number, const T &value ) { option_number_ = option_number; value_ = value; }
 
 		private:
 			uint8_t option_number_;
@@ -154,7 +154,7 @@ namespace wiselib
 		 * Sets the token by which request/response matching can be done.
 		 * @param token new message ID
 		 */
-		void set_token( OpaqueData token );
+		void set_token( const OpaqueData &token );
 
 		string_t uri_path();
 
@@ -201,12 +201,12 @@ namespace wiselib
 		uint32_t what_options_are_set() const;
 
 		int set_option( uint8_t option_number, uint32_t value );
-		int set_option( uint8_t option_number, string_t &value );
-		int set_option( uint8_t option_number, OpaqueData &value );
+		int set_option( uint8_t option_number, const string_t &value );
+		int set_option( uint8_t option_number, const OpaqueData &value );
 
 		int add_option( uint8_t option_number, uint32_t value );
-		int add_option( uint8_t option_number, string_t &value );
-		int add_option( uint8_t option_number, OpaqueData &value );
+		int add_option( uint8_t option_number, const string_t &value );
+		int add_option( uint8_t option_number, const OpaqueData &value );
 
 		int get_option( uint8_t option_number, uint32_t &value );
 		int get_option( uint8_t option_number, string_t &value );
@@ -644,7 +644,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	void CoapPacket<OsModel_P, Radio_P, String_T>::set_token( OpaqueData token )
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_token( const OpaqueData &token )
 	{
 		set_option( COAP_OPT_TOKEN, token );
 	}
@@ -975,7 +975,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, string_t &value )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, const string_t &value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -993,7 +993,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, OpaqueData &value )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option( uint8_t option_number, const OpaqueData &value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1029,7 +1029,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, string_t &value )
+	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, const string_t &value )
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
@@ -1050,7 +1050,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, OpaqueData &value)
+	int CoapPacket<OsModel_P, Radio_P, String_T>::add_option( uint8_t option_number, const OpaqueData &value)
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
