@@ -252,6 +252,11 @@ namespace wiselib
 			length_ = 0;
 		}
 
+		OpaqueData( const OpaqueData & rhs)
+		{
+			*this = rhs;
+		}
+
 		OpaqueData( uint8_t * value, size_t length )
 		{
 			set( value, length );
