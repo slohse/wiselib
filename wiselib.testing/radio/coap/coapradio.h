@@ -48,6 +48,9 @@ template<typename OsModel_P,
 
 		typedef delegate2<void, node_id_t, const coap_packet_r> coapreceiver_delegate_t;
 
+		CoapRadio();
+		~CoapRadio();
+
 		int init();
 		int destruct();
 		int init( Radio& radio, Timer& timer, Debug& debug , Rand& rand );
@@ -362,6 +365,8 @@ template<typename OsModel_P,
 		coap_msg_id_t msg_id_;
 		coap_token_t token_;
 
+		CoapRadio( const self_type &rhs );
+
 		coap_msg_id_t msg_id();
 		coap_token_t token();
 
@@ -387,6 +392,19 @@ template<typename OsModel_P,
 
 
 // public
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P,
+			typename String_T>
+	CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::CoapRadio()
+	{
+		init();
+	}
+
+
 	template<typename OsModel_P,
 			typename Radio_P,
 			typename Timer_P,
