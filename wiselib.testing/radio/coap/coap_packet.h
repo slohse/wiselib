@@ -59,8 +59,8 @@ namespace wiselib
 
 		///@name Construction / Destruction
 		///@{
-		CoapPacket();
-		CoapPacket( const coap_packet_r rhs );
+		CoapPacket( );
+		CoapPacket( const coap_packet_t &rhs );
 		~CoapPacket();
 		///@}
 
@@ -249,7 +249,7 @@ namespace wiselib
 		typename Debug::self_pointer_t debug_;
 
 		uint8_t version_;
-		uint8_t type_;
+		CoapType type_;
 		CoapCode code_;
 		coap_msg_id_t msg_id_;
 
@@ -375,7 +375,7 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	CoapPacket<OsModel_P, Radio_P, String_T>::CoapPacket( const coap_packet_r rhs)
+	CoapPacket<OsModel_P, Radio_P, String_T>::CoapPacket( const coap_packet_t &rhs)
 	{
 		init();
 		*this = rhs;
@@ -421,7 +421,7 @@ namespace wiselib
 		{
 			uint8_t coap_first_byte = read<OsModel , block_data_t , uint8_t >( datastream );
 			version_ = coap_first_byte >> 6 ;
-			type_ = ( coap_first_byte & 0x30 ) >> 4;
+			type_ = (CoapType) ( ( coap_first_byte & 0x30 ) >> 4 );
 			size_t option_count = coap_first_byte & 0x0f;
 			code_ = (CoapCode) read<OsModel , block_data_t , uint8_t >( datastream +1 );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );

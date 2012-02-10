@@ -43,11 +43,11 @@ public:
 			packet1.set_code( (CoapCode) i );
 			if( !packet1.is_request() )
 			{
-				debug_->debug(" Error, Line %i, Packet should be request but isn't (Code %i).\n", __LINE__, i );
+				debug_->debug( "Error, Line %i, Packet should be request but isn't (Code %i).\n", __LINE__, i );
 			}
 			if( packet1.is_response() )
 			{
-				debug_->debug(" Error, Line %i, Packet is response but shouldn't be (Code %i).\n", __LINE__, i );
+				debug_->debug( "Error, Line %i, Packet is response but shouldn't be (Code %i).\n", __LINE__, i );
 			}
 		}
 
@@ -56,11 +56,11 @@ public:
 			packet1.set_code( (CoapCode) i );
 			if( packet1.is_request() )
 			{
-				debug_->debug(" Error, Line %i, Packet is request but shouldn't be (Code %i).\n", __LINE__, i );
+				debug_->debug( "Error, Line %i, Packet is request but shouldn't be (Code %i).\n", __LINE__, i );
 			}
 			if( packet1.is_response() )
 			{
-				debug_->debug(" Error, Line %i, Packet is response but shouldn't be (Code %i).\n", __LINE__, i );
+				debug_->debug( "Error, Line %i, Packet is response but shouldn't be (Code %i).\n", __LINE__, i );
 			}
 		}
 
@@ -69,11 +69,11 @@ public:
 			packet1.set_code( (CoapCode) i );
 			if( packet1.is_request() )
 			{
-				debug_->debug(" Error, Line %i, Packet is request but shouldn't be (Code %i).\n", __LINE__, i );
+				debug_->debug( "Error, Line %i, Packet is request but shouldn't be (Code %i).\n", __LINE__, i );
 			}
 			if( !packet1.is_response() )
 			{
-				debug_->debug(" Error, Line %i, Packet should be response but isn't (Code %i).\n", __LINE__, i );
+				debug_->debug( "Error, Line %i, Packet should be response but isn't (Code %i).\n", __LINE__, i );
 			}
 		}
 
@@ -82,11 +82,11 @@ public:
 			packet1.set_code( (CoapCode) i );
 			if( packet1.is_request() )
 			{
-				debug_->debug(" Error, Line %i, Packet is request but shouldn't be (Code %i).\n", __LINE__, i );
+				debug_->debug( "Error, Line %i, Packet is request but shouldn't be (Code %i).\n", __LINE__, i );
 			}
 			if( packet1.is_response() )
 			{
-				debug_->debug(" Error, Line %i, Packet is response but shouldn't be (Code %i).\n", __LINE__, i );
+				debug_->debug( "Error, Line %i, Packet is response but shouldn't be (Code %i).\n", __LINE__, i );
 			}
 		}
 
@@ -97,24 +97,25 @@ public:
 
 		if( packet1.msg_id() != 0x5555 )
 		{
-			debug_->debug(" Error, Line %i, msg id is wrong.\n", __LINE__ );
+			debug_->debug( "Error, Line %i, msg id is wrong.\n", __LINE__ );
 		}
 
 		if( packet1.what_options_are_set() != 0 )
 		{
-			debug_->debug(" Error, Line %i, options are set, %x.\n", __LINE__, packet1.what_options_are_set() );
+			debug_->debug( "Error, Line %i, options are set, %x.\n", __LINE__, packet1.what_options_are_set() );
 		}
-		debug_->debug("setting token, sizeof uint64_t: %i\n", sizeof(uint64_t) );
-		uint64_t token64b = 0xA0A0A0A0A0A0A0A0;
-		debug_->debug("I didn't break the uint...\n");
-		opaque_data_t opaqued_token( (uint8_t*) &token64b, 8 );
-		debug_->debug("I didn't break OpaqueData\n");
-		packet1.set_token(opaqued_token);
 
+		uint64_t token64b = 0xA0A0A0A0A0A0A0A0;
+
+		opaque_data_t opaqued_token( (uint8_t*) &token64b, 8 );
+		packet1.set_token(opaqued_token);
+		debug_->debug( "Line %i, token: %x.\n", __LINE__, token64b );
 		if( packet1.what_options_are_set() != ( 1 << COAP_OPT_TOKEN ) )
 		{
-			debug_->debug(" Error, Line %i, options other than token are set, %x.\n", __LINE__, packet1.what_options_are_set() );
+			debug_->debug( "Error, Line %i, options other than token are set, %x.\n", __LINE__, packet1.what_options_are_set() );
 		}
+
+//		if(  )
 
 
 	}
