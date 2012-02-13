@@ -693,7 +693,9 @@ template<typename OsModel_P,
 							}
 							else if( packet.type() == COAP_MSG_TYPE_CON )
 							{
-								// TODO: unknown code, send 5.01 Not Implemented
+								char buf[ MAX_STRING_LENGTH ];
+								int buf_len = sprintf( buf, "Unknown Code %i", packet.code() );
+								reply( packet, (block_data_t*) buf, buf_len, COAP_CODE_NOT_IMPLEMENTED );
 							}
 						}
 					}
@@ -706,7 +708,7 @@ template<typename OsModel_P,
 				}
 				else if ( err_code == coap_packet_t::ERR_CON_RESPONSE || err_code == coap_packet_t::ERR_RST )
 				{
-					// TODO
+					send_coap_as_is<self_type, &self_type::receive_coap>(from, packet, this );
 				}
 				// every other case, including coap_packet_t::ERR_IGNORE_MSG
 				else
