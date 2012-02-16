@@ -690,9 +690,14 @@ template<typename OsModel_P,
 							}
 							else if( packet.type() == COAP_MSG_TYPE_CON )
 							{
-								char buf[ MAX_STRING_LENGTH ];
-								int buf_len = sprintf( buf, "Unknown Code %i", packet.code() );
-								reply( received_message, (block_data_t*) buf, buf_len, COAP_CODE_NOT_IMPLEMENTED );
+								char * error_description = NULL;
+								int len = 0;
+#ifdef COAP_HUMAN_READABLE_ERRORS
+								char error_description_str[MAX_STRING_LENGTH];
+								len = sprintf( error_description, "Unknown Code %i", packet.code() );
+								error_description = error_description_str;
+#endif
+								reply( received_message, (block_data_t*) error_description, len, COAP_CODE_NOT_IMPLEMENTED );
 							}
 						}
 					}
@@ -1159,8 +1164,13 @@ template<typename OsModel_P,
 		}
 		if( !resource_found )
 		{
-			char error_description[MAX_STRING_LENGTH];
-			int len = sprintf(error_description, "Resource %s not found.", request_res.c_str() );
+			char * error_description = NULL;
+			int len = 0;
+#ifdef COAP_HUMAN_READABLE_ERRORS
+			char error_description_str[MAX_STRING_LENGTH];
+			len = sprintf(error_description, "Resource %s not found.", request_res.c_str() );
+			error_description = error_description_str;
+#endif
 			reply( message, (uint8_t*) error_description, len, COAP_CODE_NOT_FOUND );
 		}
 	}

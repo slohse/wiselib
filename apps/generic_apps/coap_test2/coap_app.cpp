@@ -69,6 +69,8 @@ public:
 		if( radio_->id() == 0 )
 		{
 			wiselib::StaticString query("");
+			wiselib::StaticString error_request( "this/resource/doesnt/exist" );
+			cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, error_request, query, this, NULL, 0 );
 
 #ifdef SHAWN
 			char uri_query[64];
@@ -96,6 +98,8 @@ public:
 #endif
 			cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, math, query, this, NULL, 0 );
 #endif // SHAWN
+
+
 		}
 		timer_->set_timer<ExampleApplication,
 		&ExampleApplication::broadcast_loop>( 1000, this, 0 );
@@ -208,11 +212,14 @@ public:
 				{
 					debug_->debug( "Node %i -- ExampleApp::receive_coap> received reply, code %i.%i, Payload length %i, Payload: "
 							, radio_->id(), ( ( packet.code() & 0xE0 ) >> 5 ), ( packet.code() & 0x1F ), packet.data_length() );
-					for( size_t i = 0; i < packet.data_length(); ++i )
+					char payload_string[ packet.data_length() + 1 ];
+					memcpy( payload_string, packet.data(), packet.data_length() );
+					payload_string[ packet.data_length()] = '\0';
+/*					for( size_t i = 0; i < packet.data_length(); ++i )
 					{
 						debug_->debug( "%i ", packet.data()[i] );
 					}
-					debug_->debug( "\n" );
+*/					debug_->debug( "%s\n", payload_string );
 				}
 #endif
 			}

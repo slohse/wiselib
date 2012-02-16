@@ -14,7 +14,7 @@
 
 #include "stdlib.h"
 
-#define COAP_APP_DEBUG
+//#define COAP_APP_DEBUG
 
 
 typedef wiselib::OSMODEL Os;

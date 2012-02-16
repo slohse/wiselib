@@ -12,6 +12,9 @@
 using namespace std;
 
 // Config Tweaks
+
+// uncomment this to get human readable error descriptions
+//#define COAP_HUMAN_READABLE_ERRORS
 // out of all the uint options (content type, max age, uri port and accept) only accept can occur multiple times
 // and currently (draft-07) there are only six media types. So 8 seemed a pretty good default
 #define COAP_LIST_SIZE_UINT		8

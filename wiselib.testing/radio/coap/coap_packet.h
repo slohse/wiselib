@@ -450,8 +450,13 @@ namespace wiselib
 					{
 						if( type() == COAP_MSG_TYPE_CON )
 						{
-							char error_description[MAX_STRING_LENGTH];
-							int len = sprintf(error_description, "Options exceed packet length.");
+							char * error_description = NULL;
+							int len = 0;
+#ifdef COAP_HUMAN_READABLE_ERRORS
+							char error_description_str[MAX_STRING_LENGTH];
+							len = sprintf(error_description, "Options exceed packet length.");
+							error_description = error_description_str;
+#endif
 							return error_response( is_request(), COAP_CODE_BAD_REQUEST, error_description, len );
 						}
 						else
@@ -467,8 +472,13 @@ namespace wiselib
 					{
 						if( type() == COAP_MSG_TYPE_CON )
 						{
-							char error_description[MAX_STRING_LENGTH];
-							int len = sprintf(error_description, "Unknown critical option %i.", option_number);
+							char * error_description = NULL;
+							int len = 0;
+#ifdef COAP_HUMAN_READABLE_ERRORS
+							char error_description_str[MAX_STRING_LENGTH];
+							len = sprintf(error_description, "Unknown critical option %i.", option_number);
+							error_description = error_description_str;
+#endif
 							return error_response( is_request(), COAP_CODE_BAD_OPTION , error_description, len );
 						}
 						else
@@ -490,8 +500,13 @@ namespace wiselib
 						{
 							if( type() == COAP_MSG_TYPE_CON )
 							{
-								char error_description[MAX_STRING_LENGTH];
-								int len = sprintf(error_description, "Multiple occurences of critical option %i.", option_number);
+								char * error_description = NULL;
+								int len = 0;
+#ifdef COAP_HUMAN_READABLE_ERRORS
+								char error_description_str[MAX_STRING_LENGTH];
+								len = sprintf(error_description, "Multiple occurences of critical option %i.", option_number);
+								error_description = error_description_str;
+#endif
 								return error_response( is_request(), COAP_CODE_BAD_OPTION , error_description, len );
 							}
 							else
@@ -523,8 +538,13 @@ namespace wiselib
 				{
 					if( type() == COAP_MSG_TYPE_CON )
 					{
-						char error_description[MAX_STRING_LENGTH];
-						int len = sprintf(error_description, "Options exceed packet length.");
+						char * error_description = NULL;
+						int len = 0;
+#ifdef COAP_HUMAN_READABLE_ERRORS
+						char error_description_str[MAX_STRING_LENGTH];
+						len = sprintf(error_description, "Options exceed packet length.");
+						error_description = error_description_str;
+#endif
 						return error_response( is_request(), COAP_CODE_BAD_OPTION, error_description, len );
 					}
 					else
@@ -1279,8 +1299,13 @@ namespace wiselib
 					{
 						if( type() == COAP_MSG_TYPE_CON )
 						{
-							char error_description[MAX_STRING_LENGTH];
-							int len = sprintf(error_description, "String option %i out of bounds.", option_number );
+							char * error_description = NULL;
+							int len = 0;
+#ifdef COAP_HUMAN_READABLE_ERRORS
+							char error_description_str[MAX_STRING_LENGTH];
+							len = sprintf(error_description_str, "String option %i out of bounds.", option_number );
+							error_description = error_description_str;
+#endif
 							return error_response( is_request(), COAP_CODE_BAD_OPTION, error_description, len );
 						}
 						else
