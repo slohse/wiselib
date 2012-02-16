@@ -367,6 +367,11 @@ template<typename OsModel_P,
 
 		CoapRadio( const self_type &rhs );
 
+		coap_packet_t* reply( ReceivedMessage& req_msg,
+				uint8_t* payload,
+				size_t payload_length,
+				CoapCode code = COAP_CODE_CONTENT );
+
 		coap_msg_id_t msg_id();
 		coap_token_t token();
 
@@ -695,7 +700,7 @@ template<typename OsModel_P,
 							{
 								char buf[ MAX_STRING_LENGTH ];
 								int buf_len = sprintf( buf, "Unknown Code %i", packet.code() );
-								reply( packet, (block_data_t*) buf, buf_len, COAP_CODE_NOT_IMPLEMENTED );
+								reply( received_message, (block_data_t*) buf, buf_len, COAP_CODE_NOT_IMPLEMENTED );
 							}
 						}
 					}
@@ -896,7 +901,6 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> \n");
 #endif
-		coap_packet_t *sendstatus = NULL;
 		ReceivedMessage *req_mes = NULL;
 		typename received_list_t::iterator it = received_.begin();
 		for(; it != received_.end(); ++it)
@@ -916,6 +920,22 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> found matching request\n");
 #endif
+		return reply( (*req_mes), payload, payload_length, code );
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P,
+			typename String_T>
+	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::reply(ReceivedMessage &req_msg,
+				uint8_t* payload,
+				size_t payload_length,
+				CoapCode code )
+	{
+		coap_packet_t *sendstatus = NULL;
+		coap_packet_r request = req_msg.message();
 		coap_packet_t reply;
 		OpaqueData token;
 		if ( request.token( token ) != SUCCESS )
@@ -941,18 +961,18 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> setting payload\n");
 #endif
-		if( request.type() == COAP_MSG_TYPE_CON && (*req_mes).ack_sent() == NULL )
+		if( request.type() == COAP_MSG_TYPE_CON && req_msg.ack_sent() == NULL )
 		{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> sending piggybacked response\n");
 #endif
 			reply.set_type( COAP_MSG_TYPE_ACK );
 			reply.set_msg_id( request.msg_id() );
-			sendstatus = send_coap_as_is<self_type, &self_type::receive_coap>( (*req_mes).correspondent(), reply, this );
+			sendstatus = send_coap_as_is<self_type, &self_type::receive_coap>( req_msg.correspondent(), reply, this );
 			if( sendstatus != NULL )
 			{
-				(*req_mes).set_ack_sent( sendstatus );
-				(*req_mes).set_response_sent( true );
+				req_msg.set_ack_sent( sendstatus );
+				req_msg.set_response_sent( true );
 			}
 		}
 		else
@@ -960,10 +980,10 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> sending seperate response\n");
 #endif
-			sendstatus = send_coap_gen_msg_id<self_type, &self_type::receive_coap>( (*req_mes).correspondent(), reply, this );
+			sendstatus = send_coap_gen_msg_id<self_type, &self_type::receive_coap>( req_msg.correspondent(), reply, this );
 			if( sendstatus != NULL )
 			{
-				(*req_mes).set_response_sent( true );
+				req_msg.set_response_sent( true );
 			}
 		}
 
@@ -1117,6 +1137,7 @@ template<typename OsModel_P,
 	{
 		string_t available_res;
 		string_t request_res = message.message().uri_path();
+		bool resource_found = false;
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("Node %i -- CoapRadio::handle_request> looking for resource '%s'\n", id(), request_res.c_str() );
 #endif
@@ -1140,8 +1161,15 @@ template<typename OsModel_P,
 		debug_->debug("Node %i -- CoapRadio::handle_request> resource match, calling callback\n", id() );
 #endif
 					resources_.at(i).callback()( from, message.message() );
+					resource_found = true;
 				}
 			}
+		}
+		if( !resource_found )
+		{
+			char error_description[MAX_STRING_LENGTH];
+			int len = sprintf(error_description, "Resource %s not found.", request_res.c_str() );
+			reply( message, (uint8_t*) error_description, len, COAP_CODE_NOT_FOUND );
 		}
 	}
 
