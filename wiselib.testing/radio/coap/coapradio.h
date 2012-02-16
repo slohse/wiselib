@@ -406,27 +406,7 @@ template<typename OsModel_P,
 			typename String_T>
 	CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::CoapRadio()
 	{
-		init();
-	}
-
-
-	template<typename OsModel_P,
-			typename Radio_P,
-			typename Timer_P,
-			typename Debug_P,
-			typename Rand_P,
-			typename String_T>
-	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::init()
-	{
-		rand_->srand( radio_->id() );
-
-		// random initial message ID and token
-		msg_id_ = (*rand_)();
-		token_ = (*rand_)();
-#ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapRadio::init> initial msg_id %i, initial token %i\n", msg_id_, token_);
-#endif
-		return SUCCESS;
+		//init();
 	}
 
 	template<typename OsModel_P,
@@ -437,6 +417,18 @@ template<typename OsModel_P,
 			typename String_T>
 	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::destruct()
 	{
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P,
+			typename String_T>
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::init()
+	{
+		// TODO: WTF!!!
 		return SUCCESS;
 	}
 
