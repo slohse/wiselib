@@ -48,6 +48,30 @@ int main(int argc, char** argv) {
 	char buffer[256];
 	struct sockaddr_in serv_addr, cli_addr;
 	
+	coapsocket = socket(AF_INET, SOCK_DGRAM, 0);
+	if(coapsocket < 0)
+	{
+		cerr << "Couldn't open Socket\n";
+		exit(EXIT_FAILURE);
+	}
+
+	cout << "Created Socket " << port <<"\n";
+
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+
+	serv_addr.sin_family = AF_INET6;
+	serv_addr.sin_port = htons(port);
+	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	if (bind(coapsocket, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+	{
+		int binderr = errno;
+		cerr << "ERROR on binding, " << binderr << ": " << strerror(errno) << "\n";
+		exit(EXIT_FAILURE);
+	}
+
+	cout << "Bound Socket " << port << "\n";
+
 	UDP4Radio<Os> udpradio;
 
 	CoapPacket<Os, UDP4Radio<Os>, StaticString> testpacket;

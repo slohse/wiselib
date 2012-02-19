@@ -4,7 +4,7 @@ namespace wiselib
 {
 	template<typename OsModel_P>
 	class UDP4Radio : public RadioBase<OsModel_P,
-		in_addr_t,
+		sockaddr_in,
 		typename OsModel_P::size_t,
 		typename OsModel_P::block_data_t>
 	{
@@ -14,7 +14,7 @@ namespace wiselib
 		typedef UDP4Radio<OsModel> self_type;
 		typedef self_type* self_pointer_t;
 
-		typedef in_addr_t node_id_t;
+		typedef sockaddr_in node_id_t;
 		typedef uint8_t block_data_t;
 		typedef uint16_t message_id_t;
 
