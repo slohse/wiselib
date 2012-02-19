@@ -414,6 +414,17 @@ template<typename OsModel_P,
 		typename Timer_P,
 		typename Debug_P,
 		typename Rand_P,
+		typename String_T>
+	CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::~CoapRadio()
+	{
+
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename Timer_P,
+		typename Debug_P,
+		typename Rand_P,
 			typename String_T>
 	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::destruct()
 	{
@@ -873,7 +884,7 @@ template<typename OsModel_P,
 		if( uri_host == string_t() )
 		{
 			char buf[MAX_STRING_LENGTH];
-			sprintf( buf, "%i", id() );
+			sprintf( buf, "%i", receiver );
 			uri_host = string_t( buf );
 		}
 		pack.set_option( COAP_OPT_URI_HOST, uri_host );
