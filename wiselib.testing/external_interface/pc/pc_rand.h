@@ -31,6 +31,7 @@ namespace wiselib {
 			PCRandModel(PCOs& os, value_t seed);
 			void srand(value_t seed);
 			value_t operator()();
+			value_t operator()(value_t max);
 			int state();
 			
 		private:
@@ -63,6 +64,12 @@ namespace wiselib {
 	operator()() {
 		return rand();
 	}
+
+	template<typename OsModel_P>
+	typename PCRandModel<OsModel_P>::value_t PCRandModel<OsModel_P>::
+	operator()( value_t max ) {
+	        return ( rand() % max );
+	}	
 	
 	template<typename OsModel_P>
 	int PCRandModel<OsModel_P>::

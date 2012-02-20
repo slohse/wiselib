@@ -10,6 +10,7 @@
 #include "radio/coap/coapradio.h"
 
 #include "udp4radio.h"
+#include "ipv4_socket.h"
 
 using namespace wiselib;
 
@@ -43,6 +44,15 @@ int main(int argc, char** argv) {
 	
 //	MyClass c;
 
+	Os::Radio::self_pointer_t radio_;
+	Os::Timer::self_pointer_t timer_;
+	Os::Debug::self_pointer_t debug_;
+	Os::Rand::self_pointer_t rand_;
+
+	debug_ = new Os::Debug();
+	timer_ = new Os::Timer();
+	rand_ =  new Os::Rand();
+
 	int port = COAP_STD_PORT;
 	int coapsocket, acceptsocket, clilen, n;
 	char buffer[256];
@@ -59,7 +69,7 @@ int main(int argc, char** argv) {
 
 	bzero((char *) &serv_addr, sizeof(serv_addr));
 
-	serv_addr.sin_family = AF_INET6;
+	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(port);
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
@@ -72,15 +82,41 @@ int main(int argc, char** argv) {
 
 	cout << "Bound Socket " << port << "\n";
 
-	UDP4Radio<Os> udpradio;
+	listen(coapsocket,5);
 
-	CoapPacket<Os, UDP4Radio<Os>, StaticString> testpacket;
+	cout << "Listening " << port << "\n";
+
+	UDP4Radio<Os> *udpradio = new UDP4Radio<Os>();
+
+//	CoapPacket<Os, UDP4Radio<Os>, StaticString> testpacket;
 
 	CoapRadio<Os, UDP4Radio<Os>, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
 
+	cradio_.init( *udpradio,
+			*timer_,
+			*debug_,
+			*rand_);
+
+	cradio_.enable_radio();
+
 	// Loop forever in a resource-efficient way
 	// so timer events will actually occur
-	while(true) pause();
+	while(true)
+	{
+		bzero(buffer,256);
+		clilen = sizeof(cli_addr);
+		n = recvfrom(coapsocket, buffer, 256, 0, (struct sockaddr *) &cli_addr, (socklen_t*) &clilen);
+
+		if (n < 0)
+		{
+			cerr << "ERROR reading from socket, " << "\n";
+			exit(EXIT_FAILURE);
+		}
+		printf("received %i Bytes:\n",n);
+
+		IPv4Socket sender( cli_addr.sin_addr.s_addr, cli_addr.sin_port );
+		udpradio->notify_receivers( sender, n, (UDP4Radio<Os>::block_data_t *) buffer );
+	}
 	
 	return 0;
 }

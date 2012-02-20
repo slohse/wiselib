@@ -530,9 +530,15 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 			debug_->debug( "Node %i -- CoapRadio::send \n", id() );
 #endif
+#ifdef COAP_PREFACE_MSG_ID
 		block_data_t buf[len+1];
 		buf[0] = CoapMsgId;
 		memcpy( buf + 1, data, len );
+#else
+		block_data_t buf[len];
+		memcpy( buf, data, len );
+#endif
+
 #ifdef DEBUG_COAPRADIO
 			debug_->debug( "Node %i -- CoapRadio::send> sending: 0x ", id() );
 			for(size_t i = 0; i < len; ++i)
