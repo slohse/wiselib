@@ -482,13 +482,20 @@ template<typename OsModel_P,
 	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::enable_radio()
 	{
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapRadio::enable\n");
+		debug_->debug("CoapRadio::enable_radio\n");
+#endif
+#ifdef DEBUG_COAPRADIO_PC
+			cout << "CoapRadio::enable_radio\n";
 #endif
 		//enable normal radio
 		radio_->enable_radio();
 		// register receive callback to normal radio
 		recv_callback_id_ = radio_->template reg_recv_callback<self_t,
 			&self_t::receive > ( this );
+
+#ifdef DEBUG_COAPRADIO_PC
+			cout << "CoapRadio::enable_radio> Callback id " << recv_callback_id_ <<"\n";
+#endif
 
 		return SUCCESS;
 	}
@@ -637,20 +644,50 @@ template<typename OsModel_P,
 			typename String_T>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::receive(node_id_t from, size_t len, block_data_t * data)
 	{
+#ifdef DEBUG_COAPRADIO_PC
+		cout << "CoapRadio::receive> Node " << (int) radio_->id() << ": "
+				<< "From "
+				<< ((((uint32_t) from.addr()) & 0xff000000) >> 24)
+				<< "."
+				<< ((((uint32_t) from.addr()) & 0x00ff0000) >> 16)
+				<< "."
+				<< ((((uint32_t) from.addr()) & 0x0000ff00) >> 8)
+				<< "."
+				<< (((uint32_t) from.addr()) & 0x000000ff)
+				<< ":" << from.port()
+				<< ", Len " << len
+				<< "\n";
+#endif
 		// do not receive own messages
 		if (radio_->id() == from) {
 #ifdef DEBUG_COAPRADIO
 			debug_->debug( "CoapRadio::receive> Node %i: own message received\n", radio_->id());
+#endif
+#ifdef DEBUG_COAPRADIO_PC
+			cout << "CoapRadio::receive> Node " << (int) radio_->id() << ": own message received\n";
 #endif
 			return;
 		}
 		if (len > 0 )
 		{
 			message_id_t msg_id = read<OsModel, block_data_t, message_id_t>( data );
+#ifdef COAP_PREFACE_MSG_ID
 			if( msg_id == CoapMsgId )
 			{
+#endif
 #ifdef DEBUG_COAPRADIO
 				debug_->debug( "Node %i -- CoapRadio::receive> received coap message from %i\n", radio_->id(), from);
+#endif
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "Node %i -- CoapRadio::receive> received coap message from "
+						<< ((((uint32_t) from.addr()) & 0xff000000) >> 24)
+						<< "."
+						<< ((((uint32_t) from.addr()) & 0x00ff0000) >> 16)
+						<< "."
+						<< ((((uint32_t) from.addr()) & 0x0000ff00) >> 8)
+						<< "."
+						<< (((uint32_t) from.addr()) & 0x000000ff)
+						<< "\n";
 #endif
 
 				// notify those who want raw data
@@ -735,7 +772,9 @@ template<typename OsModel_P,
 					// ignore
 					return;
 				}
+#ifdef COAP_PREFACE_MSG_ID
 			}
+#endif
 #ifdef DEBUG_COAPRADIO
 			else
 			{

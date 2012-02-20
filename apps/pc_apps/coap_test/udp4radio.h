@@ -29,6 +29,9 @@ namespace wiselib
 		};
 
 		UDP4Radio() {
+#ifdef DEBUG_COAPRADIO_PC
+		cout << "UDP4Radio::UDP4Radio()";
+#endif
 			enabled = false;
 			sock = 0;
 
@@ -37,9 +40,12 @@ namespace wiselib
 
 		int enable_radio ()
 		{
+#ifdef DEBUG_COAPRADIO_PC
+		cout << "UDP4Radio::enable_radio";
+#endif
 			if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 			{
-				perror("socket");
+				cerr << "socket\n";
 				return OsModel::ERR_UNSPEC;
 			}
 			enabled = true;
@@ -48,6 +54,9 @@ namespace wiselib
 
 		int disable_radio ()
 		{
+#ifdef DEBUG_COAPRADIO_PC
+		cout << "UDP4Radio::disable_radio";
+#endif
 			close(sock);
 			enabled = false;
 			return OsModel::SUCCESS;
@@ -55,19 +64,23 @@ namespace wiselib
 		
 		int send (node_id_t receiver, size_t len, block_data_t *data)
 		{
+			cout << "UDP4Radio::send>\n";
 			sockaddr_in recv_sock;
 			recv_sock.sin_family = AF_INET;
 			recv_sock.sin_port = receiver.port();
 			recv_sock.sin_addr.s_addr = receiver.addr();
-			printf("UDP4Radio::send> sending %i Bytes to %i.%i.%i.%i\n",
-					len,
-					(recv_sock.sin_addr.s_addr & 0xff000000) >> 24,
-					(recv_sock.sin_addr.s_addr & 0x00ff0000) >> 16,
-					(recv_sock.sin_addr.s_addr & 0x0000ff00) >> 8,
-					(recv_sock.sin_addr.s_addr & 0x000000ff)
-					);
+
 			if(enabled)
 			{
+				cout << "UDP4Radio::send> sending " << len << " Bytes to"
+						<< ((recv_sock.sin_addr.s_addr & 0xff000000) >> 24)
+						<< "."
+						<< ((recv_sock.sin_addr.s_addr & 0x00ff0000) >> 16)
+						<< "."
+						<< ((recv_sock.sin_addr.s_addr & 0x0000ff00) >> 8)
+						<< "."
+						<< (recv_sock.sin_addr.s_addr & 0x000000ff)
+						<< "\n";
 				sendto( sock, data, len, 0, (struct sockaddr *) &recv_sock, sizeof( struct sockaddr_in ));
 				return OsModel::SUCCESS;
 			}
@@ -78,24 +91,6 @@ namespace wiselib
 		{
 			return serv_addr;
 		}
-
-//		int register_client ( sockaddr_in *client )
-//		{
-//			if ( resources_.empty() )
-//				resources_.assign( COAPRADIO_RESOURCES_SIZE, CoapResource() );
-//
-//			for ( unsigned int i = 0; i < resources_.size(); ++i )
-//			{
-//				if ( resources_.at(i) == CoapResource() )
-//				{
-//					resources_.at(i).set_resource_path( resource_path );
-//					resources_.at(i).set_callback( coapreceiver_delegate_t::template from_method<T, TMethod>( callback ) );
-//					return i;
-//				}
-//			}
-//
-//			return -1;
-//		}
 
 	private:
 		bool enabled;
