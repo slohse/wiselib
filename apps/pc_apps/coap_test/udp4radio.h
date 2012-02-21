@@ -38,16 +38,17 @@ namespace wiselib
 			serv_addr = IPv4Socket();
 		}
 
+		void set_socket( int socket )
+		{
+			sock = socket;
+		}
+
 		int enable_radio ()
 		{
 #ifdef DEBUG_COAPRADIO_PC
 		cout << "UDP4Radio::enable_radio";
 #endif
-			if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-			{
-				cerr << "socket\n";
-				return OsModel::ERR_UNSPEC;
-			}
+
 			enabled = true;
 			return OsModel::SUCCESS;
 		}
@@ -57,7 +58,6 @@ namespace wiselib
 #ifdef DEBUG_COAPRADIO_PC
 		cout << "UDP4Radio::disable_radio";
 #endif
-			close(sock);
 			enabled = false;
 			return OsModel::SUCCESS;
 		}

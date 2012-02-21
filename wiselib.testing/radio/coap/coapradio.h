@@ -572,6 +572,12 @@ template<typename OsModel_P,
 		debug_->debug("CoapRadio::send_coap_as_is> receiver %i, type %i, code %i.%02i, msg_id %i\n",
 					receiver, message.type(), ( ( message.code() & 0xE0 ) >> 5 ), ( message.code() & 0x1F ), message.msg_id() );
 #endif
+#ifdef DEBUG_COAPRADIO_PC
+		cout << "CoapRadio::send_coap_as_is> msg_type " << (int) message.type()
+				<< ", code " << (int) ( ( message.code() & 0xE0 ) >> 5 ) << "." << (int) ( message.code() & 0x1F )
+				<< ", msg id " << message.msg_id()
+				<< "\n";
+#endif
 		block_data_t buf[message.serialize_length()];
 
 		message.serialize(buf);
@@ -613,6 +619,9 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::gen_msg_id> \n");
 #endif
+#ifdef DEBUG_COAPRADIO_PC
+		cout << "CoapRadio::gen_msg_id> \n";
+#endif
 		message.set_msg_id( this->msg_id() );
 		return send_coap_as_is<T, TMethod>( receiver, message, callback );
 	}
@@ -628,6 +637,9 @@ template<typename OsModel_P,
 	{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::gen_msg_id_token> \n");
+#endif
+#ifdef DEBUG_COAPRADIO_PC
+		cout << "CoapRadio::gen_msg_id_token> \n";
 #endif
 		OpaqueData token;
 		coap_token_t raw_token = this->token();
@@ -1020,19 +1032,18 @@ template<typename OsModel_P,
 		coap_packet_r request = req_msg.message();
 		coap_packet_t reply;
 		OpaqueData token;
-		if ( request.token( token ) != SUCCESS )
-			return NULL;
+		if ( request.token( token ) == SUCCESS )
+			reply.set_token( token );
 
-#ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapRadio::reply> found token\n");
-#endif
-		reply.set_token( token );
 		if( request.type() == COAP_MSG_TYPE_CON || request.type() == COAP_MSG_TYPE_NON )
 			reply.set_type( request.type() );
 		else
 			return NULL;
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> type is CON or NON\n");
+#endif
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapRadio::reply> type is CON or NON\n";
 #endif
 		reply.set_code( code );
 #ifdef DEBUG_COAPRADIO
@@ -1048,6 +1059,9 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> sending piggybacked response\n");
 #endif
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapRadio::reply> sending piggybacked response\n";
+#endif
 			reply.set_type( COAP_MSG_TYPE_ACK );
 			reply.set_msg_id( request.msg_id() );
 			sendstatus = send_coap_as_is<self_type, &self_type::receive_coap>( req_msg.correspondent(), reply, this );
@@ -1061,6 +1075,9 @@ template<typename OsModel_P,
 		{
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> sending seperate response\n");
+#endif
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapRadio::reply> sending seperate response\n";
 #endif
 			sendstatus = send_coap_gen_msg_id<self_type, &self_type::receive_coap>( req_msg.correspondent(), reply, this );
 			if( sendstatus != NULL )
@@ -1275,6 +1292,7 @@ template<typename OsModel_P,
 			typename String_T>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ack( ReceivedMessage& message )
 	{
+		// TODO: prüfen ob schon ein ACK oder response gesendet wurde, falls ja retransmit
 #ifdef DEBUG_COAPRADIO_PC
 				cout << "CoapPacket::ack> msg_id " << message.message().msg_id() << "\n";
 #endif

@@ -99,6 +99,8 @@ int main(int argc, char** argv) {
 
 	cradio_.enable_radio();
 
+	udpradio->set_socket( coapsocket );
+
 	// Loop forever in a resource-efficient way
 	// so timer events will actually occur
 	while(true)
