@@ -670,8 +670,10 @@ template<typename OsModel_P,
 		}
 		if (len > 0 )
 		{
-			message_id_t msg_id = read<OsModel, block_data_t, message_id_t>( data );
+			size_t msg_id_t_size = 0;
 #ifdef COAP_PREFACE_MSG_ID
+			message_id_t msg_id = read<OsModel, block_data_t, message_id_t>( data );
+			msg_id_t_size = sizeof( message_id_t );
 			if( msg_id == CoapMsgId )
 			{
 #endif
@@ -679,7 +681,7 @@ template<typename OsModel_P,
 				debug_->debug( "Node %i -- CoapRadio::receive> received coap message from %i\n", radio_->id(), from);
 #endif
 #ifdef DEBUG_COAPRADIO_PC
-				cout << "Node %i -- CoapRadio::receive> received coap message from "
+				cout << "CoapRadio::receive> received coap message from "
 						<< ((((uint32_t) from.addr()) & 0xff000000) >> 24)
 						<< "."
 						<< ((((uint32_t) from.addr()) & 0x00ff0000) >> 16)
@@ -688,13 +690,22 @@ template<typename OsModel_P,
 						<< "."
 						<< (((uint32_t) from.addr()) & 0x000000ff)
 						<< "\n";
+				cout << "raw: " << hex;
+				for( size_t m = 0; m < len; ++m )
+				{
+					cout << (int) *(data + m) << " ";
+				}
+				cout << dec << "\n";
 #endif
 
 				// notify those who want raw data
-				notify_receivers( from, len - sizeof( message_id_t ), data + sizeof( message_id_t ) );
+				notify_receivers( from, len - msg_id_t_size, data + msg_id_t_size );
 
 				coap_packet_t packet;
-				int err_code = packet.parse_message( data + sizeof( message_id_t ), len - sizeof( message_id_t ) );
+				int err_code = packet.parse_message( data + msg_id_t_size, len - msg_id_t_size );
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapRadio::receive> parse_message returned " << (int) err_code << "\n";
+#endif
 				if( err_code == SUCCESS )
 				{
 #ifdef DEBUG_COAPRADIO
@@ -702,12 +713,24 @@ template<typename OsModel_P,
 				debug_->debug( "Node %i -- CoapRadio::receive> type %i, code %i.%02i, msg_id %i \n",
 							radio_->id(), packet.type(), ( ( packet.code() & 0xE0 ) >> 5 ), ( packet.code() & 0x1F ), packet.msg_id() );
 #endif
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapRadio::receive> Successfully parsed message:\n";
+				cout << "CoapRadio::receive> type "
+						<< packet.type()
+						<< ", code "
+						<< ( ( packet.code() & 0xE0 ) >> 5 ) << "." << ( packet.code() & 0x1F )
+						<< ", msg id " << packet.msg_id()
+						<< "\n";
+#endif
 					ReceivedMessage *deduplication;
 					// Only act if this message hasn't been received yet, otherwise ignore
 					if( (deduplication = find_message_by_id(from, packet.msg_id(), received_)) == NULL )
 					{
 #ifdef DEBUG_COAPRADIO
 				debug_->debug( "Node %i -- CoapRadio::receive> message is not duplicate!\n", radio_->id());
+#endif
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapRadio::receive> message is not duplicate!\n";
 #endif
 						ReceivedMessage received_message( packet, from );
 						queue_message( received_message, received_ );
@@ -757,6 +780,9 @@ template<typename OsModel_P,
 					}
 					else
 					{
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapRadio::receive> duplicate found\n";
+#endif
 						// if it's confirmable we might want to hurry sending an ACK
 						if( packet.type() == COAP_MSG_TYPE_CON )
 							ack( *deduplication );
@@ -987,6 +1013,9 @@ template<typename OsModel_P,
 				size_t payload_length,
 				CoapCode code )
 	{
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapRadio::reply> \n";
+#endif
 		coap_packet_t *sendstatus = NULL;
 		coap_packet_r request = req_msg.message();
 		coap_packet_t reply;
@@ -1194,6 +1223,10 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("Node %i -- CoapRadio::handle_request> looking for resource '%s'\n", id(), request_res.c_str() );
 #endif
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapRadio::handle_request> looking for resource '"
+						<< request_res.c_str() << "'\n";
+#endif
 		for(size_t i = 0; i < resources_.size(); ++i )
 		{
 			if( resources_.at(i) != CoapResource() && resources_.at(i).callback() && resources_.at(i).callback().obj_ptr() != NULL )
@@ -1220,6 +1253,9 @@ template<typename OsModel_P,
 		}
 		if( !resource_found )
 		{
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapRadio::handle_request> resource not found, sending 4.04'\n";
+#endif
 			char * error_description = NULL;
 			int len = 0;
 #ifdef COAP_HUMAN_READABLE_ERRORS
@@ -1239,6 +1275,9 @@ template<typename OsModel_P,
 			typename String_T>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ack( ReceivedMessage& message )
 	{
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapPacket::ack> msg_id " << message.message().msg_id() << "\n";
+#endif
 		coap_packet_t ackp;
 		ackp.set_type( COAP_MSG_TYPE_ACK );
 		ackp.set_msg_id( message.message().msg_id() );

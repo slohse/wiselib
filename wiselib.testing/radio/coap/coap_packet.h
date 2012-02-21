@@ -413,6 +413,9 @@ namespace wiselib
 		typename String_T>
 	int CoapPacket<OsModel_P, Radio_P, String_T>::parse_message( block_data_t *datastream, size_t length )
 	{
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapPacket::parse_message> \n";
+#endif
 		// clear everything
 		init();
 
@@ -420,11 +423,23 @@ namespace wiselib
 		if( length >= COAP_START_OF_OPTIONS )
 		{
 			uint8_t coap_first_byte = read<OsModel , block_data_t , uint8_t >( datastream );
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapPacket::parse_message> first byte: " << hex << (int) coap_first_byte << dec << "\n";
+#endif
 			version_ = coap_first_byte >> 6 ;
 			type_ = (CoapType) ( ( coap_first_byte & 0x30 ) >> 4 );
 			size_t option_count = coap_first_byte & 0x0f;
 			code_ = (CoapCode) read<OsModel , block_data_t , uint8_t >( datastream +1 );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
+
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapPacket::parse_message> version " << (int) version_
+						<< ", type " << (int) type_
+						<< ", option_count " << option_count
+						<< ", code " << code_
+						<< ", msg_id " << (uint16_t) msg_id_
+						<<"\n";
+#endif
 
 			uint8_t parsed_options = 0;
 			uint8_t previous_option_number = 0;
@@ -435,8 +450,17 @@ namespace wiselib
 			// TODO: Überlegen ob das mit der while-Schleife so klug ist
 			// bzw. aufpassen, dass man mit den ganzen i++ nicht aus den Options
 			// rausläuft
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapPacket::parse_message> starting to parse options\n";
+#endif
 			while( parsed_options < option_count && i < length )
 			{
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapPacket::parse_message> parsed_options: "
+						<< (int) parsed_options << "/" << (int) option_count
+						<< " looking at byte " << (int) i << "/" << (int) length
+						<< "\n";
+#endif
 				option_number = previous_option_number + ( read<OsModel , block_data_t , uint8_t >( datastream + i ) >> 4 );
 				length_of_option = read<OsModel , block_data_t , uint8_t >( datastream + i ) & 0x0f;
 				if( length_of_option == COAP_LONG_OPTION )
@@ -531,6 +555,9 @@ namespace wiselib
 					}
 					else
 					{
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapPacket::parse_message> parse_option returned error " << option_parse_status << "\n";
+#endif
 						return option_parse_status;
 					}
 				}
@@ -574,6 +601,10 @@ namespace wiselib
 			// can't make any sense of it
 			return ERR_IGNORE_MSG;
 		}
+
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapPacket::parse_message> sucessful\n";
+#endif
 
 		return SUCCESS;
 	}
@@ -1268,6 +1299,11 @@ namespace wiselib
 		typename String_T>
 	int CoapPacket<OsModel_P, Radio_P, String_T>::parse_option( uint8_t option_number, size_t option_length, block_data_t* value)
 	{
+#ifdef DEBUG_COAPRADIO_PC
+				cout << "CoapPacket::parse_option> number " << (int) option_number
+						<< ", length " << option_length
+						<< "\n";
+#endif
 		if( option_number <= COAP_LARGEST_OPTION_NUMBER )
 		{
 			if( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_NONE )
