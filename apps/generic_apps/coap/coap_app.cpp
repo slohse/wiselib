@@ -53,11 +53,11 @@ class ExampleApplication
 #ifdef COAP_APP_DEBUG
          debug_->debug( "set options are 0x%x\n ", testpacket.what_options_are_set() );
 #endif
-         size_t example_data_expected_length = testpacket.serialize_length();
          uint8_t example_data_reserialized[50];
          size_t example_data_length;
          example_data_length = testpacket.serialize( example_data_reserialized );
 #ifdef COAP_APP_DEBUG
+         size_t example_data_expected_length = testpacket.serialize_length();
          if( example_data_expected_length != example_data_length )
          {
         	 debug_->debug( "serialize_length has bugs!" );

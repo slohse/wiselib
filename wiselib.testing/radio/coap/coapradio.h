@@ -98,6 +98,39 @@ template<typename OsModel_P,
 					uint16_t uri_port = COAP_STD_PORT);
 
 		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
+		coap_packet_t* put(node_id_t receiver,
+					string_t uri_path,
+					string_t uri_query,
+					T *callback,
+					uint8_t* payload = NULL,
+					size_t payload_length = 0,
+					bool confirmable = false,
+					string_t uri_host = string_t(),
+					uint16_t uri_port = COAP_STD_PORT);
+
+		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
+		coap_packet_t* post(node_id_t receiver,
+					string_t uri_path,
+					string_t uri_query,
+					T *callback,
+					uint8_t* payload = NULL,
+					size_t payload_length = 0,
+					bool confirmable = false,
+					string_t uri_host = string_t(),
+					uint16_t uri_port = COAP_STD_PORT);
+
+		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
+		coap_packet_t* del(node_id_t receiver,
+					string_t uri_path,
+					string_t uri_query,
+					T *callback,
+					uint8_t* payload = NULL,
+					size_t payload_length = 0,
+					bool confirmable = false,
+					string_t uri_host = string_t(),
+					uint16_t uri_port = COAP_STD_PORT);
+
+		template<class T, void (T::*TMethod)(node_id_t, const coap_packet_r)>
 		coap_packet_t* request(node_id_t receiver,
 					CoapCode code,
 					string_t uri_path,
@@ -913,6 +946,75 @@ template<typename OsModel_P,
 		debug_->debug("CoapRadio::get> \n");
 #endif
 		return request<T, TMethod>( receiver, COAP_CODE_GET ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P,
+			typename String_T>
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
+	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::put(node_id_t receiver,
+			string_t uri_path,
+			string_t uri_query,
+			T *callback,
+			uint8_t* payload,
+			size_t payload_length,
+			bool confirmable,
+			string_t uri_host,
+			uint16_t uri_port)
+	{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::put> \n");
+#endif
+		return request<T, TMethod>( receiver, COAP_CODE_PUT ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P,
+			typename String_T>
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
+	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::post(node_id_t receiver,
+			string_t uri_path,
+			string_t uri_query,
+			T *callback,
+			uint8_t* payload,
+			size_t payload_length,
+			bool confirmable,
+			string_t uri_host,
+			uint16_t uri_port)
+	{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::post> \n");
+#endif
+		return request<T, TMethod>( receiver, COAP_CODE_POST ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P,
+			typename String_T>
+	template <class T, void (T::*TMethod)( typename Radio_P::node_id_t, const typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_r ) >
+	typename CoapPacket<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::del(node_id_t receiver,
+			string_t uri_path,
+			string_t uri_query,
+			T *callback,
+			uint8_t* payload,
+			size_t payload_length,
+			bool confirmable,
+			string_t uri_host,
+			uint16_t uri_port)
+	{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapRadio::delete> \n");
+#endif
+		return request<T, TMethod>( receiver, COAP_CODE_DELETE ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
 	}
 
 	template<typename OsModel_P,
