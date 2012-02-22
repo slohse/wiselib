@@ -103,11 +103,11 @@ template<typename OsModel_P,
 					string_t uri_path,
 					string_t uri_query,
 					T *callback,
-					uint8_t* payload,
-					size_t payload_length,
-					bool confirmable,
-					string_t uri_host,
-					uint16_t uri_port);
+					uint8_t* payload = NULL,
+					size_t payload_length = 0,
+					bool confirmable = false,
+					string_t uri_host = string_t(),
+					uint16_t uri_port = COAP_STD_PORT);
 
 		coap_packet_t* reply(coap_packet_t request,
 				uint8_t* payload,
@@ -963,17 +963,12 @@ template<typename OsModel_P,
 
 		confirmable ? pack.set_type( COAP_MSG_TYPE_CON ) : pack.set_type( COAP_MSG_TYPE_NON );
 
-		// if no host is supplied the physical address of the node is used
-		if( uri_host == string_t() )
+		if( uri_host != string_t() )
 		{
-			char buf[MAX_STRING_LENGTH];
-			sprintf( buf, "%i", receiver );
-			uri_host = string_t( buf );
+			pack.set_option( COAP_OPT_URI_HOST, uri_host );
 		}
-		pack.set_option( COAP_OPT_URI_HOST, uri_host );
 
-		pack.set_option( COAP_OPT_URI_PORT, uri_port );
-
+		pack.set_uri_port( uri_port );
 
 		return send_coap_gen_msg_id_token<T, TMethod>(receiver, pack, callback );
 	}
@@ -1032,8 +1027,7 @@ template<typename OsModel_P,
 		coap_packet_r request = req_msg.message();
 		coap_packet_t reply;
 		OpaqueData token;
-		if ( request.token( token ) == SUCCESS )
-			reply.set_token( token );
+		request.token( token );
 
 		if( request.type() == COAP_MSG_TYPE_CON || request.type() == COAP_MSG_TYPE_NON )
 			reply.set_type( request.type() );
@@ -1165,8 +1159,9 @@ template<typename OsModel_P,
 		typename list_static<OsModel_P, T, N>::iterator it = queue.begin();
 		for(; it != queue.end(); ++it)
 		{
-			if( (*it).correspondent() == correspondent && (*it).message().get_option( COAP_OPT_TOKEN, current_token ) == SUCCESS )
+			if( (*it).correspondent() == correspondent )
 			{
+				(*it).message().token( current_token );
 				if( current_token == token )
 				{
 					return &(*it);
@@ -1191,37 +1186,31 @@ template<typename OsModel_P,
 #endif
 		OpaqueData request_token, response_token;
 
-		// No token --> can't match response
-		if( (message.message()).token( response_token ) != SUCCESS )
+		// see if the given request candidate is the matching request, otherwise find the matching request by token
+		if( request != NULL )
 		{
-			if( message.message().type() == COAP_MSG_TYPE_CON )
-			{
-				rst( from, message.message().msg_id() );
-				message.set_response_sent(true);
-			}
-			return;
+			(*request).message().token(request_token);
 		}
 
-		// see if the given request candidate is the matching request, otherwise find the matching request by token
-		if( !( request != NULL  && (*request).message().token(request_token) == SUCCESS  && request_token == response_token ) )
+		if( request == NULL || request_token != response_token )
 		{
 			request = find_message_by_token( from, response_token, sent_ );
+			if( request == NULL )
+			{
+				// can't match response
+				if( message.message().type() == COAP_MSG_TYPE_CON )
+				{
+					rst( from, message.message().msg_id() );
+					message.set_response_sent(true);
+				}
+				return;
+			}
+			(*request).message().token(request_token);
 		}
 
-		if( ( request != NULL  && (*request).message().token(request_token) == SUCCESS
-				&& request_token == response_token ) && request->sender_callback() && request->sender_callback().obj_ptr() != NULL )
+		if( request_token == response_token && request->sender_callback() && request->sender_callback().obj_ptr() != NULL )
 		{
 			(*request).sender_callback()( from, message.message() );
-		}
-		else
-		{
-			// can't match response
-			if( message.message().type() == COAP_MSG_TYPE_CON )
-			{
-				rst( from, message.message().msg_id() );
-				message.set_response_sent(true);
-			}
-			return;
 		}
 
 	}

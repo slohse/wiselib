@@ -302,6 +302,12 @@ namespace wiselib
 			return value_;
 		}
 
+		size_t serialize( uint8_t *datastream ) const
+		{
+			memcpy( datastream, value_, length_ );
+			return length_;
+		}
+
 	private:
 		uint8_t value_[COAP_OPT_MAXLEN_OPAQUE];
 		size_t length_;

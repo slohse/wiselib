@@ -146,10 +146,9 @@ namespace wiselib
 
 		/**
 		 * Returns the token by which request/response matching can be done.
-		 * @param token reference to OpaqueData object, if SUCCESS is returned it will contain token afterwards
-		 * @return SUCCESS if the package has the token option set, ERR_OPT_NOT_SET otherwise
+		 * @param token reference to OpaqueData object, will contain message token afterwards
 		 */
-		int token( OpaqueData &token );
+		void token( OpaqueData &token );
 
 		/**
 		 * Sets the token by which request/response matching can be done.
@@ -162,6 +161,10 @@ namespace wiselib
 		int set_uri_path( string_t &path );
 
 		int set_uri_query( string_t &query );
+
+		void set_uri_port( uint32_t port );
+
+		uint32_t uri_port();
 
 		/**
 		 * Returns a pointer to the payload section of the packet
@@ -703,9 +706,12 @@ namespace wiselib
 	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T>
-	int CoapPacket<OsModel_P, Radio_P, String_T>::token( OpaqueData &token )
+	void CoapPacket<OsModel_P, Radio_P, String_T>::token( OpaqueData &token )
 	{
-		return get_option( COAP_OPT_TOKEN, token );
+		if( get_option( COAP_OPT_TOKEN, token ) != SUCCESS )
+		{
+			token = OpaqueData();
+		}
 	}
 
 	template<typename OsModel_P,
@@ -713,7 +719,10 @@ namespace wiselib
 		typename String_T>
 	void CoapPacket<OsModel_P, Radio_P, String_T>::set_token( const OpaqueData &token )
 	{
-		set_option( COAP_OPT_TOKEN, token );
+		if( token != OpaqueData() )
+		{
+			set_option( COAP_OPT_TOKEN, token );
+		}
 	}
 
 	template<typename OsModel_P,
@@ -772,6 +781,27 @@ namespace wiselib
 #endif
 
 		return add_string_segments( cstr + segment_start , '&', COAP_OPT_URI_QUERY );
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename String_T>
+	void CoapPacket<OsModel_P, Radio_P, String_T>::set_uri_port( uint32_t port )
+	{
+		if( port != COAP_STD_PORT )
+		{
+			set_option( COAP_OPT_URI_PORT, port );
+		}
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename String_T>
+	uint32_t CoapPacket<OsModel_P, Radio_P, String_T>::uri_port()
+	{
+		uint32_t port = COAP_STD_PORT;
+		get_option( COAP_OPT_URI_PORT, port );
+		return port;
 	}
 
 	template<typename OsModel_P,
@@ -1473,30 +1503,6 @@ namespace wiselib
 	template <typename T, list_size_t N>
 	void CoapPacket<OsModel_P, Radio_P, String_T>::set_option(list_static<OsModel_P, CoapOption<T>, N> &options, CoapOption<T> &option)
 	{
-/*		typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
-		for(;; ++it)
-		{
-			if(it == options.end())
-			{
-				options.push_back(option);
-				break;
-			}
-			if( ( *it ).option_number() < option.option_number() )
-			{
-				continue;
-			}
-			if( ( *it ).option_number() == option.option_number() )
-			{
-				( *it ) = option;
-				break;
-			}
-			if( ( *it ).option_number() > option.option_number() )
-			{
-				options.insert(it, option);
-				break;
-			}
-		}
-		*/
 		remove_option( options, option.option_number() );
 		add_option( options, option );
 	}
