@@ -33,7 +33,7 @@ namespace wiselib
 			CoapOption( uint8_t option_number, const T &value) { set(option_number, value); }
 			virtual ~CoapOption() {}
 			uint8_t option_number() const {return option_number_;}
-			T value() const {return value_; }
+			const T& value() const {return value_; }
 			void set( uint8_t option_number, const T &value ) { option_number_ = option_number; value_ = value; }
 
 		private:
@@ -1380,7 +1380,7 @@ namespace wiselib
 						}
 					}
 					// option is elective --> ignore
-					return 0;
+					return ERR_IGNORE_MSG;
 				}
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapPacket::parse_option> adding string option, length %i\n", option_length );
@@ -1607,7 +1607,7 @@ namespace wiselib
 		datastream[offset] = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 );
 		optlength( opt.value().length(), datastream, offset );
 
-		memcpy(datastream + offset, opt.value().c_str(), opt.value().length());
+		memcpy(datastream + offset, const_cast<string_t&>(opt.value()).c_str(), opt.value().length());
 		offset += opt.value().length();
 		return offset;
 	}
