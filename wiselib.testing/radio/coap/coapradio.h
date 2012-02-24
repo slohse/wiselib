@@ -41,6 +41,7 @@ template<typename OsModel_P,
 		typedef self_type* self_pointer_t;
 
 		typedef CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T> self_t;
+		typedef self_t CoapRadio_t;
 
 		typedef typename CoapPacket<OsModel, Radio, string_t>::coap_packet_t coap_packet_t;
 		typedef typename CoapPacket<OsModel, Radio, string_t>::coap_packet_r coap_packet_r;
@@ -155,6 +156,81 @@ template<typename OsModel_P,
 			ERR_NOTIMPL = OsModel::ERR_NOTIMPL
 		};
 
+		class ReceivedMessage
+		{
+		public:
+			ReceivedMessage()
+			{
+				message_ = coap_packet_t();
+				ack_ = NULL;
+				response_ = false;
+			}
+
+			ReceivedMessage( const coap_packet_t &packet, node_id_t from )
+			{
+				message_ = packet;
+				correspondent_ = from;
+				ack_ = NULL;
+				response_ = false;
+			}
+
+			coap_packet_r message() const
+			{
+				return message_;
+			}
+
+			coap_packet_r message()
+			{
+				return message_;
+			}
+
+			node_id_t correspondent() const
+			{
+				return correspondent_;
+			}
+
+			coap_packet_t * ack_sent() const
+			{
+				return ack_;
+			}
+
+			bool response_sent() const
+			{
+				return response_;
+			}
+
+		private:
+			template<typename __os, typename __radio, typename __timer, typename __debug, typename __rand, typename __string> friend class CoapRadio;
+			coap_packet_t message_;
+			// in this case the sender
+			node_id_t correspondent_;
+			coap_packet_t *ack_;
+			bool response_;
+			// TODO: empfangszeit? (Freshness)
+
+			void set_message( const coap_packet_t &message)
+			{
+				message_ = message;
+			}
+
+			void set_correspondent( node_id_t correspondent)
+			{
+				correspondent_ = correspondent;
+			}
+
+			void set_ack_sent( coap_packet_t *ack )
+			{
+				ack_ = ack;
+			}
+
+			void set_response_sent(bool response)
+			{
+				response_ = response;
+			}
+
+
+		};
+
 	private:
 		class SentMessage
 		{
@@ -246,78 +322,6 @@ template<typename OsModel_P,
 			uint16_t retransmit_timeout_;
 			bool ack_received_;
 			coapreceiver_delegate_t sender_callback_;
-		};
-
-		class ReceivedMessage
-		{
-		public:
-			ReceivedMessage()
-			{
-				message_ = coap_packet_t();
-				ack_ = NULL;
-				response_ = false;
-			}
-
-			ReceivedMessage( const coap_packet_t &packet, node_id_t from )
-			{
-				message_ = packet;
-				correspondent_ = from;
-				ack_ = NULL;
-				response_ = false;
-			}
-
-			coap_packet_r message() const
-			{
-				return message_;
-			}
-
-			coap_packet_r message()
-			{
-				return message_;
-			}
-
-			void set_message( const coap_packet_t &message)
-			{
-				message_ = message;
-			}
-
-			node_id_t correspondent() const
-			{
-				return correspondent_;
-			}
-
-			void set_correspondent( node_id_t correspondent)
-			{
-				correspondent_ = correspondent;
-			}
-
-			coap_packet_t * ack_sent() const
-			{
-				return ack_;
-			}
-
-			void set_ack_sent( coap_packet_t *ack )
-			{
-				ack_ = ack;
-			}
-
-			bool response_sent() const
-			{
-				return response_;
-			}
-
-			void set_response_sent(bool response)
-			{
-				response_ = response;
-			}
-
-		private:
-			coap_packet_t message_;
-			// in this case the sender
-			node_id_t correspondent_;
-			coap_packet_t *ack_;
-			bool response_;
-			// TODO: empfangszeit? (Freshness)
 		};
 
 		class CoapResource
@@ -1089,6 +1093,9 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> \n");
 #endif
+#ifdef DEBUG_COAPRADIO_PC
+		cout << "CoapRadio::reply> \n";
+#endif
 		ReceivedMessage *req_mes = NULL;
 		typename received_list_t::iterator it = received_.begin();
 		for(; it != received_.end(); ++it)
@@ -1107,6 +1114,9 @@ template<typename OsModel_P,
 
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> found matching request\n");
+#endif
+#ifdef DEBUG_COAPRADIO_PC
+		cout << "CoapRadio::reply> found matching request\n";
 #endif
 		return reply( (*req_mes), payload, payload_length, code );
 	}

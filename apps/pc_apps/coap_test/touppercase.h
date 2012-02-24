@@ -15,10 +15,54 @@
 namespace wiselib
 {
 
+template<typename CoapRadio_P>
 class ToUpperCase
 {
+public:
+	typedef CoapRadio_P Radio;
+	typedef typename Radio::coap_packet_t coap_packet_t;
+	typedef typename Radio::coap_packet_r coap_packet_r;
 
+	ToUpperCase()
+	{
 
+	}
+
+	~ToUpperCase()
+	{
+
+	}
+
+	int init( Radio& radio)
+	{
+		radio_ = radio;
+	}
+
+	void receive_coap( typename Radio::node_id_t from, const coap_packet_r packet )
+	{
+		cout << "ToUpperCase::receive_coap> Received Code"
+				<< (int) packet.code() << " with "
+				<< packet.data_length() << " Bytes payload\n";
+		typename Radio::block_data_t *reply;
+		size_t reply_length = 0;
+		if(packet.data_length() > 0)
+		{
+			string payload = string( (char *) packet.data(), packet.data_length() );
+			cout << "Payload String: " << payload;
+			boost::to_upper( payload );
+			cout << " converted to " << payload << "\n";
+			char cstr[payload.length()];
+			memcpy(cstr, payload.data(), payload.length());
+			reply_length = payload.length();
+			reply = (typename Radio::block_data_t *) cstr;
+		}
+		cout << "sending " << reply_length << " bytes in reply\n";
+		radio_.reply( packet, reply, reply_length );
+
+	}
+
+private:
+	Radio radio_;
 };
 
 }

@@ -12,6 +12,7 @@
 #include "udp4radio.h"
 #include "ipv4_socket.h"
 #include "coapresource.h"
+#include "touppercase.h"
 
 using namespace wiselib;
 
@@ -49,6 +50,8 @@ int main(int argc, char** argv) {
 	Os::Timer::self_pointer_t timer_;
 	Os::Debug::self_pointer_t debug_;
 	Os::Rand::self_pointer_t rand_;
+
+	typedef wiselib::StaticString string_t;
 
 	debug_ = new Os::Debug();
 	timer_ = new Os::Timer();
@@ -89,9 +92,9 @@ int main(int argc, char** argv) {
 
 	UDP4Radio<Os> *udpradio = new UDP4Radio<Os>();
 
-//	CoapPacket<Os, UDP4Radio<Os>, StaticString> testpacket;
+	typedef CoapRadio<Os, UDP4Radio<Os>, Os::Timer, Os::Debug, Os::Rand, string_t> coap_radio_t;
 
-	CoapRadio<Os, UDP4Radio<Os>, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
+	coap_radio_t cradio_;
 
 	cradio_.init( *udpradio,
 			*timer_,
@@ -99,6 +102,13 @@ int main(int argc, char** argv) {
 			*rand_);
 
 	cradio_.enable_radio();
+
+	ToUpperCase<coap_radio_t> uppercaser;
+	uppercaser.init(cradio_);
+
+	string_t to_upper_path = string_t("touppercase");
+
+	int to_upper_id = cradio_.reg_resource_callback< ToUpperCase<coap_radio_t>, &ToUpperCase<coap_radio_t>::receive_coap>( to_upper_path, &uppercaser );
 
 	udpradio->set_socket( coapsocket );
 
