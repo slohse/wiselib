@@ -464,6 +464,9 @@ namespace wiselib
 						<< " looking at byte " << (int) i << "/" << (int) length
 						<< "\n";
 #endif
+#ifdef DEBUG_COAPRADIO
+				debug_->debug("CoapPacket::parse_message> parsed_options: %i/%i\n", parsed_options, option_count );
+#endif
 				option_number = previous_option_number + ( read<OsModel , block_data_t , uint8_t >( datastream + i ) >> 4 );
 				length_of_option = read<OsModel , block_data_t , uint8_t >( datastream + i ) & 0x0f;
 				if( length_of_option == COAP_LONG_OPTION )
@@ -550,6 +553,9 @@ namespace wiselib
 				++i;
 				if( i + length_of_option - 1 < length )
 				{
+#ifdef DEBUG_COAPRADIO
+				debug_->debug("CoapPacket::parse_message> parsing option %i, length %i\n", option_number, length_of_option );
+#endif
 					int option_parse_status = parse_option(option_number, length_of_option, datastream+i);
 					if ( option_parse_status == SUCCESS )
 					{
@@ -1390,7 +1396,7 @@ namespace wiselib
 				str_buf[option_length] = '\0';
 				CoapOption<string_t> str_opt( option_number, string_t( str_buf ) );
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapPacket::parse_option> adding string %s\n", str_opt.value().c_str() );
+		debug_->debug("CoapPacket::parse_option> adding string %s\n", str_buf );
 #endif
 
 				if( str_opt.option_number() == COAP_OPT_URI_HOST )
@@ -1404,6 +1410,9 @@ namespace wiselib
 			}
 			else if( COAP_OPTION_FORMAT[option_number] ==  COAP_FORMAT_OPAQUE )
 			{
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::parse_option> adding opaque option, optnum %i\n", option_number );
+#endif
 				OpaqueData opq_dta( value, option_length );
 				CoapOption<OpaqueData> opq_opt( option_number, opq_dta );
 				if( opq_opt.option_number() == COAP_OPT_TOKEN )
