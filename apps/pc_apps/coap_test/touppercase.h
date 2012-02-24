@@ -54,7 +54,7 @@ public:
 		radio_ = radio;
 	}
 
-	void receive_coap( typename Radio::node_id_t from, coap_message_t message )
+	void receive_coap( typename Radio::node_id_t from, coap_message_t &message )
 	{
 		coap_packet_r packet = message.message();
 		cout << "ToUpperCase::receive_coap> Received Code"
