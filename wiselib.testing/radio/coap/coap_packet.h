@@ -725,6 +725,7 @@ namespace wiselib
 		typename String_T>
 	void CoapPacket<OsModel_P, Radio_P, String_T>::set_token( const OpaqueData &token )
 	{
+		remove_option( COAP_OPT_TOKEN );
 		if( token != OpaqueData() )
 		{
 			set_option( COAP_OPT_TOKEN, token );
