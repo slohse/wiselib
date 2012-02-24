@@ -243,8 +243,9 @@ class ExampleApplication
 //         debug_->debug( "message is %s\n", buf );
       }
 
-      void receive_coap( Os::Radio::node_id_t from, const wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_r packet )
+      void receive_coap( Os::Radio::node_id_t from, wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
       {
+    	  wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_r packet = message.message();
 #ifdef COAP_APP_DEBUG
     	  debug_->debug( "Node %i -- ExampleApp::receive_coap> received from node %i\n", radio_->id(), from );
 #endif
@@ -261,7 +262,7 @@ class ExampleApplication
     				  debug_->debug( "Node %i -- ExampleApp::receive_coap> there is data\n", radio_->id() );
 #endif
     				  uint8_t result = packet.data()[0] + 1;
-    				  cradio_.reply( packet, &result, 1 );
+    				  cradio_.reply( message, &result, 1 );
     			  }
     		  }
 
@@ -333,7 +334,7 @@ class ExampleApplication
 #endif
     			  block_data_t result_ser[4];
     			  wiselib::write<Os , block_data_t , int32_t >( result_ser, result );
-    			  cradio_.reply( packet, result_ser, 4 );
+    			  cradio_.reply( message, result_ser, 4 );
 
     		  }
 #endif // SHAWN

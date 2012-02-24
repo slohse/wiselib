@@ -103,12 +103,12 @@ int main(int argc, char** argv) {
 
 	cradio_.enable_radio();
 
-	ToUpperCase<coap_radio_t> uppercaser;
+	ToUpperCase<coap_radio_t> uppercaser = ToUpperCase<coap_radio_t>();
 	uppercaser.init(cradio_);
 
-	string_t to_upper_path = string_t("touppercase");
+	wiselib::StaticString to_upper_path = wiselib::StaticString("touppercase");
 
-	int to_upper_id = cradio_.reg_resource_callback< ToUpperCase<coap_radio_t>, &ToUpperCase<coap_radio_t>::receive_coap>( to_upper_path, &uppercaser );
+	int to_upper_id = cradio_.reg_resource_callback< ToUpperCase<coap_radio_t>, &ToUpperCase<coap_radio_t>::receive_coap >( to_upper_path, &uppercaser );
 
 	udpradio->set_socket( coapsocket );
 

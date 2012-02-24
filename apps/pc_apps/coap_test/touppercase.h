@@ -22,10 +22,26 @@ public:
 	typedef CoapRadio_P Radio;
 	typedef typename Radio::coap_packet_t coap_packet_t;
 	typedef typename Radio::coap_packet_r coap_packet_r;
+	typedef typename Radio::ReceivedMessage coap_message_t;
+
+	ToUpperCase& operator=( const ToUpperCase &rhs )
+	{
+		// avoid self-assignment
+		if(this != &rhs)
+		{
+			radio_ = rhs.radio_;
+		}
+		return *this;
+	}
 
 	ToUpperCase()
 	{
 
+	}
+
+	ToUpperCase( const ToUpperCase &rhs )
+	{
+		*this = rhs;
 	}
 
 	~ToUpperCase()
@@ -38,8 +54,9 @@ public:
 		radio_ = radio;
 	}
 
-	void receive_coap( typename Radio::node_id_t from, const coap_packet_r packet )
+	void receive_coap( typename Radio::node_id_t from, coap_message_t message )
 	{
+		coap_packet_r packet = message.message();
 		cout << "ToUpperCase::receive_coap> Received Code"
 				<< (int) packet.code() << " with "
 				<< packet.data_length() << " Bytes payload\n";
@@ -57,7 +74,7 @@ public:
 			reply = (typename Radio::block_data_t *) cstr;
 		}
 		cout << "sending " << reply_length << " bytes in reply\n";
-		radio_.reply( packet, reply, reply_length );
+		radio_.reply( message, reply, reply_length );
 
 	}
 
