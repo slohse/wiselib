@@ -60,7 +60,7 @@ public:
 		cout << "ToUpperCase::receive_coap> Received Code"
 				<< (int) packet.code() << " with "
 				<< packet.data_length() << " Bytes payload\n";
-		typename Radio::block_data_t *reply;
+		typename Radio::block_data_t *reply = NULL;
 		size_t reply_length = 0;
 		if(packet.data_length() > 0)
 		{
@@ -68,13 +68,20 @@ public:
 			cout << "Payload String: " << payload;
 			boost::to_upper( payload );
 			cout << " converted to " << payload << "\n";
-			char cstr[payload.length()];
-			memcpy(cstr, payload.data(), payload.length());
+			reply = (typename Radio::block_data_t *) malloc(payload.length() * sizeof( char ));
+			memcpy(reply, payload.data(), payload.length());
 			reply_length = payload.length();
-			reply = (typename Radio::block_data_t *) cstr;
 		}
-		cout << "sending " << reply_length << " bytes in reply\n";
+		cout << "sending " << reply_length << " bytes in reply: ";
+		for(size_t m = 0; m < reply_length; ++m )
+		{
+			cout << (int) reply[m] << " ";
+		}
+		cout << "\n";
 		radio_.reply( message, reply, reply_length );
+
+		if( reply != NULL )
+			free(reply);
 
 	}
 
