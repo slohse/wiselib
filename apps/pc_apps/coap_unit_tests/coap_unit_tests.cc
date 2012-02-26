@@ -58,8 +58,6 @@ BOOST_FIXTURE_TEST_CASE( Constructor, FacetsFixture )
 	BOOST_CHECK_EQUAL( packet.opt_if_none_match(), false );
 	BOOST_CHECK_EQUAL( packet.what_options_are_set(), 0 );
 	BOOST_CHECK_EQUAL( packet.uri_port(), COAP_STD_PORT );
-
-
 }
 
 BOOST_FIXTURE_TEST_CASE( Serialize, FacetsFixture )
@@ -81,18 +79,27 @@ BOOST_FIXTURE_TEST_CASE( Serialize2, FacetsFixture )
 {
 	coap_packet_t packet;
 	size_t packet_serialize_length_expected = 6;
+	block_data_t packet_actual[ 200 ];
 
 	packet.set_opt_if_none_match( true );
 	BOOST_CHECK_EQUAL( packet.serialize_length(), packet_serialize_length_expected );
 
 	block_data_t packet_expected[] = { 0x52, COAP_CODE_EMPTY, 0x00, 0x00,
 			( ( COAP_OPT_FENCEPOST & 0x0F) << 4 ), ( ( 7 & 0x0F) << 4 ) };
-	block_data_t packet_actual[ packet.serialize_length() ];
 	size_t packet_serialize_length_actual = packet.serialize( packet_actual );
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 				packet_expected, packet_expected + packet_serialize_length_expected );
 
 	packet.set_opt_if_none_match( false );
+
+	block_data_t vanilla_packet_expected[] = { 0x50, COAP_CODE_EMPTY, 0x00, 0x00 };
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+	size_t vanilla_packet_serialize_length_expected = 4;
+
+	BOOST_CHECK_EQUAL( packet.serialize_length(), packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + vanilla_packet_serialize_length_expected,
+				vanilla_packet_expected, vanilla_packet_expected + vanilla_packet_serialize_length_expected );
+
 }
 
 
