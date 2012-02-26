@@ -43,6 +43,13 @@ BOOST_FIXTURE_TEST_CASE( ConstructorsDestructors, FacetsFixture )
 {
 	coap_packet_t packet;
 	BOOST_CHECK_EQUAL( packet.code(), COAP_CODE_EMPTY );
+	BOOST_CHECK_EQUAL( packet.version(), COAP_VERSION );
+	BOOST_CHECK_EQUAL( packet.type(), COAP_MSG_TYPE_NON );
+	BOOST_CHECK_EQUAL( packet.data_length(), 0 );
+	BOOST_CHECK_EQUAL( packet.opt_if_none_match(), false );
+	BOOST_CHECK_EQUAL( packet.what_options_are_set(), 0 );
+	BOOST_CHECK_EQUAL( packet.uri_port(), COAP_STD_PORT );
+
 }
 
 

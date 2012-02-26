@@ -295,6 +295,8 @@ namespace wiselib
 
 		uint32_t deserialize_uint( block_data_t *datastream, size_t length);
 
+		size_t uint_serialize_length( const uint32_t number ) const;
+
 		int add_string_segments( char *cstr, char delimiter, CoapOptions optnum );
 
 	};
@@ -795,6 +797,7 @@ namespace wiselib
 		typename String_T>
 	void CoapPacket<OsModel_P, Radio_P, String_T>::set_uri_port( uint32_t port )
 	{
+		remove_option( COAP_OPT_URI_PORT );
 		if( port != COAP_STD_PORT )
 		{
 			set_option( COAP_OPT_URI_PORT, port );
@@ -870,18 +873,7 @@ namespace wiselib
 			// Option header
 			++length;
 
-			// TODO: Magic Number.... die Uint-Optionen sind in der aktuellen Version (draft-07)
-			// des Standards maximal 4 byte lang (Max-Age)
-			// TODO: und es gibt sicher einen eleganteren Weg herauszufinden wie viele Bytes
-			// man für eine Zahl braucht
-			for( int i = 0; i < 4; ++i )
-			{
-				if ( ( *uit ).value() % (0x100 << (i * 8)) == ( *uit ).value() )
-				{
-					length += i+1;
-					break;
-				}
-			}
+			length += uint_serialize_length( ( *uit ).value() );
 		}
 
 		typename list_static<OsModel, CoapOption<OpaqueData>, COAP_LIST_SIZE_OPAQUE>::iterator oit = opaque_options_.begin();
@@ -1633,17 +1625,7 @@ namespace wiselib
 
 		delta_and_size = (uint8_t) (( opt.option_number() - previous_option_number ) << 4 );
 
-		size_t length = 0;
-		// the maximum size of the integer is 32bit or 4 byte
-		// this loop determines how many bytes are actually needed to transmit a uint
-		for( int i = 0; i < 4; ++i )
-		{
-			if ( opt.value() % (0x100 << (i * 8)) == opt.value() )
-			{
-				length += i+1;
-				break;
-			}
-		}
+		size_t length = uint_serialize_length( opt.value() );
 		delta_and_size |= (length & 0x0f);
 		write<OsModel , block_data_t , uint8_t >( ( block_data_t* ) datastream + offset, delta_and_size);
 		++offset;
@@ -1672,6 +1654,22 @@ namespace wiselib
 			result = (result << 8) | datastream[i];
 		}
 		return result;
+	}
+
+	template<typename OsModel_P,
+		typename Radio_P,
+		typename String_T>
+	size_t CoapPacket<OsModel_P, Radio_P, String_T>::uint_serialize_length( const uint32_t number ) const
+	{
+		int i = 0;
+		for( ; i < 5; ++i )
+		{
+			if ( number < (uint32_t) (0x1 << (i * 8)) )
+			{
+				break;
+			}
+		}
+		return i;
 	}
 
 	template<typename OsModel_P,
