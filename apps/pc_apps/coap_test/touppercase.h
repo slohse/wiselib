@@ -78,7 +78,7 @@ public:
 			cout << (int) reply[m] << " ";
 		}
 		cout << "\n";
-		radio_.reply( message, reply, reply_length );
+		radio_->reply( message, reply, reply_length );
 
 		if( reply != NULL )
 			free(reply);

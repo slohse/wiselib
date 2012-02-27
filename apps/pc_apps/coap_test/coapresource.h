@@ -17,10 +17,14 @@
 namespace wiselib
 {
 
+template<typename CoapRadio_P>
 class CoapResource
 {
 public:
 	typedef CoapRadio_P Radio;
+	typedef typename Radio::coap_packet_t coap_packet_t;
+	typedef typename Radio::coap_packet_r coap_packet_r;
+	typedef typename Radio::ReceivedMessage coap_message_t;
 
 	CoapResource( Radio& radio ) :
 		radio_(radio)
@@ -107,7 +111,7 @@ public:
 
 	void receive_coap( typename Radio::node_id_t from, coap_message_t &message )
 	{
-
+//		if(message.message().)
 	}
 
 private:

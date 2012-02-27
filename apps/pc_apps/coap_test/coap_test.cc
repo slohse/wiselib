@@ -11,7 +11,7 @@
 
 #include "udp4radio.h"
 #include "ipv4_socket.h"
-#include "coapresource.h"
+//#include "coapresource.h"
 #include "touppercase.h"
 
 using namespace wiselib;
