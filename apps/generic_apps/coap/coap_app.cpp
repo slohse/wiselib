@@ -199,7 +199,7 @@ class ExampleApplication
 #ifdef COAP_APP_DEBUG
         	 debug_->debug( "Node %i -- ExampleApp::broadcast_loop()> sending request for plusone with number %i\n", radio_->id(), testnumber );
 #endif
-        	 cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, plusone, query, this, &testnumber, 1 );
+        	 cradio_.post< ExampleApplication, &ExampleApplication::receive_coap>( 1, plusone, query, this, &testnumber, 1 );
         	 testnumber += 2;
 
 #ifdef SHAWN

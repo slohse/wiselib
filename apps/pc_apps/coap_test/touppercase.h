@@ -51,7 +51,7 @@ public:
 
 	int init( Radio& radio)
 	{
-		radio_ = radio;
+		radio_ = &radio;
 	}
 
 	void receive_coap( typename Radio::node_id_t from, coap_message_t &message )
@@ -86,7 +86,7 @@ public:
 	}
 
 private:
-	Radio radio_;
+	Radio *radio_;
 };
 
 }

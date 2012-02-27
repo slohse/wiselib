@@ -184,8 +184,6 @@ template<typename OsModel_P,
 					string_t uri_path,
 					string_t uri_query,
 					T *callback,
-					uint8_t* payload = NULL,
-					size_t payload_length = 0,
 					bool confirmable = false,
 					string_t uri_host = string_t(),
 					uint16_t uri_port = COAP_STD_PORT);
@@ -217,8 +215,6 @@ template<typename OsModel_P,
 					string_t uri_path,
 					string_t uri_query,
 					T *callback,
-					uint8_t* payload = NULL,
-					size_t payload_length = 0,
 					bool confirmable = false,
 					string_t uri_host = string_t(),
 					uint16_t uri_port = COAP_STD_PORT);
@@ -972,8 +968,6 @@ template<typename OsModel_P,
 			string_t uri_path,
 			string_t uri_query,
 			T *callback,
-			uint8_t* payload,
-			size_t payload_length,
 			bool confirmable,
 			string_t uri_host,
 			uint16_t uri_port)
@@ -981,7 +975,7 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::get> \n");
 #endif
-		return request<T, TMethod>( receiver, COAP_CODE_GET ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
+		return request<T, TMethod>( receiver, COAP_CODE_GET ,uri_path, uri_query, callback, NULL, 0, confirmable, uri_host, uri_port );
 	}
 
 	template<typename OsModel_P,
@@ -1041,8 +1035,6 @@ template<typename OsModel_P,
 			string_t uri_path,
 			string_t uri_query,
 			T *callback,
-			uint8_t* payload,
-			size_t payload_length,
 			bool confirmable,
 			string_t uri_host,
 			uint16_t uri_port)
@@ -1050,7 +1042,7 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::delete> \n");
 #endif
-		return request<T, TMethod>( receiver, COAP_CODE_DELETE ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
+		return request<T, TMethod>( receiver, COAP_CODE_DELETE ,uri_path, uri_query, callback, NULL, 0, confirmable, uri_host, uri_port );
 	}
 
 	template<typename OsModel_P,

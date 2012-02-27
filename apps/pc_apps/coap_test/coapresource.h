@@ -20,7 +20,10 @@ namespace wiselib
 class CoapResource
 {
 public:
-	CoapResource()
+	typedef CoapRadio_P Radio;
+
+	CoapResource( Radio& radio ) :
+		radio_(radio)
 	{
 		resource_name_ = "";
 		data_ = NULL;
@@ -34,6 +37,11 @@ public:
 		{
 			free(data_);
 		}
+	}
+
+	int init( Radio& radio)
+	{
+		radio_ = radio;
 	}
 
 	const string& resource_name() const
@@ -97,12 +105,20 @@ public:
 		return data_len_;
 	}
 
+	void receive_coap( typename Radio::node_id_t from, coap_message_t &message )
+	{
+
+	}
 
 private:
 	string resource_name_;
 	map<string, CoapResource> subresources_;
 	uint8_t * data_;
 	size_t data_len_;
+	Radio& radio_;
+
+	CoapResource( );
+
 
 };
 }
