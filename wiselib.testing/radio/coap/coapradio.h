@@ -1356,7 +1356,7 @@ template<typename OsModel_P,
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::handle_request( node_id_t from, ReceivedMessage& message )
 	{
 		string_t available_res;
-		// we're looking at the first path segment only, subresources should be handled by their parents
+		// TODO: we're looking at the first path segment only, subresources should be handled by their parents
 		string_t request_res = message.message().uri_path();
 		bool resource_found = false;
 #ifdef DEBUG_COAPRADIO
