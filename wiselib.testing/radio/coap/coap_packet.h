@@ -484,7 +484,7 @@ namespace wiselib
 						{
 							char * error_description = NULL;
 							int len = 0;
-#ifdef COAP_HUMAN_READABLE_ERRORS
+#if COAP_HUMAN_READABLE_ERRORS == 1
 							char error_description_str[MAX_STRING_LENGTH];
 							len = sprintf(error_description, "Options exceed packet length.");
 							error_description = error_description_str;
@@ -506,7 +506,7 @@ namespace wiselib
 						{
 							char * error_description = NULL;
 							int len = 0;
-#ifdef COAP_HUMAN_READABLE_ERRORS
+#if COAP_HUMAN_READABLE_ERRORS == 1
 							char error_description_str[MAX_STRING_LENGTH];
 							len = sprintf(error_description, "Unknown critical option %i.", option_number);
 							error_description = error_description_str;
@@ -534,7 +534,7 @@ namespace wiselib
 							{
 								char * error_description = NULL;
 								int len = 0;
-#ifdef COAP_HUMAN_READABLE_ERRORS
+#if COAP_HUMAN_READABLE_ERRORS == 1
 								char error_description_str[MAX_STRING_LENGTH];
 								len = sprintf(error_description, "Multiple occurences of critical option %i.", option_number);
 								error_description = error_description_str;
@@ -578,7 +578,7 @@ namespace wiselib
 					{
 						char * error_description = NULL;
 						int len = 0;
-#ifdef COAP_HUMAN_READABLE_ERRORS
+#if COAP_HUMAN_READABLE_ERRORS == 1
 						char error_description_str[MAX_STRING_LENGTH];
 						len = sprintf(error_description, "Options exceed packet length.");
 						error_description = error_description_str;
@@ -1366,7 +1366,7 @@ namespace wiselib
 						{
 							char * error_description = NULL;
 							int len = 0;
-#ifdef COAP_HUMAN_READABLE_ERRORS
+#if COAP_HUMAN_READABLE_ERRORS == 1
 							char error_description_str[MAX_STRING_LENGTH];
 							len = sprintf(error_description_str, "String option %i out of bounds.", option_number );
 							error_description = error_description_str;

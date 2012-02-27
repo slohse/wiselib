@@ -583,7 +583,7 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 			debug_->debug( "Node %i -- CoapRadio::send \n", id() );
 #endif
-#ifdef COAP_PREFACE_MSG_ID
+#if COAP_PREFACE_MSG_ID == 1
 		block_data_t buf[len+1];
 		buf[0] = CoapMsgId;
 		memcpy( buf + 1, data, len );
@@ -601,7 +601,7 @@ template<typename OsModel_P,
 			debug_->debug( "\n" );
 #endif
 
-#ifdef COAP_PREFACE_MSG_ID
+#if COAP_PREFACE_MSG_ID == 1
 		radio_->send(receiver, len + 1, buf);
 #else
 		radio_->send(receiver, len, buf);
@@ -737,7 +737,7 @@ template<typename OsModel_P,
 		if (len > 0 )
 		{
 			size_t msg_id_t_size = 0;
-#ifdef COAP_PREFACE_MSG_ID
+#if COAP_PREFACE_MSG_ID == 1
 			message_id_t msg_id = read<OsModel, block_data_t, message_id_t>( data );
 			msg_id_t_size = sizeof( message_id_t );
 			if( msg_id == CoapMsgId )
@@ -846,7 +846,7 @@ template<typename OsModel_P,
 							{
 								char * error_description = NULL;
 								int len = 0;
-#ifdef COAP_HUMAN_READABLE_ERRORS
+#if COAP_HUMAN_READABLE_ERRORS == 1
 								char error_description_str[MAX_STRING_LENGTH];
 								len = sprintf( error_description, "Unknown Code %i", packet.code() );
 								error_description = error_description_str;
@@ -875,7 +875,7 @@ template<typename OsModel_P,
 					// ignore
 					return;
 				}
-#ifdef COAP_PREFACE_MSG_ID
+#if COAP_PREFACE_MSG_ID == 1
 			}
 #ifdef DEBUG_COAPRADIO
 			else
@@ -1356,6 +1356,7 @@ template<typename OsModel_P,
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::handle_request( node_id_t from, ReceivedMessage& message )
 	{
 		string_t available_res;
+		// we're looking at the first path segment only, subresources should be handled by their parents
 		string_t request_res = message.message().uri_path();
 		bool resource_found = false;
 #ifdef DEBUG_COAPRADIO
@@ -1396,7 +1397,7 @@ template<typename OsModel_P,
 #endif
 			char * error_description = NULL;
 			int len = 0;
-#ifdef COAP_HUMAN_READABLE_ERRORS
+#if COAP_HUMAN_READABLE_ERRORS == 1
 			char error_description_str[MAX_STRING_LENGTH];
 			len = sprintf(error_description, "Resource %s not found.", request_res.c_str() );
 			error_description = error_description_str;
