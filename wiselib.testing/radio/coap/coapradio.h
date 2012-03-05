@@ -16,10 +16,7 @@ template<typename OsModel_P,
 	typename Rand_P = typename OsModel_P::Rand,
 	typename String_T = wiselib::StaticString>
 	class CoapRadio
-	: public RadioBase<OsModel_P,
-		typename Radio_P::node_id_t,
-		typename Radio_P::size_t,
-		typename Radio_P::block_data_t> {
+	{
 
 	public:
 		// Type definitions
@@ -763,9 +760,6 @@ template<typename OsModel_P,
 				}
 				cout << dec << "\n";
 #endif
-
-				// notify those who want raw data
-				notify_receivers( from, len - msg_id_t_size, data + msg_id_t_size );
 
 				coap_packet_t packet;
 #ifdef DEBUG_COAPRADIO
