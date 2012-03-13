@@ -739,7 +739,7 @@ namespace wiselib
 		typename String_T>
 	String_T CoapPacket<OsModel_P, Radio_P, String_T>::uri_path()
 	{
-		string_t path;
+		string_t path = string_t();
 		list_static<OsModel_P, string_t, COAP_LIST_SIZE_STRING> segments;
 		if ( get_options( COAP_OPT_URI_PATH, segments ) == SUCCESS )
 		{
@@ -1384,10 +1384,10 @@ namespace wiselib
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapPacket::parse_option> adding string option, length %i\n", option_length );
 #endif
-				char str_buf[ option_length + 1];
-				memcpy( str_buf, value, option_length );
-				str_buf[option_length] = '\0';
-				CoapOption<string_t> str_opt( option_number, string_t( str_buf ) );
+//				char str_buf[ option_length + 1];
+//				memcpy( str_buf, value, option_length );
+//				str_buf[option_length] = '\0';
+				CoapOption<string_t> str_opt( option_number, string_t( (char*) value, option_length ) );
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapPacket::parse_option> adding string %s\n", str_buf );
 #endif
@@ -1695,10 +1695,10 @@ namespace wiselib
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapPacket::add_string_segments> found segment at %i length %i \n", segment_start, length);
 #endif
-				char buffer[length + 1];
-				memcpy( buffer, cstr + segment_start, length );
-				buffer[length] = '\0';
-				string_t buffer_str( buffer );
+//				char buffer[length + 1];
+//				memcpy( buffer, cstr + segment_start, length );
+//				buffer[length] = '\0';
+				string_t buffer_str( cstr + segment_start, length );
 				add_option( optnum , buffer_str );
 				++segments;
 				segment_start = position + 1;
@@ -1710,13 +1710,13 @@ namespace wiselib
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapPacket::add_string_segments> found segment at %i length %i \n", segment_start, length);
 #endif
-			char buffer[length + 1];
-			memcpy( buffer, cstr + segment_start, length );
-			buffer[length] = '\0';
+//			char buffer[length + 1];
+//			memcpy( buffer, cstr + segment_start, length );
+//			buffer[length] = '\0';
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapPacket::add_string_segments> adding %s \n", buffer );
 #endif
-			string_t buffer_str( buffer );
+			string_t buffer_str( cstr + segment_start, length );
 			add_option( optnum , buffer_str );
 			++segments;
 		}
