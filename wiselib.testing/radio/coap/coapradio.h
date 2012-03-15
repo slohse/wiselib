@@ -101,7 +101,7 @@ template<typename OsModel_P,
 				return ack_;
 			}
 
-			bool response_sent() const
+			coap_packet_t * response_sent() const
 			{
 				return response_;
 			}
@@ -112,7 +112,7 @@ template<typename OsModel_P,
 			// in this case the sender
 			node_id_t correspondent_;
 			coap_packet_t *ack_;
-			bool response_;
+			coap_packet_t *response_;
 			// TODO: empfangszeit? (Freshness)
 
 			void set_message( const coap_packet_t &message)
@@ -130,7 +130,7 @@ template<typename OsModel_P,
 				ack_ = ack;
 			}
 
-			void set_response_sent(bool response)
+			void set_response_sent(coap_packet_t *response)
 			{
 				response_ = response;
 			}
@@ -172,7 +172,7 @@ template<typename OsModel_P,
 		template<class T, void (T::*TMethod)(node_id_t, ReceivedMessage&)>
 		int reg_resource_callback( string_t resource_path, T *callback );
 
-		int unreg_recv_callback( int idx );
+		int unreg_resource_callback( int idx );
 
 		void receive_coap(node_id_t from, ReceivedMessage& message);
 
@@ -857,6 +857,7 @@ template<typename OsModel_P,
 						// if it's confirmable we might want to hurry sending an ACK
 						if( packet.type() == COAP_MSG_TYPE_CON )
 							ack( *deduplication );
+// TODO						if( deduplication->response_sent() != NULL )
 					}
 				}
 				else if ( err_code == coap_packet_t::ERR_CON_RESPONSE || err_code == coap_packet_t::ERR_RST )
@@ -944,7 +945,7 @@ template<typename OsModel_P,
 			typename Debug_P,
 			typename Rand_P,
 			typename String_T>
-	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::unreg_recv_callback( int idx )
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::unreg_resource_callback( int idx )
 	{
 		resources_.at(idx) = CoapResource();
 		return SUCCESS;
@@ -1157,7 +1158,7 @@ template<typename OsModel_P,
 			if( sendstatus != NULL )
 			{
 				req_msg.set_ack_sent( sendstatus );
-				req_msg.set_response_sent( true );
+				req_msg.set_response_sent( sendstatus );
 			}
 		}
 		else
@@ -1171,7 +1172,7 @@ template<typename OsModel_P,
 			sendstatus = send_coap_gen_msg_id<self_type, &self_type::receive_coap>( req_msg.correspondent(), reply, this );
 			if( sendstatus != NULL )
 			{
-				req_msg.set_response_sent( true );
+				req_msg.set_response_sent( sendstatus );
 			}
 		}
 
@@ -1323,8 +1324,7 @@ template<typename OsModel_P,
 				// can't match response
 				if( message.message().type() == COAP_MSG_TYPE_CON )
 				{
-					rst( from, message.message().msg_id() );
-					message.set_response_sent(true);
+					message.set_response_sent( rst( from, message.message().msg_id() ) );
 				}
 				return;
 			}
