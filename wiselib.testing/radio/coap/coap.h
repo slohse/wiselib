@@ -62,8 +62,9 @@ enum CoapType
 
 #define COAP_LONG_OPTION	15
 
-enum CoapOptions
+enum CoapOptionNum
 {
+	COAP_OPT_NOOPT = 0,
 	COAP_OPT_CONTENT_TYPE = 1,
 	COAP_OPT_MAX_AGE = 2,
 	COAP_OPT_PROXY_URI = 3,
