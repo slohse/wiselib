@@ -60,7 +60,7 @@ BOOST_FIXTURE_TEST_CASE( Constructor, FacetsFixture )
 	BOOST_CHECK_EQUAL( packet.uri_port(), COAP_STD_PORT );
 }
 
-BOOST_FIXTURE_TEST_CASE( Serialize, FacetsFixture )
+BOOST_FIXTURE_TEST_CASE( Serialize_minimal_packet, FacetsFixture )
 {
 	coap_packet_t packet;
 	size_t vanilla_packet_serialize_length_expected = 4;
@@ -75,7 +75,7 @@ BOOST_FIXTURE_TEST_CASE( Serialize, FacetsFixture )
 			vanilla_packet_expected, vanilla_packet_expected + vanilla_packet_serialize_length_expected );
 }
 
-BOOST_FIXTURE_TEST_CASE( Serialize2, FacetsFixture )
+BOOST_FIXTURE_TEST_CASE( Serialize_fence_posts, FacetsFixture )
 {
 	coap_packet_t packet;
 	size_t packet_serialize_length_expected = 6;
@@ -102,4 +102,47 @@ BOOST_FIXTURE_TEST_CASE( Serialize2, FacetsFixture )
 
 }
 
+BOOST_FIXTURE_TEST_CASE( Serialize_msg_id_token, FacetsFixture )
+{
+	coap_packet_t packet;
+	block_data_t packet_actual[ 200 ];
+
+	size_t packet_serialize_length_expected;
+	size_t packet_serialize_length_actual;
+
+	packet.set_msg_id( 0x1234 );
+	size_t full_opaque = 8;
+	uint8_t tkn_array[ ] = { 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF1, 0x23, 0x45 };
+	OpaqueData tkn( tkn_array, full_opaque );
+	packet.set_token( tkn );
+
+	OpaqueData tkncheck;
+
+//	packet.token( tkncheck );
+
+//	BOOST_CHECK_EQUAL( tkn, tkncheck );
+
+	// 4 Header, 1 option header, 8 token
+	packet_serialize_length_expected = 13;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	block_data_t packet_expected[ ] = { 0x51, COAP_CODE_EMPTY, 0x12, 0x34, 0xB8, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF1, 0x23, 0x45 };
+
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+					packet_expected, packet_expected + packet_serialize_length_expected );
+
+	packet.set_token( tkncheck );
+
+	packet.token( tkncheck );
+
+//	BOOST_CHECK_EQUAL( OpaqueData(), tkncheck );
+
+	size_t packet_serialize_length_expected2 = 4;
+	block_data_t packet_expected2[ ] = { 0x50, COAP_CODE_EMPTY, 0x12, 0x34 };
+
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected2,
+						packet_expected2, packet_expected2 + packet_serialize_length_expected2 );
+
+}
 

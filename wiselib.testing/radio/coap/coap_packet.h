@@ -1573,11 +1573,11 @@ namespace wiselib
 	void CoapPacket<OsModel_P, Radio_P, String_T>::remove_option(list_static<OsModel_P, CoapOption<T>, N> &options, uint8_t option_number)
 	{
 		typename list_static<OsModel_P, CoapOption<T>, N>::iterator it = options.begin();
-		while(it != options.end())
+		while( it != options.end() )
 		{
 			if( ( *it ).option_number() == option_number )
 			{
-				options.erase(it);
+				options.erase( it++ );
 				continue;
 			}
 			++it;
