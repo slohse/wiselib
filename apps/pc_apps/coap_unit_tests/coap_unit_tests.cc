@@ -118,10 +118,6 @@ BOOST_FIXTURE_TEST_CASE( Serialize_msg_id_token, FacetsFixture )
 
 	OpaqueData tkncheck;
 
-//	packet.token( tkncheck );
-
-//	BOOST_CHECK_EQUAL( tkn, tkncheck );
-
 	// 4 Header, 1 option header, 8 token
 	packet_serialize_length_expected = 13;
 
@@ -129,6 +125,7 @@ BOOST_FIXTURE_TEST_CASE( Serialize_msg_id_token, FacetsFixture )
 
 	block_data_t packet_expected[ ] = { 0x51, COAP_CODE_EMPTY, 0x12, 0x34, 0xB8, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF1, 0x23, 0x45 };
 
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 					packet_expected, packet_expected + packet_serialize_length_expected );
 
@@ -136,13 +133,29 @@ BOOST_FIXTURE_TEST_CASE( Serialize_msg_id_token, FacetsFixture )
 
 	packet.token( tkncheck );
 
-//	BOOST_CHECK_EQUAL( OpaqueData(), tkncheck );
+	BOOST_CHECK( tkncheck == OpaqueData() );
 
-	size_t packet_serialize_length_expected2 = 4;
+	packet_serialize_length_expected = 4;
 	block_data_t packet_expected2[ ] = { 0x50, COAP_CODE_EMPTY, 0x12, 0x34 };
 
-	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected2,
-						packet_expected2, packet_expected2 + packet_serialize_length_expected2 );
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+					packet_expected2, packet_expected2 + packet_serialize_length_expected );
+
+	uint8_t tkn_array2[ ] = { 0 };
+	tkn.set( tkn_array2, 1 );
+	packet.set_token( tkn );
+
+	packet_serialize_length_expected = 6;
+	block_data_t packet_expected3[ ] = { 0x51, COAP_CODE_EMPTY, 0x12, 0x34, 0xB1, 0x00 };
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+					packet_expected3, packet_expected3 + packet_serialize_length_expected );
 
 }
 
