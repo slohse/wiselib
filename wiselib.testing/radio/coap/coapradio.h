@@ -251,6 +251,7 @@ template<typename OsModel_P,
 				retransmit_count_ = 0;
 				ack_received_ = false;
 				sender_callback_ = coapreceiver_delegate_t();
+				response_ = NULL;
 			}
 
 			coap_packet_r message() const
@@ -315,6 +316,16 @@ template<typename OsModel_P,
 				ack_received_ = ack_received;
 			}
 
+			ReceivedMessage * response_received() const
+			{
+				return response_;
+			}
+
+			void set_response_received(ReceivedMessage & response)
+			{
+				response_ = &response;
+			}
+
 			coapreceiver_delegate_t sender_callback() const
 			{
 				return sender_callback_;
@@ -332,6 +343,7 @@ template<typename OsModel_P,
 			uint8_t retransmit_count_;
 			uint16_t retransmit_timeout_;
 			bool ack_received_;
+			ReceivedMessage * response_;
 			coapreceiver_delegate_t sender_callback_;
 		};
 
@@ -584,24 +596,9 @@ template<typename OsModel_P,
 		block_data_t buf[len+1];
 		buf[0] = CoapMsgId;
 		memcpy( buf + 1, data, len );
-#else
-		block_data_t buf[len];
-		memcpy( buf, data, len );
-#endif
-
-#ifdef DEBUG_COAPRADIO
-			debug_->debug( "Node %i -- CoapRadio::send> sending: 0x ", id() );
-			for(size_t i = 0; i < len; ++i)
-			{
-				debug_->debug( "%x ", data[i] );
-			}
-			debug_->debug( "\n" );
-#endif
-
-#if COAP_PREFACE_MSG_ID == 1
 		radio_->send(receiver, len + 1, buf);
 #else
-		radio_->send(receiver, len, buf);
+		radio_->send(receiver, len, data);
 #endif
 
 		return SUCCESS;
@@ -857,7 +854,13 @@ template<typename OsModel_P,
 						// if it's confirmable we might want to hurry sending an ACK
 						if( packet.type() == COAP_MSG_TYPE_CON )
 							ack( *deduplication );
-// TODO						if( deduplication->response_sent() != NULL )
+						if( deduplication->response_sent() != NULL )
+						{
+							block_data_t buf[ deduplication->response_sent()->serialize_length() ];
+
+							deduplication->response_sent()->serialize(buf);
+							send(deduplication->correspondent(), deduplication->response_sent()->serialize_length(), buf);
+						}
 					}
 				}
 				else if ( err_code == coap_packet_t::ERR_CON_RESPONSE || err_code == coap_packet_t::ERR_RST )
@@ -1336,6 +1339,7 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("Node %i -- CoapRadio::handle_response> calling response-handler\n", id() );
 #endif
+			(*request).set_response_received( message );
 			(*request).sender_callback()( from, message );
 		}
 
@@ -1408,10 +1412,17 @@ template<typename OsModel_P,
 			typename String_T>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ack( ReceivedMessage& message )
 	{
-		// TODO: prüfen ob schon ein ACK oder response gesendet wurde, falls ja retransmit
 #ifdef DEBUG_COAPRADIO_PC
 				cout << "CoapPacket::ack> msg_id " << message.message().msg_id() << "\n";
 #endif
+		if( message.ack_sent() != NULL )
+		{
+			block_data_t buf[ message.ack_sent()->serialize_length() ];
+
+			message.ack_sent()->serialize(buf);
+			send(message.correspondent(), message.ack_sent()->serialize_length(), buf);
+			return;
+		}
 		coap_packet_t ackp;
 		ackp.set_type( COAP_MSG_TYPE_ACK );
 		ackp.set_msg_id( message.message().msg_id() );
@@ -1432,7 +1443,7 @@ template<typename OsModel_P,
 		if ( act->type_ == TIMER_RETRANSMIT )
 		{
 			SentMessage *sent = ((SentMessage*) act->message_);
-			if( !sent->ack_received() )
+			if( !sent->ack_received() && sent->response_received() == NULL)
 			{
 				size_t length = sent->message().serialize_length();
 				block_data_t buf[length];
