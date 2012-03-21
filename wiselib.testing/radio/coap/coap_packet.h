@@ -1389,7 +1389,7 @@ namespace wiselib
 //				str_buf[option_length] = '\0';
 				CoapOption<string_t> str_opt( option_number, string_t( (char*) value, option_length ) );
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapPacket::parse_option> adding string %s\n", str_buf );
+		debug_->debug("CoapPacket::parse_option> adding string %s\n", const_cast<string_t&>(str_opt.value()).c_str() );
 #endif
 
 				if( str_opt.option_number() == COAP_OPT_URI_HOST )
@@ -1713,10 +1713,10 @@ namespace wiselib
 //			char buffer[length + 1];
 //			memcpy( buffer, cstr + segment_start, length );
 //			buffer[length] = '\0';
-#ifdef DEBUG_COAPRADIO
-		debug_->debug("CoapPacket::add_string_segments> adding %s \n", buffer );
-#endif
 			string_t buffer_str( cstr + segment_start, length );
+#ifdef DEBUG_COAPRADIO
+		debug_->debug("CoapPacket::add_string_segments> adding %s \n", buffer_str.c_str() );
+#endif
 			add_option( optnum , buffer_str );
 			++segments;
 		}
