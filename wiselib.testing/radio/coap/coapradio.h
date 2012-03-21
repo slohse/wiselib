@@ -446,7 +446,9 @@ template<typename OsModel_P,
 
 		void timeout ( void * action );
 
-		TimerAction * reg_timer_action( TimerAction *action );
+		unsigned int reg_timer_action( TimerAction *action );
+
+		void unreg_timer_action( unsigned int idx );
 
 	};
 
@@ -631,20 +633,19 @@ template<typename OsModel_P,
 		if(status != SUCCESS )
 			return NULL;
 
-		SentMessage sent;
+		SentMessage & sent = *( queue_message(SentMessage(), sent_) );
 		sent.set_correspondent( receiver );
 		sent.set_message( message );
 		sent.set_sender_callback( coapreceiver_delegate_t::template from_method<T, TMethod>( callback ) );
 		uint16_t response_timeout = (uint16_t) ((*rand_)( (COAP_MAX_RESPONSE_TIMEOUT - COAP_RESPONSE_TIMEOUT) ) + COAP_RESPONSE_TIMEOUT);
 		sent.set_retransmit_timeout( response_timeout );
-		SentMessage * sentp = queue_message(sent, sent_);
 
 		if( message.type() == COAP_MSG_TYPE_CON )
 		{
 			TimerAction action;
 			action.type_ = TIMER_RETRANSMIT;
-			action.message_ = (void*) sentp;
-			TimerAction * actionp = reg_timer_action( &action );
+			action.message_ = (void*) &sent;
+			void* actionp = (void*) reg_timer_action( &action );
 
 			timer_->template set_timer<self_type, &self_type::timeout>( sent.retransmit_timeout(), this, actionp );
 		}
@@ -791,7 +792,7 @@ template<typename OsModel_P,
 						<< "\n";
 #endif
 					ReceivedMessage *deduplication;
-					// Only act if this message hasn't been received yet, otherwise ignore
+					// Only act if this message hasn't been received yet
 					if( (deduplication = find_message_by_id(from, packet.msg_id(), received_)) == NULL )
 					{
 #ifdef DEBUG_COAPRADIO
@@ -800,8 +801,8 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO_PC
 				cout << "CoapRadio::receive> message is not duplicate!\n";
 #endif
-						ReceivedMessage received_message( packet, from );
-						queue_message( received_message, received_ );
+						ReceivedMessage& received_message = *( queue_message( ReceivedMessage( packet, from ), received_ ) );
+
 						SentMessage *request;
 
 						if ( packet.type() == COAP_MSG_TYPE_RST )
@@ -825,6 +826,15 @@ template<typename OsModel_P,
 						}
 						else
 						{
+							if( packet.type() == COAP_MSG_TYPE_CON )
+							{
+								TimerAction action;
+								action.type_ = TIMER_ACK;
+								action.message_ = (void*) &received_message;
+								void* actionp = (void*) reg_timer_action( &action );
+
+								timer_->template set_timer<self_type, &self_type::timeout>( COAP_ACK_GRACE_PERIOD, this, actionp );
+							}
 							if( packet.is_request() )
 							{
 								handle_request( from, received_message );
@@ -1149,6 +1159,7 @@ template<typename OsModel_P,
 #endif
 		if( request.type() == COAP_MSG_TYPE_CON && req_msg.ack_sent() == NULL )
 		{
+			// no ACK has been sent yet, piggybacked response is possible
 #ifdef DEBUG_COAPRADIO
 		debug_->debug("CoapRadio::reply> sending piggybacked response\n");
 #endif
@@ -1438,11 +1449,11 @@ template<typename OsModel_P,
 			typename String_T>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::timeout ( void * action )
 	{
-		TimerAction *act = (TimerAction *) action;
+		TimerAction& act = timers_.at( (unsigned int) action );
 
-		if ( act->type_ == TIMER_RETRANSMIT )
+		if ( act.type_ == TIMER_RETRANSMIT )
 		{
-			SentMessage *sent = ((SentMessage*) act->message_);
+			SentMessage *sent = ((SentMessage*) act.message_);
 			if( !sent->ack_received() && sent->response_received() == NULL)
 			{
 				size_t length = sent->message().serialize_length();
@@ -1464,19 +1475,19 @@ template<typename OsModel_P,
 			}
 			else
 			{
-				(*act) = TimerAction();
+				unreg_timer_action( ( unsigned int ) action );
 			}
 		}
-		else if ( act->type_ == TIMER_ACK )
+		else if ( act.type_ == TIMER_ACK )
 		{
-			ReceivedMessage *sent = ((ReceivedMessage*) act->message_);
+			ReceivedMessage *sent = ((ReceivedMessage*) act.message_);
 			if( sent->ack_sent() == NULL )
 			{
 				ack( (*sent) );
 			}
 			else
 			{
-				(*act) = TimerAction();
+				unreg_timer_action( ( unsigned int ) action );
 			}
 		}
 	}
@@ -1487,7 +1498,7 @@ template<typename OsModel_P,
 		typename Debug_P,
 		typename Rand_P,
 		typename String_T>
-	typename CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::TimerAction * CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::reg_timer_action( TimerAction *action )
+	unsigned int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::reg_timer_action( TimerAction *action )
 	{
 		if ( timers_.empty() )
 		{
@@ -1499,11 +1510,22 @@ template<typename OsModel_P,
 			if ( timers_.at(i) == TimerAction() )
 			{
 				timers_.at(i) = (*action);
-				return &(timers_.at(i));
+				return i;
 			}
 		}
 
 		return NULL;
+	}
+
+	template<typename OsModel_P,
+			typename Radio_P,
+			typename Timer_P,
+			typename Debug_P,
+			typename Rand_P,
+			typename String_T>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::unreg_timer_action( unsigned int idx )
+	{
+		timers_.at( idx ) = TimerAction();
 	}
 }
 

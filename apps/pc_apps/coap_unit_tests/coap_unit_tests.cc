@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE CoapPacketTest
+#define BOOST_TEST_MODULE CoapTest
 #include <boost/test/included/unit_test.hpp>
 
 #include "external_interface/pc/pc_os_model.h"
@@ -47,6 +47,8 @@ struct FacetsFixture {
 	Os::Debug::self_pointer_t debug_;
 	Os::Rand::self_pointer_t rand_;
 };
+
+BOOST_AUTO_TEST_SUITE(CoapPacket)
 
 BOOST_FIXTURE_TEST_CASE( Constructor, FacetsFixture )
 {
@@ -158,4 +160,19 @@ BOOST_FIXTURE_TEST_CASE( Serialize_msg_id_token, FacetsFixture )
 					packet_expected3, packet_expected3 + packet_serialize_length_expected );
 
 }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+//-----------------------------------------------------------------------
+
+BOOST_AUTO_TEST_SUITE(CoapRadio)
+
+BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
+{
+	int muh = 2;
+	BOOST_CHECK_EQUAL( 2, muh );
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 
