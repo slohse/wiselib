@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE CoapTest
 #include <boost/test/included/unit_test.hpp>
+#include <string>
 
 #include "external_interface/pc/pc_os_model.h"
 #include "external_interface/pc/pc_timer.h"
@@ -158,6 +159,30 @@ BOOST_FIXTURE_TEST_CASE( Serialize_msg_id_token, FacetsFixture )
 	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 					packet_expected3, packet_expected3 + packet_serialize_length_expected );
+
+}
+
+BOOST_FIXTURE_TEST_CASE( parse_and_uri_path, FacetsFixture )
+{
+
+	size_t packet_length = 26;
+
+	block_data_t packet_stream[ ] = { 0x43, COAP_CODE_GET, 0xa4, 0xf2,
+			// Uri-Path, length 7, "storage"
+			0x97, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65,
+			// Uri-Path, length 11, "KAESEKUCHEN"
+			0x0b, 0x4b, 0x41, 0x45, 0x53, 0x45, 0x4b, 0x55, 0x43, 0x48, 0x45, 0x4e,
+			// If-None-Match with one unneccessary value Byte
+			0xc1, 0x00 };
+
+	coap_packet_t packet;
+
+	packet.parse_message( packet_stream, packet_length );
+
+	string expected_path( "storage/KAESEKUCHEN" );
+	string actual_path( packet.uri_path().c_str() );
+
+	BOOST_CHECK_EQUAL( expected_path, actual_path );
 
 }
 

@@ -14,7 +14,7 @@
 
 #include "stdlib.h"
 
-#define COAP_APP_DEBUG
+//#define COAP_APP_DEBUG
 
 
 typedef wiselib::OSMODEL Os;
@@ -226,7 +226,7 @@ class ExampleApplication
 #ifdef COAP_APP_DEBUG
         	 debug_->debug( "Node %i -- ExampleApp::broadcast_loop()> requesting math with query %s\n", radio_->id(), uri_query );
 #endif
-        	 cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, math, query, this, NULL, 0 );
+        	 cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( 1, math, query, this );
 #endif // SHAWN
          }
 //         Os::Radio::block_data_t message[] = "hello world!\0";
