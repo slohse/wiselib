@@ -241,8 +241,13 @@ template<typename OsModel_P,
 			ERR_NOTIMPL = OsModel::ERR_NOTIMPL
 		};
 
-
 	private:
+#ifdef BOOST_TEST_DECL
+		// *cough* ugly hackery
+		// this is probably frowned upon, but I'd like some insight into
+		// private members when testing
+	public:
+#endif
 		class SentMessage
 		{
 		public:

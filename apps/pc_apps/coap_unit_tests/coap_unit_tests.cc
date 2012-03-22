@@ -20,6 +20,8 @@ typedef CoapPacket<Os, UnitTestRadio, string_t>::coap_packet_t coap_packet_t;
 typedef CoapRadio<Os, UnitTestRadio, DummyTimerModel, Os::Debug, Os::Rand, string_t> coapradio_t;
 typedef UnitTestRadio::block_data_t block_data_t;
 
+typedef coapradio_t::TimerAction TimerAction;
+
 //changing output of chars (block_data_t) to numbers
 namespace std {
 ostream &operator<<( ostream &os, const unsigned char &uc )
@@ -237,6 +239,12 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 	cradio.receive( 23, packet_length, packet );
 
 	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 1 );
+
+	BOOST_CHECK_EQUAL( timer_->lastEvent().time_, COAP_ACK_GRACE_PERIOD );
+
+	TimerAction taction = cradio.timers_.at( (size_t) timer_->lastEvent().userdata_ );
+
+	BOOST_CHECK_EQUAL( taction.type_, TIMER_ACK );
 
 }
 
