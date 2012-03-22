@@ -9,6 +9,7 @@
 #include "radio/coap/coap_packet.h"
 #include "radio/coap/coapradio.h"
 #include "unit_test_radio.h"
+#include "timer_stub.h"
 
 
 using namespace wiselib;
@@ -16,6 +17,7 @@ using namespace wiselib;
 typedef PCOsModel Os;
 typedef wiselib::StaticString string_t;
 typedef CoapPacket<Os, UnitTestRadio, string_t>::coap_packet_t coap_packet_t;
+typedef CoapRadio<Os, UnitTestRadio, DummyTimerModel, Os::Debug, Os::Rand, string_t> coapradio_t;
 typedef UnitTestRadio::block_data_t block_data_t;
 
 //changing output of chars (block_data_t) to numbers
@@ -30,7 +32,7 @@ struct FacetsFixture {
 	FacetsFixture()
 	{
 		debug_ = new Os::Debug();
-		timer_ = new Os::Timer();
+		timer_ = new DummyTimerModel();
 		rand_ =  new Os::Rand();
 		radio_ = new UnitTestRadio();
 	}
@@ -44,7 +46,7 @@ struct FacetsFixture {
 	}
 
 	UnitTestRadio *radio_;
-	Os::Timer::self_pointer_t timer_;
+	DummyTimerModel *timer_;
 	Os::Debug::self_pointer_t debug_;
 	Os::Rand::self_pointer_t rand_;
 };
@@ -184,6 +186,28 @@ BOOST_FIXTURE_TEST_CASE( parse_and_uri_path, FacetsFixture )
 
 	BOOST_CHECK_EQUAL( expected_path, actual_path );
 
+	BOOST_CHECK( packet.opt_if_none_match() );
+
+	block_data_t packet_reserialized[200];
+
+	block_data_t packet_reserialized_expected[ ] = { 0x43, COAP_CODE_GET, 0xa4, 0xf2,
+			// Uri-Path, length 7, "storage"
+			0x97, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65,
+			// Uri-Path, length 11, "KAESEKUCHEN"
+			0x0b, 0x4b, 0x41, 0x45, 0x53, 0x45, 0x4b, 0x55, 0x43, 0x48, 0x45, 0x4e,
+			// If-None-Match without unneccessary value Byte
+			0xc0 };
+
+	size_t packet_length_expected = 25;
+
+	size_t packet_length_actual = packet.serialize( packet_reserialized );
+
+	BOOST_CHECK_EQUAL( packet_length_expected, packet_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_reserialized,
+			packet_reserialized + packet_length_expected,
+			packet_reserialized_expected,
+			packet_reserialized_expected + packet_length_expected );
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -194,8 +218,26 @@ BOOST_AUTO_TEST_SUITE(CoapRadio)
 
 BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 {
-	int muh = 2;
-	BOOST_CHECK_EQUAL( 2, muh );
+	size_t packet_length = 25;
+	block_data_t packet[ ] =
+			// Confirmable message
+			{ 0x43, COAP_CODE_GET, 0xa4, 0xf2,
+			// Uri-Path, length 7, "storage"
+			0x97, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65,
+			// Uri-Path, length 11, "KAESEKUCHEN"
+			0x0b, 0x4b, 0x41, 0x45, 0x53, 0x45, 0x4b, 0x55, 0x43, 0x48, 0x45, 0x4e,
+			// If-None-Match with one unneccessary value Byte
+			0xc0 };
+
+	coapradio_t cradio;
+	cradio.init( *radio_, *timer_, *debug_ , *rand_ );
+
+	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 0 );
+
+	cradio.receive( 23, packet_length, packet );
+
+	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 1 );
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

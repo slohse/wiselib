@@ -902,6 +902,7 @@ namespace wiselib
 		typename String_T>
 	size_t CoapPacket<OsModel_P, Radio_P, String_T>::serialize( block_data_t *datastream ) const
 	{
+//		size_t option_count = 0;
 		datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | (( option_count() + fenceposts_needed() ) & 0x0f);
 		datastream[1] = code();
 		datastream[2] = (this->msg_id() & 0xff00) >> 8;
@@ -955,39 +956,29 @@ namespace wiselib
 				break;
 			}
 
-			if( uindex < sindex )
+			if( uindex < sindex && uindex < oindex)
 			{
-				if( oindex < uindex )
-				{
-					offset += serialize_option( datastream + offset, previous_option_number, ( *oit ) );
-					previous_option_number = ( *oit ).option_number();
-					++oit;
-					continue;
-				}
-				else
-				{
-					offset += serialize_option( datastream + offset, previous_option_number, ( *uit ) );
-					previous_option_number = ( *uit ).option_number();
-					++uit;
-					continue;
-				}
+				offset += serialize_option( datastream + offset, previous_option_number, ( *uit ) );
+				previous_option_number = ( *uit ).option_number();
+//				++option_count;
+				++uit;
+				continue;
+			}
+			else if( oindex < uindex && oindex < sindex )
+			{
+				offset += serialize_option( datastream + offset, previous_option_number, ( *oit ) );
+				previous_option_number = ( *oit ).option_number();
+//				++option_count;
+				++oit;
+				continue;
 			}
 			else
 			{
-				if( oindex < sindex )
-				{
-					offset += serialize_option( datastream + offset, previous_option_number, ( *oit ) );
-					previous_option_number = ( *oit ).option_number();
-					++oit;
-					continue;
-				}
-				else
-				{
-					offset += serialize_option( datastream + offset, previous_option_number, ( *sit ) );
-					previous_option_number = ( *sit ).option_number();
-					++sit;
-					continue;
-				}
+				offset += serialize_option( datastream + offset, previous_option_number, ( *sit ) );
+				previous_option_number = ( *sit ).option_number();
+//				++option_count;
+				++sit;
+				continue;
 			}
 		}
 
@@ -995,6 +986,7 @@ namespace wiselib
 		{
 			fenceposting( (uint8_t) COAP_OPT_IF_NONE_MATCH, previous_option_number, datastream, offset );
 			datastream[offset] = (uint8_t) (( COAP_OPT_IF_NONE_MATCH - previous_option_number ) << 4 );
+//			++option_count;
 			++offset;
 		}
 
