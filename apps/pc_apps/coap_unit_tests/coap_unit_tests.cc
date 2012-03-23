@@ -236,25 +236,27 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 
 	BOOST_CHECK_EQUAL( radio_->sentMessages() , 0 );
 
+	node_id_t id = 23;
 	coapradio_t cradio;
 	cradio.init( *radio_, *timer_, *debug_ , *rand_ );
 
 	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 0 );
 
-	cradio.receive( 23, packet_length, packet );
+	cradio.receive( id, packet_length, packet );
 
 	// a 4.04 should have been sent
 	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
 
-	node_id_t id;
+	node_id_t id_actual;
 	UnitTestRadio::size_t len;
 	block_data_t *data;
-	data = radio_->lastMessage().get( id, len );
+	radio_->lastMessage().get( id_actual, len, data );
 
 	block_data_t packet_expected[ ] =
 			// piggybacked 4.04
 			{ 0x60, COAP_CODE_NOT_FOUND, 0xa4, 0xf2 };
 
+	BOOST_CHECK_EQUAL( id , id_actual );
 	BOOST_CHECK_EQUAL( len , 4 );
 	BOOST_CHECK_EQUAL_COLLECTIONS( data,
 				data + len,

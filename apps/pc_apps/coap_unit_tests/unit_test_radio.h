@@ -94,7 +94,6 @@ public:
 					exit(1);
 				}
 			}
-			cout << (int) data[0] << " " << (int) data[1] << " " << (int) data[2] << " " << (int) data[3] << "\n";
 			memcpy( data_, data, len_ );
 		}
 
@@ -116,6 +115,7 @@ public:
 		node_id_t receiver_;
 		size_t len_;
 		block_data_t * data_;
+
 	};
 
 	UnitTestRadio& operator=( const UnitTestRadio &rhs )
@@ -125,7 +125,6 @@ public:
 
 	UnitTestRadio()
 	{
-
 	}
 
 	UnitTestRadio( const UnitTestRadio &rhs )
@@ -142,7 +141,6 @@ public:
 	int send( node_id_t id, size_t len, block_data_t *data )
 	{
 		cout << "Sending message to " << (int) id << " size " << (int) len << "\n";
-		cout << (int) data[0] << " " << (int) data[1] << " " << (int) data[2] << " " << (int) data[3] << "\n";
 		Message msg(id, len, data );
 		sent_.push_back( msg );
 		return SUCCESS;
@@ -180,7 +178,7 @@ public:
 		return sent_.size();
 	}
 
-	Message lastMessage()
+	Message& lastMessage()
 	{
 		return sent_.back();
 	}
