@@ -400,6 +400,42 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule2, FacetsFixture )
 			data + len,
 			dummy_reply_expected,
 			dummy_reply_expected + len );
+
+	// retransmit timeout should be scheduled
+	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 2 );
+	taction = cradio.timers_.at( (size_t) timer_->lastEvent().userdata_ );
+	BOOST_CHECK_EQUAL( taction.type_, TIMER_RETRANSMIT );
+	BOOST_CHECK_GE(timer_->lastEvent().time_, COAP_RESPONSE_TIMEOUT );
+	BOOST_CHECK_LE(timer_->lastEvent().time_, COAP_MAX_RESPONSE_TIMEOUT );
+
+	// cause timeout of retransmit
+	timer_->lastEvent().callback_( timer_->lastEvent().userdata_ );
+	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 3 );
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 4 );
+
+	// cause retransmits. No new timeouts, but two new messages (ACK and response)
+	cradio.receive( id, dummy_length, dummy_request );
+	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 3 );
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 6 );
+	// response
+	radio_->lastMessage().get( id_actual, len, data );
+	BOOST_CHECK_EQUAL( id , id_actual );
+	BOOST_CHECK_EQUAL( len , 11 );
+	BOOST_CHECK_EQUAL_COLLECTIONS( data,
+			data + len,
+			dummy_reply_expected,
+			dummy_reply_expected + len );
+
+	list<UnitTestRadio::Message>::iterator it = radio_->sent_.end();
+	--it;
+	--it;
+	(*it).get( id_actual, len, data );
+	BOOST_CHECK_EQUAL( id , id_actual );
+	BOOST_CHECK_EQUAL( len , 4 );
+	BOOST_CHECK_EQUAL_COLLECTIONS( data,
+			data + len,
+			dummy_ack,
+			dummy_ack + len );
 }
 
 BOOST_AUTO_TEST_SUITE_END()
