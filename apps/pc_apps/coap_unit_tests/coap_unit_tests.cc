@@ -33,6 +33,27 @@ ostream &operator<<( ostream &os, const unsigned char &uc )
 }
 }
 
+class DummyResource
+{
+public:
+	DummyResource()
+	{
+
+	}
+
+	~DummyResource()
+	{
+
+	}
+
+	void receive_coap( coapradio_t::ReceivedMessage & message )
+	{
+		// do nothing
+	}
+
+
+};
+
 struct FacetsFixture {
 	FacetsFixture()
 	{
@@ -281,6 +302,9 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
 	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 1 );
 
+	DummyResource dresource = DummyResource();
+	// register a resource
+	cradio.reg_resource_callback<DummyResource, &DummyResource::receive_coap>( string_t("dummy"), &dresource );
 
 
 }
