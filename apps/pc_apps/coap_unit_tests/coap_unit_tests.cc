@@ -275,9 +275,13 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 	// cause a timeout on the ACK
 	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
 
-//	timer_->lastEvent().callback_( timer_->lastEvent().userdata_ );
+	timer_->lastEvent().callback_( timer_->lastEvent().userdata_ );
 
-//	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
+	// no message should have been sent, as the piggybacked ACK already went out
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
+	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 1 );
+
+
 
 }
 

@@ -32,7 +32,7 @@ public:
 		TimerEvent( millis_t millis, timer_delegate_t callback, void *userdata )
 		{
 			time_ = millis;
-			callback = callback;
+			callback_ = callback;
 			userdata_ = userdata;
 		}
 
@@ -55,8 +55,7 @@ public:
 	template<typename T, void (T::*TMethod)(void*)>
 	int set_timer( millis_t millis, T *obj_pnt, void *userdata )
 	{
-		timer_delegate_t del = timer_delegate_t::from_method<T, TMethod>(obj_pnt);
-		TimerEvent tevent( millis, del, userdata );
+		TimerEvent tevent( millis, timer_delegate_t::template from_method<T, TMethod>(obj_pnt), userdata );
 		scheduled_events_.push_back( tevent );
 	}
 
@@ -65,7 +64,7 @@ public:
 		return scheduled_events_.size();
 	}
 
-	TimerEvent lastEvent()
+	TimerEvent& lastEvent()
 	{
 		return scheduled_events_.back();
 	}
