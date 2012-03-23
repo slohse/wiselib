@@ -1,6 +1,7 @@
 #define BOOST_TEST_MODULE CoapTest
 #include <boost/test/included/unit_test.hpp>
 #include <string>
+#include <list>
 
 #include "external_interface/pc/pc_os_model.h"
 #include "external_interface/pc/pc_timer.h"
@@ -48,9 +49,10 @@ public:
 
 	void receive_coap( coapradio_t::ReceivedMessage & message )
 	{
-		// do nothing
+		messages_.push_back(&message);
 	}
 
+	list<coapradio_t::ReceivedMessage*> messages_;
 
 };
 
@@ -280,9 +282,9 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 	BOOST_CHECK_EQUAL( id , id_actual );
 	BOOST_CHECK_EQUAL( len , 4 );
 	BOOST_CHECK_EQUAL_COLLECTIONS( data,
-				data + len,
-				packet_expected,
-				packet_expected + len );
+			data + len,
+			packet_expected,
+			packet_expected + len );
 
 	// a timeout should have been scheduled to send an ACK to the received Message
 	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 1 );
@@ -309,9 +311,19 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 	BOOST_CHECK_EQUAL( id , id_actual );
 	BOOST_CHECK_EQUAL( len , 4 );
 	BOOST_CHECK_EQUAL_COLLECTIONS( data,
-				data + len,
-				packet_expected,
-				packet_expected + len );
+			data + len,
+			packet_expected,
+			packet_expected + len );
+
+
+
+}
+
+BOOST_FIXTURE_TEST_CASE( ACKschedule2, FacetsFixture )
+{
+	node_id_t id = 23;
+	coapradio_t cradio;
+	cradio.init( *radio_, *timer_, *debug_ , *rand_ );
 
 	DummyResource dresource = DummyResource();
 	// register a resource
@@ -327,31 +339,67 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 
 	cradio.receive( id, dummy_length, dummy_request );
 	// new ACK timeout should be present
-	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 2 );
+	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 1 );
 	BOOST_CHECK_EQUAL( timer_->lastEvent().time_, COAP_ACK_GRACE_PERIOD );
-	taction = cradio.timers_.at( (size_t) timer_->lastEvent().userdata_ );
+	TimerAction taction = cradio.timers_.at( (size_t) timer_->lastEvent().userdata_ );
 	BOOST_CHECK_EQUAL( taction.type_, TIMER_ACK );
 	// no message should be sent, as the resource is present, but has not yet
 	// returned a result
-	BOOST_CHECK_EQUAL( radio_->sentMessages() , 2 );
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 0 );
+	// resources handler should have been called
+	BOOST_CHECK_EQUAL( dresource.messages_.size(), 1);
 
 	// ack grace period is over
 	timer_->lastEvent().callback_( timer_->lastEvent().userdata_ );
 	// ACK should have been sent
-	BOOST_CHECK_EQUAL( radio_->sentMessages() , 3 );
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
 
 	block_data_t dummy_ack[ ] =
 			// ACK, id 0xaffe
 			{ 0x60, COAP_CODE_EMPTY, 0xaf, 0xfe };
+	node_id_t id_actual;
+	UnitTestRadio::size_t len;
+	block_data_t *data;
 	radio_->lastMessage().get( id_actual, len, data );
 	BOOST_CHECK_EQUAL( id , id_actual );
 	BOOST_CHECK_EQUAL( len , 4 );
 	BOOST_CHECK_EQUAL_COLLECTIONS( data,
-				data + len,
-				dummy_ack,
-				dummy_ack + len );
+			data + len,
+			dummy_ack,
+			dummy_ack + len );
 
+	// retransmit should lead to retransmit of ACK
+	cradio.receive( id, dummy_length, dummy_request );
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 2 );
+	radio_->lastMessage().get( id_actual, len, data );
+	BOOST_CHECK_EQUAL( id , id_actual );
+	BOOST_CHECK_EQUAL( len , 4 );
+	BOOST_CHECK_EQUAL_COLLECTIONS( data,
+			data + len,
+			dummy_ack,
+			dummy_ack + len );
+	// the resources handler should not have been called again
+	BOOST_CHECK_EQUAL( dresource.messages_.size(), 1);
 
+	block_data_t dummy_reply[] = { 0x68, 0x69, 0x74, 0x68, 0x65, 0x72, 0x65 };
+	size_t dummy_reply_len = 7;
+	cradio.reply( *(dresource.messages_.back()), dummy_reply, dummy_reply_len );
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 3 );
+
+	coap_msg_id_t random_msg_id = cradio.msg_id_ - 1;
+	block_data_t dummy_reply_expected[] =
+			// CON reply, 2.05, id random
+			{ 0x40, COAP_CODE_CONTENT, (random_msg_id & 0xff00) >> 8, random_msg_id & 0xff,
+			// payload
+			0x68, 0x69, 0x74, 0x68, 0x65, 0x72, 0x65
+			};
+	radio_->lastMessage().get( id_actual, len, data );
+	BOOST_CHECK_EQUAL( id , id_actual );
+	BOOST_CHECK_EQUAL( len , 11 );
+	BOOST_CHECK_EQUAL_COLLECTIONS( data,
+			data + len,
+			dummy_reply_expected,
+			dummy_reply_expected + len );
 }
 
 BOOST_AUTO_TEST_SUITE_END()
