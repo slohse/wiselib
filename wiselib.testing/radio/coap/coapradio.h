@@ -860,7 +860,9 @@ template<typename OsModel_P,
 						// if it's confirmable we might want to hurry sending an ACK
 						if( packet.type() == COAP_MSG_TYPE_CON )
 							ack( *deduplication );
-						if( deduplication->response_sent() != NULL )
+						// if the response was piggybacked it was already resent by the line above
+						if( deduplication->response_sent() != NULL
+								&& deduplication->response_sent()->type() != COAP_MSG_TYPE_ACK)
 						{
 							block_data_t buf[ deduplication->response_sent()->serialize_length() ];
 

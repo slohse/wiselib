@@ -302,9 +302,54 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
 	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 1 );
 
+	// request again. Same response should go out
+	cradio.receive( id, packet_length, packet );
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 2 );
+	radio_->lastMessage().get( id_actual, len, data );
+	BOOST_CHECK_EQUAL( id , id_actual );
+	BOOST_CHECK_EQUAL( len , 4 );
+	BOOST_CHECK_EQUAL_COLLECTIONS( data,
+				data + len,
+				packet_expected,
+				packet_expected + len );
+
 	DummyResource dresource = DummyResource();
 	// register a resource
 	cradio.reg_resource_callback<DummyResource, &DummyResource::receive_coap>( string_t("dummy"), &dresource );
+
+	size_t dummy_length = 10;
+	block_data_t dummy_request[ ] =
+			// Confirmable GET, id 0xaffe
+			{ 0x41, COAP_CODE_GET, 0xaf, 0xfe,
+			// Uri-Path "dummy"
+			0x95, 0x64, 0x75, 0x6d, 0x6d, 0x79
+			};
+
+	cradio.receive( id, dummy_length, dummy_request );
+	// new ACK timeout should be present
+	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 2 );
+	BOOST_CHECK_EQUAL( timer_->lastEvent().time_, COAP_ACK_GRACE_PERIOD );
+	taction = cradio.timers_.at( (size_t) timer_->lastEvent().userdata_ );
+	BOOST_CHECK_EQUAL( taction.type_, TIMER_ACK );
+	// no message should be sent, as the resource is present, but has not yet
+	// returned a result
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 2 );
+
+	// ack grace period is over
+	timer_->lastEvent().callback_( timer_->lastEvent().userdata_ );
+	// ACK should have been sent
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 3 );
+
+	block_data_t dummy_ack[ ] =
+			// ACK, id 0xaffe
+			{ 0x60, COAP_CODE_EMPTY, 0xaf, 0xfe };
+	radio_->lastMessage().get( id_actual, len, data );
+	BOOST_CHECK_EQUAL( id , id_actual );
+	BOOST_CHECK_EQUAL( len , 4 );
+	BOOST_CHECK_EQUAL_COLLECTIONS( data,
+				data + len,
+				dummy_ack,
+				dummy_ack + len );
 
 
 }
