@@ -9,12 +9,14 @@
 #define TIMER_STUB_H_
 
 #include <list>
+#include "util/delegates/delegate.hpp"
 
 namespace wiselib
 {
 class DummyTimerModel
 {
 public:
+	typedef delegate1<void, void*> timer_delegate_t;
 	typedef uint32_t millis_t;
 
 	class TimerEvent
@@ -23,14 +25,14 @@ public:
 		TimerEvent()
 		{
 			time_ = 0;
-			obj_ptr_ = NULL;
+			callback_ = timer_delegate_t();
 			userdata_ = NULL;
 		}
 
-		TimerEvent( millis_t millis, void *obj_pnt, void *userdata )
+		TimerEvent( millis_t millis, timer_delegate_t callback, void *userdata )
 		{
 			time_ = millis;
-			obj_ptr_ = obj_pnt;
+			callback = callback;
 			userdata_ = userdata;
 		}
 
@@ -40,7 +42,7 @@ public:
 		}
 
 		millis_t time_;
-		void* obj_ptr_;
+		timer_delegate_t callback_;
 		void* userdata_;
 	};
 
@@ -53,7 +55,8 @@ public:
 	template<typename T, void (T::*TMethod)(void*)>
 	int set_timer( millis_t millis, T *obj_pnt, void *userdata )
 	{
-		TimerEvent tevent( millis, obj_pnt, userdata );
+		timer_delegate_t del = timer_delegate_t::from_method<T, TMethod>(obj_pnt);
+		TimerEvent tevent( millis, del, userdata );
 		scheduled_events_.push_back( tevent );
 	}
 
@@ -67,7 +70,6 @@ public:
 		return scheduled_events_.back();
 	}
 
-private:
 	list<TimerEvent> scheduled_events_;
 
 };

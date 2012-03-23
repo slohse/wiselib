@@ -51,7 +51,7 @@ public:
 		Message( const Message & rhs )
 		{
 			init();
-			set( rhs.receiver_, rhs.len_,rhs.data_ );
+			set( rhs.receiver_, rhs.len_, rhs.data_ );
 		}
 
 		~Message()
@@ -94,14 +94,22 @@ public:
 					exit(1);
 				}
 			}
+			cout << (int) data[0] << " " << (int) data[1] << " " << (int) data[2] << " " << (int) data[3] << "\n";
 			memcpy( data_, data, len_ );
 		}
 
-		void get( node_id_t &id, size_t &len, block_data_t *data )
+		void get( node_id_t &id, size_t &len, block_data_t *&data )
 		{
 			id = receiver_;
 			len = len_;
 			data = data_;
+		}
+
+		block_data_t * get( node_id_t &id, size_t &len )
+		{
+			id = receiver_;
+			len = len_;
+			return data_;
 		}
 
 	private:
@@ -133,6 +141,8 @@ public:
 
 	int send( node_id_t id, size_t len, block_data_t *data )
 	{
+		cout << "Sending message to " << (int) id << " size " << (int) len << "\n";
+		cout << (int) data[0] << " " << (int) data[1] << " " << (int) data[2] << " " << (int) data[3] << "\n";
 		Message msg(id, len, data );
 		sent_.push_back( msg );
 		return SUCCESS;
@@ -175,7 +185,6 @@ public:
 		return sent_.back();
 	}
 
-private:
 	list<Message> sent_;
 };
 

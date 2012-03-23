@@ -831,15 +831,6 @@ template<typename OsModel_P,
 						}
 						else
 						{
-							if( packet.type() == COAP_MSG_TYPE_CON )
-							{
-								TimerAction action;
-								action.type_ = TIMER_ACK;
-								action.message_ = (void*) &received_message;
-								void* actionp = (void*) reg_timer_action( &action );
-
-								timer_->template set_timer<self_type, &self_type::timeout>( COAP_ACK_GRACE_PERIOD, this, actionp );
-							}
 							if( packet.is_request() )
 							{
 								handle_request( from, received_message );
@@ -1350,6 +1341,11 @@ template<typename OsModel_P,
 			(*request).message().token(request_token);
 		}
 
+		if( message.message().type() == COAP_MSG_TYPE_CON )
+		{
+			ack( message );
+		}
+
 		if( request->sender_callback() && request->sender_callback().obj_ptr() != NULL )
 		{
 #ifdef DEBUG_COAPRADIO
@@ -1369,6 +1365,18 @@ template<typename OsModel_P,
 			typename String_T>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::handle_request( node_id_t from, ReceivedMessage& message )
 	{
+		// don't send an ACK right away, instead wait a little to give the
+		// resource a chance to send a piggybacked response
+		if( message.message().type() == COAP_MSG_TYPE_CON )
+		{
+			TimerAction action;
+			action.type_ = TIMER_ACK;
+			action.message_ = (void*) &message;
+			void* actionp = (void*) reg_timer_action( &action );
+
+			timer_->template set_timer<self_type, &self_type::timeout>( COAP_ACK_GRACE_PERIOD, this, actionp );
+		}
+
 		string_t available_res;
 		// TODO: we're looking at the first path segment only, subresources should be handled by their parents
 		string_t request_res = message.message().uri_path();

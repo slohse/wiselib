@@ -19,8 +19,11 @@ typedef wiselib::StaticString string_t;
 typedef CoapPacket<Os, UnitTestRadio, string_t>::coap_packet_t coap_packet_t;
 typedef CoapRadio<Os, UnitTestRadio, DummyTimerModel, Os::Debug, Os::Rand, string_t> coapradio_t;
 typedef UnitTestRadio::block_data_t block_data_t;
+typedef UnitTestRadio::node_id_t node_id_t;
 
 typedef coapradio_t::TimerAction TimerAction;
+
+typedef delegate1<void, void*> timer_delegate_t;
 
 //changing output of chars (block_data_t) to numbers
 namespace std {
@@ -231,6 +234,8 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 			// If-None-Match with one unneccessary value Byte
 			0xc0 };
 
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 0 );
+
 	coapradio_t cradio;
 	cradio.init( *radio_, *timer_, *debug_ , *rand_ );
 
@@ -238,6 +243,25 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 
 	cradio.receive( 23, packet_length, packet );
 
+	// a 4.04 should have been sent
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
+
+	node_id_t id;
+	UnitTestRadio::size_t len;
+	block_data_t *data;
+	data = radio_->lastMessage().get( id, len );
+
+	block_data_t packet_expected[ ] =
+			// piggybacked 4.04
+			{ 0x60, COAP_CODE_NOT_FOUND, 0xa4, 0xf2 };
+
+	BOOST_CHECK_EQUAL( len , 4 );
+	BOOST_CHECK_EQUAL_COLLECTIONS( data,
+				data + len,
+				packet_expected,
+				packet_expected + len );
+
+	// a timeout should have been scheduled to send an ACK to the received Message
 	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 1 );
 
 	BOOST_CHECK_EQUAL( timer_->lastEvent().time_, COAP_ACK_GRACE_PERIOD );
@@ -245,6 +269,13 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 	TimerAction taction = cradio.timers_.at( (size_t) timer_->lastEvent().userdata_ );
 
 	BOOST_CHECK_EQUAL( taction.type_, TIMER_ACK );
+
+	// cause a timeout on the ACK
+	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
+
+//	timer_->lastEvent().callback_( timer_->lastEvent().userdata_ );
+
+//	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
 
 }
 
