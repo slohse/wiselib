@@ -45,8 +45,8 @@ enum CoapMsgIds
 #define COAP_VERSION	1
 #define COAP_STD_PORT	5683
 
-static const uint16_t COAP_RESPONSE_TIMEOUT = 2000;
 static const float COAP_RANDOM_FACTOR = 1.5;
+static const uint16_t COAP_RESPONSE_TIMEOUT = 2000;
 static const uint16_t COAP_MAX_RESPONSE_TIMEOUT = (uint16_t) COAP_RESPONSE_TIMEOUT * COAP_RANDOM_FACTOR;
 static const uint8_t COAP_MAX_RETRANSMIT = 4;
 // Time before an ACK is sent. This is to give the application a chance to send a piggybacked response

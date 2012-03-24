@@ -16,6 +16,9 @@ namespace wiselib
 		typename String_T>
 	class CoapPacket
 	{
+	// TODO: wieder entfernen!
+	public:
+
 		template<typename T>
 		class CoapOption
 		{
@@ -28,7 +31,7 @@ namespace wiselib
 				}
 				return *this;
 			}
-			bool operator==( const CoapOption &rhs ) const { return (this->option_number_ == rhs.option_number_ && this->value_ == rhs.value_); }
+			bool operator==( const CoapOption &rhs ) const { return (this->option_number_ == rhs.option_number_ && const_cast<T&>(this->value_) == rhs.value_); }
 			CoapOption() { option_number_ = 0; }
 			CoapOption( uint8_t option_number, const T &value) { set(option_number, value); }
 			virtual ~CoapOption() {}
@@ -37,8 +40,8 @@ namespace wiselib
 			void set( uint8_t option_number, const T &value ) { option_number_ = option_number; value_ = value; }
 
 		private:
-			uint8_t option_number_;
 			T value_;
+			uint8_t option_number_;
 		};
 
 	public:
@@ -251,15 +254,16 @@ namespace wiselib
 	private:
 		typename Debug::self_pointer_t debug_;
 
-		uint8_t version_;
-		CoapType type_;
-		CoapCode code_;
-		coap_msg_id_t msg_id_;
-
 		// options
-		list_static<OsModel, CoapOption<uint32_t>, COAP_LIST_SIZE_UINT> uint_options_;
 		list_static<OsModel, CoapOption<string_t>, COAP_LIST_SIZE_STRING> string_options_;
 		list_static<OsModel, CoapOption<OpaqueData>, COAP_LIST_SIZE_OPAQUE> opaque_options_;
+		list_static<OsModel, CoapOption<uint32_t>, COAP_LIST_SIZE_UINT> uint_options_;
+
+		coap_msg_id_t msg_id_;
+		CoapType type_;
+		CoapCode code_;
+		uint8_t version_;
+
 		bool opt_if_none_match_;
 
 		block_data_t data_[COAP_DATA_SIZE];
