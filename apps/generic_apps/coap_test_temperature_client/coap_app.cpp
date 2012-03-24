@@ -10,9 +10,6 @@
 #include "util/pstl/static_string.h"
 
 #include "stdlib.h"
-#include "string.h"
-#include <isense/modules/environment_module/environment_module.h>
-#include <isense/modules/environment_module/temp_sensor.h>
 
 #define COAP_APP_DEBUG
 
@@ -26,58 +23,47 @@ public:
 	typedef Os::Radio::node_id_t node_id_t;
 	typedef Os::Radio::block_data_t block_data_t;
 
-	void read_temperature()
-	{
-		temperature_ = em_->temp_sensor()->temperature();
-		temperature_str_len_ = sprintf( temperature_str_, "%i", temperature_ );
-	}
-
 	void init( Os::AppMainParameter& value )
 	{
 		radio_ = &wiselib::FacetProvider<Os, Os::Radio>::get_facet( value );
 		timer_ = &wiselib::FacetProvider<Os, Os::Timer>::get_facet( value );
 		debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
-
-		temperature_ = -1;
-		temperature_str_len_ = sprintf( temperature_str_, "%i", temperature_ );
 		//
-		debug_->debug( "node %x > Temperature CoAP Service booting\n", radio_->id() );
+		debug_->debug( "node %x > Temperature CoAP Client booting\n", radio_->id() );
 
+		server_id_ = 0x2015;
 		temp_uri_path_ = wiselib::StaticString("temperature");
-		em_ = new isense::EnvironmentModule(value);
 
-		if (em_->temp_sensor() != NULL)
-		{
-			em_->temp_sensor()->enable();
-			read_temperature();
-			debug_->debug( "node %x > Temperature Sensor enabled, current Temperature: %i °C\n", radio_->id(), temperature_ );
-			// measure temperature every 10 seconds
-			timer_->set_timer<ExampleApplication,
-					&ExampleApplication::temperature_loop>( 10000, this, 0 );
-			cradio_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap>( temp_uri_path_, this );
-		}
+		// request temperature every second
+		// (yes, even though the server only measures every 10 seconds - we want
+		// to evaluate the protocol, not the temperature sensor...)
+		timer_->set_timer<ExampleApplication,
+							&ExampleApplication::get_temperature_loop>( 1000, this, 0 );
 
 	}
 	// --------------------------------------------------------------------
-	void temperature_loop( void* )
+	void get_temperature_loop( void* )
 	{
-		read_temperature();
-		timer_->set_timer<ExampleApplication,
-							&ExampleApplication::temperature_loop>( 10000, this, 0 );
+		cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( server_id_, temp_uri_path_, wiselib::StaticString(), this );
 	}
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
-
+		//         debug_->debug( "received msg at %x from %x\n", radio_->id(), from );
+		//         debug_->debug( "message is %s\n", buf );
 	}
 
 	void receive_coap( wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
 	{
 		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_r packet = message.message();
-
-		if( packet.is_request() && packet.uri_path() == temp_uri_path_ )
+		if( packet.is_response() )
 		{
-			cradio_.reply( message, (uint8_t*) temperature_str_, temperature_str_len_ );
+			if( packet.data_length() > 0 && packet.data_length() < 5)
+			{
+				memcpy(temperature_str_, packet.data(), packet.data_length() );
+				temperature_str_[ packet.data_length() ] = '\0';
+				debug_->debug( "node %x > Temperature: %s °C\n", radio_->id(), temperature_str_ );
+			}
 		}
 	}
 private:
@@ -85,16 +71,12 @@ private:
 	Os::Timer::self_pointer_t timer_;
 	Os::Debug::self_pointer_t debug_;
 
-	isense::EnvironmentModule* em_;
-
 	wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
 
 	wiselib::StaticString temp_uri_path_;
-
-	int8_t temperature_;
+	node_id_t server_id_;
 
 	char temperature_str_[5];
-	size_t temperature_str_len_;
 
 };
 // --------------------------------------------------------------------------
