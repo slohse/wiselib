@@ -318,6 +318,7 @@ namespace wiselib
 			typename String_T>
 	void CoapPacket<OsModel_P, Radio_P, String_T>::set_option(CoapOptionNum num, block_data_t *serial_opt, size_t len)
 	{
+		// TODO: evtl vorangehende fenceposts entfernen
 		CoapOptionNum prev = 0;
 		uint8_t fencepost = 0;
 		// data + header
