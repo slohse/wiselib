@@ -260,6 +260,7 @@ namespace wiselib
 		list_static<OsModel, CoapOption<uint32_t>, COAP_LIST_SIZE_UINT> uint_options_;
 
 		coap_msg_id_t msg_id_;
+		size_t data_length_;
 		CoapType type_;
 		CoapCode code_;
 		uint8_t version_;
@@ -267,7 +268,6 @@ namespace wiselib
 		bool opt_if_none_match_;
 
 		block_data_t data_[COAP_DATA_SIZE];
-		size_t data_length_;
 
 		// methods:
 		int parse_option( uint8_t option_number, size_t option_length, block_data_t* value);

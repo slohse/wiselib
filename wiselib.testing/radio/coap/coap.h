@@ -21,19 +21,19 @@ using namespace std;
 
 // out of all the uint options (content type, max age, uri port and accept) only accept can occur multiple times
 // and currently (draft-07) there are only six media types. So 8 seemed a pretty good default
-#define COAP_LIST_SIZE_UINT		8
+#define COAP_LIST_SIZE_UINT		3
 // TODO: Sinnvollen Default finden
-#define COAP_LIST_SIZE_STRING		8
+#define COAP_LIST_SIZE_STRING		2
 // TODO: Sinnvollen Default finden
 #define COAP_LIST_SIZE_OPAQUE		3
 // size of the payload in bytes. Keep in mind, that this is multiplied by the number of coap messages the coap radio keeps in its buffer
-#define COAP_DATA_SIZE		80
+#define COAP_DATA_SIZE		50
 
 // Size of message buffer that saves sent and received messages for a while
-#define COAPRADIO_SENT_LIST_SIZE		25
-#define COAPRADIO_RECEIVED_LIST_SIZE		25
-#define COAPRADIO_RESOURCES_SIZE		8
-#define COAPRADIO_TIMER_ACTION_SIZE		25
+#define COAPRADIO_SENT_LIST_SIZE		8
+#define COAPRADIO_RECEIVED_LIST_SIZE		8
+#define COAPRADIO_RESOURCES_SIZE		4
+#define COAPRADIO_TIMER_ACTION_SIZE		8
 
 
 enum CoapMsgIds
@@ -310,8 +310,8 @@ namespace wiselib
 		}
 
 	private:
-		uint8_t value_[COAP_OPT_MAXLEN_OPAQUE];
 		size_t length_;
+		uint8_t value_[COAP_OPT_MAXLEN_OPAQUE];
 	};
 }
 
