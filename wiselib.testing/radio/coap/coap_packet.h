@@ -7,8 +7,8 @@
 namespace wiselib
 {
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	class CoapPacket
 	{
 	public:
@@ -113,8 +113,20 @@ namespace wiselib
 		 * Sets the payload
 		 * @param data the payload
 		 * @param length payload length
+		 * @return ERR_NOMEM if there is not enough space for data this size
+		 * SUCCESS otherwise
 		 */
-		void set_data( block_data_t* data , size_t length);
+		int set_data( block_data_t* data , size_t length);
+
+		enum error_code
+		{
+			// inherited from concepts::BasicReturnValues_concept
+			SUCCESS = OsModel::SUCCESS,
+			ERR_NOMEM = OsModel::ERR_NOMEM,
+			ERR_UNSPEC = OsModel::ERR_UNSPEC,
+			ERR_NOTIMPL = OsModel::ERR_NOTIMPL
+			// coap_packet_t errors
+		};
 
 
 	private:
@@ -132,8 +144,10 @@ namespace wiselib
 		// contains Options and Data
 		block_data_t storage_[COAP_STORAGE_SIZE];
 
-		void set_option(CoapOptionNum num, block_data_t *serial_opt, size_t len);
+		int set_option(CoapOptionNum num, block_data_t *serial_opt, size_t len);
+		void scan_opts( block_data_t *start, CoapOptionNum prev );
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
+		bool is_fencepost(uint8_t optnum) const;
 
 	};
 
@@ -148,16 +162,16 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	CoapPacket<OsModel_P, Radio_P, String_T>::CoapPacket()
 	{
 		init();
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	CoapPacket<OsModel_P, Radio_P, String_T>::CoapPacket( const coap_packet_t &rhs)
 	{
 		init();
@@ -165,15 +179,15 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	CoapPacket<OsModel_P, Radio_P, String_T>::~CoapPacket()
 	{
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	void CoapPacket<OsModel_P, Radio_P, String_T>::init()
 	{
 		version_ = COAP_VERSION;
@@ -193,108 +207,111 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::version() const
 	{
 		return version_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	void CoapPacket<OsModel_P, Radio_P, String_T>::set_version( uint8_t version )
 	{
 		version_ = version & 0x03;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	CoapType CoapPacket<OsModel_P, Radio_P, String_T>::type() const
 	{
 		return type_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	void CoapPacket<OsModel_P, Radio_P, String_T>::set_type( CoapType type )
 	{
 		type_ = type;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	CoapCode CoapPacket<OsModel_P, Radio_P, String_T>::code() const
 	{
 		return code_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	void CoapPacket<OsModel_P, Radio_P, String_T>::set_code( CoapCode code )
 	{
 		code_ = code;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	bool CoapPacket<OsModel_P, Radio_P, String_T>::is_request() const
 	{
 		return( code() >= COAP_REQUEST_CODE_RANGE_MIN && code() <= COAP_REQUEST_CODE_RANGE_MAX );
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	bool CoapPacket<OsModel_P, Radio_P, String_T>::is_response() const
 	{
 		return( code() >= COAP_RESPONSE_CODE_RANGE_MIN && code() <= COAP_RESPONSE_CODE_RANGE_MAX );
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	uint16_t CoapPacket<OsModel_P, Radio_P, String_T>::msg_id() const
 	{
 		return msg_id_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	void CoapPacket<OsModel_P, Radio_P, String_T>::set_msg_id( uint16_t msg_id )
 	{
 		msg_id_ = msg_id;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
-	void CoapPacket<OsModel_P, Radio_P, String_T>::set_data( block_data_t* data , size_t length)
+	typename Radio_P,
+	typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_data( block_data_t* data , size_t length)
 	{
 		// we put data at the very end
+		block_data_t *payload = storage_ + ( (COAP_STORAGE_SIZE - 1) - length );
+		if( payload <= end_of_options_  )
+			return ERR_NOMEM;
 		data_length_ = length;
-		payload_ = storage_ + ((COAP_STORAGE_SIZE - 1) - data_length_ );
+		payload_ = payload;
 		memcpy(payload_, data, data_length_ );
-
+		return SUCCESS;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	typename Radio_P::block_data_t * CoapPacket<OsModel_P, Radio_P, String_T>::data()
 	{
 		return payload_;
 	}
 
 	template<typename OsModel_P,
-		typename Radio_P,
-		typename String_T>
+	typename Radio_P,
+	typename String_T>
 	const typename Radio_P::block_data_t * CoapPacket<OsModel_P, Radio_P, String_T>::data() const
 	{
 		return payload_;
@@ -314,12 +331,13 @@ namespace wiselib
 // Private methods start here
 
 	template<typename OsModel_P,
-			typename Radio_P,
-			typename String_T>
-	void CoapPacket<OsModel_P, Radio_P, String_T>::set_option(CoapOptionNum num, block_data_t *serial_opt, size_t len)
+	typename Radio_P,
+	typename String_T>
+	int CoapPacket<OsModel_P, Radio_P, String_T>::set_option(CoapOptionNum num, block_data_t *serial_opt, size_t len)
 	{
-		// TODO: evtl vorangehende fenceposts entfernen
+		// TODO: evtl vorangehende und folgende fenceposts entfernen
 		CoapOptionNum prev = 0;
+		CoapOptionNum next = 0;
 		uint8_t fencepost = 0;
 		// data + header
 		size_t bytes_needed = len + 1;
@@ -332,15 +350,17 @@ namespace wiselib
 		{
 			// look for the next bigger option - this is where we need to start
 			// moving things further back
-			for( size_t i = (size_t) num; i < COAP_OPTION_ARRAY_SIZE; ++i )
+			for( size_t i = (size_t) num + 1; i < COAP_OPTION_ARRAY_SIZE; ++i )
 			{
 				if( options_[i] != NULL )
 				{
+					next = (CoapOptionNum) i;
 					put_here = options_[i];
 					break;
 				}
 			}
 
+			// look for previous option - can be the same option we're inserting
 			for( size_t i = (size_t) num; i > 0; --i )
 			{
 				if( options_[i] != NULL )
@@ -385,14 +405,30 @@ namespace wiselib
 			*(put_here + 1) = (len - 15);
 		}
 
-		while( put_here < end_of_options_ )
+		// if we just appended we don't want to overwrite the option's pointer
+		if( prev == num )
 		{
-			options_[ prev + (((*put_here) & 0xf0) >> 4) ] = put_here;
-			len = (*put_here) & 0x0f;
+			put_here += len;
+		}
+		scan_opts( put_here, prev );
+
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T>
+	void CoapPacket<OsModel_P, Radio_P, String_T>::scan_opts( block_data_t *start, CoapOptionNum prev )
+	{
+
+		while( start < end_of_options_ )
+		{
+			options_[ prev + (((*start) & 0xf0) >> 4) ] = start;
+			size_t len = (*start) & 0x0f;
 			if( len < 15 )
-				put_here += len + 1;
+				start += len + 1;
 			else
-				put_here +=  *(put_here + 1) + 16;
+				start +=  *(start + 1) + 16;
 		}
 	}
 
@@ -402,6 +438,14 @@ namespace wiselib
 	uint8_t CoapPacket<OsModel_P, Radio_P, String_T>::next_fencepost_delta(uint8_t previous_opt_number) const
 	{
 		return ( COAP_OPT_FENCEPOST - ( (previous_opt_number) % COAP_OPT_FENCEPOST ) );
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T>
+	bool CoapPacket<OsModel_P, Radio_P, String_T>::is_fencepost(uint8_t optnum) const
+	{
+		return (optnum > 0 && optnum % 14 == 0);
 	}
 
 }
