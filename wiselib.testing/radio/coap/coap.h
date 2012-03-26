@@ -19,11 +19,15 @@ using namespace std;
 // set this to 1 to preface messages with CoapMsgId
 #define COAP_PREFACE_MSG_ID		0
 
-// size of the storage blob of a coap packet. contains options and payload
-#define COAP_STORAGE_SIZE		127
-// size of the length variable of a coap option. Make bigger if you intend to
-// have options longer than 255 bytes
-typedef uint8_t coap_opt_len_t;
+// out of all the uint options (content type, max age, uri port and accept) only accept can occur multiple times
+// and currently (draft-07) there are only six media types. So 8 seemed a pretty good default
+#define COAP_LIST_SIZE_UINT		3
+// TODO: Sinnvollen Default finden
+#define COAP_LIST_SIZE_STRING		2
+// TODO: Sinnvollen Default finden
+#define COAP_LIST_SIZE_OPAQUE		3
+// size of the payload in bytes. Keep in mind, that this is multiplied by the number of coap messages the coap radio keeps in its buffer
+#define COAP_DATA_SIZE		50
 
 // Size of message buffer that saves sent and received messages for a while
 #define COAPRADIO_SENT_LIST_SIZE		8
@@ -158,9 +162,9 @@ enum TimerType
 #define COAP_FORMAT_STRING		2
 #define COAP_FORMAT_OPAQUE		3
 #define COAP_LARGEST_OPTION_NUMBER	21
-#define COAP_OPTION_ARRAY_SIZE	COAP_LARGEST_OPTION_NUMBER + 1
+#define COAP_OPTION_FORMAT_ARRAY_SIZE	COAP_LARGEST_OPTION_NUMBER + 1
 
-static const uint8_t COAP_OPTION_FORMAT[COAP_OPTION_ARRAY_SIZE] =
+static const uint8_t COAP_OPTION_FORMAT[COAP_OPTION_FORMAT_ARRAY_SIZE] =
 {
 	COAP_FORMAT_UNKNOWN,			// 0: not in use
 	COAP_FORMAT_UINT,			// 1: COAP_OPT_CONTENT_TYPE
@@ -186,7 +190,7 @@ static const uint8_t COAP_OPTION_FORMAT[COAP_OPTION_ARRAY_SIZE] =
 	COAP_FORMAT_NONE			// 21: COAP_OPT_IF_NONE_MATCH
 };
 
-static const bool COAP_OPT_CAN_OCCUR_MULTIPLE[COAP_OPTION_ARRAY_SIZE] =
+static const bool COAP_OPT_CAN_OCCUR_MULTIPLE[COAP_OPTION_FORMAT_ARRAY_SIZE] =
 {
 	false,			// 0: not in use
 	false,			// 1: COAP_OPT_CONTENT_TYPE
