@@ -20,16 +20,13 @@ using namespace std;
 #define COAP_PREFACE_MSG_ID		0
 
 // size of the storage blob of a coap packet. contains options and payload
-#define COAP_STORAGE_SIZE		127
-// size of the length variable of a coap option. Make bigger if you intend to
-// have options longer than 255 bytes
-typedef uint8_t coap_opt_len_t;
+#define COAP_DEFAULT_STORAGE_SIZE		127
 
 // Size of message buffer that saves sent and received messages for a while
-#define COAPRADIO_SENT_LIST_SIZE		8
-#define COAPRADIO_RECEIVED_LIST_SIZE		8
-#define COAPRADIO_RESOURCES_SIZE		4
-#define COAPRADIO_TIMER_ACTION_SIZE		8
+#define COAPRADIO_SENT_LIST_SIZE		15
+#define COAPRADIO_RECEIVED_LIST_SIZE		15
+#define COAPRADIO_RESOURCES_SIZE		5
+#define COAPRADIO_TIMER_ACTION_SIZE		10
 
 
 enum CoapMsgIds
