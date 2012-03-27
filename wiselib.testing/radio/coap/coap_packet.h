@@ -153,7 +153,8 @@ namespace wiselib
 			// coap_packet_t errors
 			ERR_WRONG_TYPE,
 			ERR_UNKNOWN_OPT,
-			ERR_OPT_NOT_SET
+			ERR_OPT_NOT_SET,
+			ERR_OPT_TOO_LONG,
 		};
 
 
@@ -178,6 +179,7 @@ namespace wiselib
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
 		bool is_fencepost(uint8_t optnum) const;
 		size_t optlen(block_data_t * optheader) const;
+		size_t make_string_segments( char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *segments, size_t &num_segments ) const;
 
 	};
 
@@ -421,6 +423,21 @@ namespace wiselib
 			return ERR_WRONG_TYPE;
 		}
 
+		if( option_number == COAP_OPT_LOCATION_PATH
+		   || option_number  == COAP_OPT_URI_PATH )
+		{
+			// TODO
+		}
+		else if ( option_number == COAP_OPT_LOCATION_QUERY
+		         || option_number  == COAP_OPT_URI_QUERY )
+		{
+			// TODO
+		}
+		else
+		{
+			// TODO
+		}
+
 		return SUCCESS;
 	}
 
@@ -649,10 +666,15 @@ namespace wiselib
 		CoapOptionNum prev = (CoapOptionNum) 0;
 		CoapOptionNum next = (CoapOptionNum) 0;
 		uint8_t fencepost = 0;
-		// header
-		size_t overhead_len = 1;
-		if( len > 14 )
-			++overhead_len;
+		// only add header when a single option is added
+		size_t overhead_len = 0;
+		if( num_of_opts == 1)
+		{
+			overhead_len = 1;
+			if( len > 14 )
+				++overhead_len;
+		}
+
 		size_t fenceposts_omitted_len = 0;
 
 		block_data_t *put_here = end_of_options_;
@@ -769,14 +791,19 @@ namespace wiselib
 			++put_here;
 			++option_count_;
 		}
-		if( len < 15 )
+		// if multiple options are inserted only add delta, otherwise add size too
+		*put_here = ( *put_here & 0x0f ) | ((num - prev) << 4);
+		if( num_of_opts == 1 )
 		{
-			*put_here = ((num - prev) << 4) | (len & 0x0f);
-		}
-		else
-		{
-			*put_here = ((num - prev) << 4) | 0x0f;
-			*(put_here + 1) = (len - 15);
+			if( len < 15 )
+			{
+				*put_here = ( *put_here & 0xf0 ) | (len & 0x0f);
+			}
+			else
+			{
+				*put_here = ( *put_here & 0xf0 ) | 0x0f;
+				*(put_here + 1) = (len - 15);
+			}
 		}
 
 		// if we just appended we don't want to overwrite the option's pointer
@@ -847,6 +874,61 @@ namespace wiselib
 			len += *(optheader + 1);
 		}
 		return len;
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
+	::make_string_segments( char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *result, size_t &num_segments ) const
+	{
+#ifdef BOOST_TEST_DECL
+		cout << "CoapPacket::add_string_segments> string '"
+		     << cstr << "', delimiter " << delimiter << "\n";
+#endif
+		size_t result_pos = 0;
+		size_t position = 0;
+		size_t segment_start = 0;
+		size_t length = 0;
+		num_segments = 0;
+		if(cstr[position] == '\0')
+			return 0;
+		do
+		{
+			if( cstr[position] == delimiter )
+			{
+				if( (length = position - segment_start ) == 0)
+					return 0;
+
+#ifdef BOOST_TEST_DECL
+		cout << "CoapPacket::add_string_segments> found segment at "
+		     << segment_start << " length " << length << "\n";
+#endif
+				if( length > 15 && length <= 270 )
+				{
+					*(result + result_pos) = 0x0f;
+					++result_pos;
+					*(result + result_pos) = (block_data_t) length - 15;
+					++result_pos;
+				}
+				else if ( length <= 15 )
+				{
+					*(result + result_pos) = (block_data_t) length;
+					++result_pos;
+				}
+				else
+					return 0;
+
+				memcpy(result + result_pos, cstr + position, length );
+				result_pos += length;
+				++num_segments;
+				segment_start = position + 1;
+			}
+			++position;
+		} while( cstr[position] != '\0' );
+
+		return result_pos;
 	}
 
 }
