@@ -160,6 +160,7 @@ namespace wiselib
 	private:
 		// points to beginning of payload
 		block_data_t *payload_;
+		// marks the first byte PAST the last option
 		block_data_t *end_of_options_;
 		size_t data_length_;
 		size_t option_count_;
@@ -338,7 +339,7 @@ namespace wiselib
 	{
 		// we put data at the very end
 		block_data_t *payload = storage_ + ( (storage_size_) - length );
-		if( payload <= end_of_options_  )
+		if( payload < end_of_options_  )
 			return ERR_NOMEM;
 		data_length_ = length;
 		payload_ = payload;
@@ -455,8 +456,13 @@ namespace wiselib
 		{
 			do
 			{
+#ifdef BOOST_TEST_DECL
+				cout << "Num of Segments: " << num_segments << "\n";
+#endif
 				++num_segments;
-
+#ifdef BOOST_TEST_DECL
+				cout << "Num of Segments: " << num_segments << "\n";
+#endif
 				curr_segment_len = *(removal_start + removal_len) & 0x0f;
 				if( curr_segment_len == 15 )
 				{
@@ -468,11 +474,14 @@ namespace wiselib
 				}
 
 				removal_len += curr_segment_len;
-			} while( (removal_start + removal_len) <= end_of_options_
+#ifdef BOOST_TEST_DECL
+				cout << "Do-while pass " << num_segments << "\n";
+#endif
+			} while( (removal_start + removal_len) < end_of_options_
 			         && ( *(removal_start + removal_len) & 0xf0 ) == 0 );
 
 			// insert a new fencepost if necessary
-			if( (removal_start + removal_len) <= end_of_options_ )
+			if( (removal_start + removal_len) < end_of_options_ )
 			{
 				if( ( ( (*removal_start) & 0xf0 ) >> 4)
 				    + ( ( *(removal_start + removal_len)  & 0xf0 ) >> 4 ) )
@@ -487,7 +496,7 @@ namespace wiselib
 
 			// if the removed option is the last option and the one
 			// before is a fencepost, remove the fencepost
-			if( (removal_start + removal_len) > end_of_options_ )
+			if( (removal_start + removal_len) >= end_of_options_ )
 			{
 				CoapOptionNum prev = (CoapOptionNum) (option_number - ( ((*removal_start) & 0xf0 ) >> 4));
 				if(is_fencepost( prev ))
@@ -497,8 +506,15 @@ namespace wiselib
 					options_[ prev ] = NULL;
 					++num_segments;
 				}
-
 			}
+
+#ifdef BOOST_TEST_DECL
+		cout << "entferne " << removal_len << " bytes in "
+		     << num_segments << " segmenten" << "\n";
+		cout << "memmove bewegt "
+		     << size_t (end_of_options_ - (removal_start + removal_len) )
+		     << " bytes\n";
+#endif
 
 			memmove( removal_start,
 					removal_start + removal_len,
@@ -525,14 +541,8 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_opt_if_none_match( bool opt_if_none_match )
 	{
-#ifdef BOOST_TEST_DECL
-		cout << "set_opt_if_none_match";
-#endif
 		if( opt_if_none_match )
 		{
-#ifdef BOOST_TEST_DECL
-			cout << "true\n";
-#endif
 			return set_option(COAP_OPT_IF_NONE_MATCH , NULL, 0 );
 		}
 		else
