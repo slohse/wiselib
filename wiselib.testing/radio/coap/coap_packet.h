@@ -123,6 +123,8 @@ namespace wiselib
 		int add_option( CoapOptionNum option_number, const string_t &value );
 		int add_option( CoapOptionNum option_number, const OpaqueData &value );
 
+		int remove_option( CoapOptionNum option_number );
+
 		bool opt_if_none_match() const;
 		int set_opt_if_none_match( bool opt_if_none_match );
 
@@ -174,6 +176,7 @@ namespace wiselib
 		void scan_opts( block_data_t *start, CoapOptionNum prev, bool count_opts = false );
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
 		bool is_fencepost(uint8_t optnum) const;
+		size_t optlen(block_data_t * optheader) const;
 
 	};
 
@@ -442,6 +445,75 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::remove_option( CoapOptionNum option_number )
+	{
+		block_data_t *removal_start = options_[COAP_OPT_IF_NONE_MATCH];
+		size_t removal_len = 0;
+		size_t num_segments = 0;
+		size_t curr_segment_len;
+		if( removal_start != NULL )
+		{
+			do
+			{
+				++num_segments;
+
+				curr_segment_len = *(removal_start + removal_len) & 0x0f;
+				if( curr_segment_len == 15 )
+				{
+					curr_segment_len += *(removal_start + removal_len + 1) + 2;
+				}
+				else
+				{
+					++curr_segment_len;
+				}
+
+				removal_len += curr_segment_len;
+			} while( (removal_start + removal_len) <= end_of_options_
+			         && ( *(removal_start + removal_len) & 0xf0 ) == 0 );
+
+			// insert a new fencepost if necessary
+			if( (removal_start + removal_len) <= end_of_options_ )
+			{
+				if( ( ( (*removal_start) & 0xf0 ) >> 4)
+				    + ( ( *(removal_start + removal_len)  & 0xf0 ) >> 4 ) )
+				{
+					*removal_start = next_fencepost_delta( option_number
+					                 - ( ( (*removal_start) & 0xf0 ) >> 4) ) << 4;
+					++removal_start;
+					--removal_len;
+					--num_segments;
+				}
+			}
+
+			// if the removed option is the last option and the one
+			// before is a fencepost, remove the fencepost
+			if( (removal_start + removal_len) > end_of_options_ )
+			{
+				CoapOptionNum prev = (CoapOptionNum) (option_number - ( ((*removal_start) & 0xf0 ) >> 4));
+				if(is_fencepost( prev ))
+				{
+					removal_start = options_[ prev ];
+					removal_len = (size_t) (end_of_options_ - removal_start);
+					options_[ prev ] = NULL;
+					++num_segments;
+				}
+
+			}
+
+			memmove( removal_start,
+					removal_start + removal_len,
+					size_t (end_of_options_ - (removal_start + removal_len) ) );
+			options_[ option_number ] = NULL;
+			option_count_ -= num_segments;
+			end_of_options_ -= removal_len;
+		}
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
 	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::opt_if_none_match() const
 	{
 		return options_[COAP_OPT_IF_NONE_MATCH] != NULL;
@@ -453,16 +525,19 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_opt_if_none_match( bool opt_if_none_match )
 	{
+#ifdef BOOST_TEST_DECL
+		cout << "set_opt_if_none_match";
+#endif
 		if( opt_if_none_match )
 		{
+#ifdef BOOST_TEST_DECL
+			cout << "true\n";
+#endif
 			return set_option(COAP_OPT_IF_NONE_MATCH , NULL, 0 );
 		}
 		else
 		{
-			end_of_options_ = options_[COAP_OPT_IF_NONE_MATCH] - 1;
-			options_[COAP_OPT_IF_NONE_MATCH] = NULL;
-			--option_count_;
-			return SUCCESS;
+			return remove_option( COAP_OPT_IF_NONE_MATCH );
 		}
 	}
 
@@ -473,20 +548,21 @@ namespace wiselib
 	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
 	::option_count() const
 	{
-		size_t count = 0;
-		block_data_t * position = (block_data_t*) storage_;
-		size_t len = 0;
-		while( position < end_of_options_ )
-		{
-			len = *position & 0x0f;
-			if( len == 15 )
-			{
-				len = 16 + ( *(position + 1) & 0x0f );
-			}
-			position += len + 1;
-			++count;
-		}
-		return count;
+//		size_t count = 0;
+//		block_data_t * position = (block_data_t*) storage_;
+//		size_t len = 0;
+//		while( position < end_of_options_ )
+//		{
+//			len = (*position) & 0x0f;
+//			if( len == 15 )
+//			{
+//				len = 16 + ( *(position + 1) );
+//			}
+//			position += len + 1;
+//			++count;
+//		}
+//		return count;
+		return option_count_;
 	}
 
 	template<typename OsModel_P,
@@ -495,11 +571,6 @@ namespace wiselib
 	size_t storage_size_>
 	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::serialize_length() const
 	{
-#ifdef BOOST_TEST_DECL
-		cout << (int) end_of_options_ << " - " << (int) storage_ << " = " << (size_t) (end_of_options_ - storage_) << "\n";
-		cout << (int) storage_ << " + " << (int) storage_size_ << " = " << (size_t) (storage_ + storage_size_) << "\n";
-		cout << (size_t) (storage_ + storage_size_) << " - " << (int) payload_ << " = " << (size_t) ((storage_ + storage_size_) - payload_) << "\n";
-#endif
 		// header (4 bytes) + options + payload
 		return (size_t) ( 4 +
 		         ( end_of_options_ - storage_ ) +
@@ -520,17 +591,36 @@ namespace wiselib
 
 #ifdef BOOST_TEST_DECL
 		cout << (int) end_of_options_ << " - " << (int) storage_ << " = " << (size_t) (end_of_options_ - storage_) << "\n";
-		cout << (int) storage_ << " + " << (int) storage_size_ << " = " << (size_t) (storage_ + storage_size_) << "\n";
-		cout << (size_t) (storage_ + storage_size_) << " - " << (int) payload_ << " = " << (size_t) ((storage_ + storage_size_) - payload_) << "\n";
+		cout << (int) storage_ << " + " << (int) storage_size_ << " = " << (int) (storage_ + storage_size_) << "\n";
+		cout << (int) (storage_ + storage_size_) << " - " << (int) payload_ << " = " << (size_t) ((storage_ + storage_size_) - payload_) << "\n";
 #endif
 
-		size_t len = 4;;
-		memcpy( (datastream + 4), storage_, (size_t) (end_of_options_ - storage_) );
+		size_t len = 4;
+#ifdef BOOST_TEST_DECL
+		cout << "copying " << (size_t) (end_of_options_ - storage_)
+		     << " bytes from " << hex << (unsigned int) storage_
+		     << " to " << (unsigned int) (datastream + 4) << "\n";
+#endif
+		memcpy( datastream + len, storage_, (size_t) (end_of_options_ - storage_) );
+#ifdef BOOST_TEST_DECL
+		cout << "checkpoint option copy\n";
+#endif
 		len += (size_t) (end_of_options_ - storage_);
-		memcpy( datastream + 4 + (end_of_options_ - storage_),
-		        payload_, (size_t) ((storage_ + storage_size_) - payload_ ) );
+#ifdef BOOST_TEST_DECL
+		cout << "copying " << (size_t) ((storage_ + storage_size_) - payload_ )
+		     << " bytes from " << hex << (unsigned int) payload_
+		     << " to " << (unsigned int) (datastream + 4 + (size_t) (end_of_options_ - storage_)) << "\n";
+#endif
+		memcpy( datastream + len,
+		        payload_, data_length_ );
+#ifdef BOOST_TEST_DECL
+		cout << "checkpoint payload copy\n";
+#endif
 		len += (size_t) ((storage_ + storage_size_) - payload_ );
 
+#ifdef BOOST_TEST_DECL
+		cout << "return from serialize with length " << dec << len << "\n";
+#endif
 		return len;
 	}
 
@@ -593,53 +683,74 @@ namespace wiselib
 			}
 
 			// look for previous option - can be the same option we're inserting
-			for( size_t i = (size_t) num; i > 0; --i )
+			if( next != 0 )
 			{
-				if( options_[i] != NULL )
+				prev = (CoapOptionNum) ( next - (CoapOptionNum) ( ( *(options_[next]) & 0xf0 ) >> 4 ));
+			}
+			else
+			{
+				for( size_t i = (size_t) num; i > 0; --i )
 				{
-					prev = (CoapOptionNum) i;
-					if( is_fencepost( prev ) )
+					if( options_[i] != NULL )
 					{
-						// if the delta to the option before the fencepost is
-						// small enough, we can ommit the fencepost
-						CoapOptionNum prevprev = (CoapOptionNum) ( prev -
-						        ( *( options_[prev] ) && 0xf0) >> 4 );
-						if( num - prevprev <= 15 )
-						{
-							put_here = options_[prev];
-							options_[prev] = NULL;
-							prev = prevprev;
-						}
+						prev = (CoapOptionNum) i;
+						break;
 					}
-					break;
+				}
+			}
+
+			if( is_fencepost( prev ) )
+			{
+				// if the delta to the option before the fencepost is
+				// small enough, we can ommit the fencepost
+				CoapOptionNum prevprev = (CoapOptionNum) ( prev -
+						( *( options_[prev] ) && 0xf0) >> 4 );
+				if( num - prevprev <= 15 )
+				{
+					put_here = options_[prev];
+					options_[prev] = NULL;
+					prev = prevprev;
 				}
 			}
 
 			fenceposts_omitted_len = next_opt_start - put_here;
-
-			if( num - prev > 15 )
-			{
-				++overhead_len;
-				fencepost = next_fencepost_delta( prev );
-			}
 		}
+
+		if( num - prev > 15 )
+		{
+			++overhead_len;
+			fencepost = next_fencepost_delta( prev );
+		}
+
+#ifdef BOOST_TEST_DECL
+		cout << "overhead len: " << overhead_len << ", fp omit len: " << fenceposts_omitted_len << " \n";
+		cout << "prev: " << prev << ", next: " << next << "\n";
+		cout << "fencepost: " << fencepost << "\n";
+#endif
 
 		// move following options back
 		size_t bytes_needed = len + overhead_len - fenceposts_omitted_len;
 		if( end_of_options_ + bytes_needed >= payload_ )
 			return ERR_NOMEM;
-		// correcting delta of following option
-		*next_opt_start = ( *next_opt_start & 0x0f )
-		                  | (block_data_t) ((next - num) << 4);
 		if( put_here < end_of_options_ )
 		{
+			// correcting delta of following option
+			*next_opt_start = ( *next_opt_start & 0x0f )
+			                  | (block_data_t) ((next - num) << 4);
+
 			memmove( next_opt_start + bytes_needed,
 			        next_opt_start,
 			        (size_t) (end_of_options_ - next_opt_start));
 		}
 
 		memcpy( put_here + (bytes_needed - len), serial_opt, len );
+#ifdef BOOST_TEST_DECL
+		cout << "end_of_options_: " << (unsigned int) end_of_options_ <<"\n";
+#endif
 		end_of_options_ += bytes_needed;
+#ifdef BOOST_TEST_DECL
+		cout << "end_of_options_: " << (unsigned int) end_of_options_ <<"\n";
+#endif
 		if( fencepost != 0)
 		{
 			*put_here = fencepost << 4;
@@ -670,24 +781,27 @@ namespace wiselib
 		return SUCCESS;
 	}
 
+
+
 	template<typename OsModel_P,
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::scan_opts( block_data_t *start, CoapOptionNum prev, bool count_opts )
 	{
+#ifdef BOOST_TEST_DECL
+		cout << "scan_opts> start: " << (unsigned int) start << ", num: " << prev <<"\n";
+#endif
+
 		if(count_opts)
 			option_count_ = 0;
 		uint8_t delta = 0;
 		while( start < end_of_options_ )
 		{
-			if( delta = (((*start) & 0xf0) >> 4) != 0 )
+			if( (delta = (((*start) & 0xf0) >> 4)) != 0 )
 				options_[ prev + delta ] = start;
-			size_t len = (*start) & 0x0f;
-			if( len < 15 )
-				start += len + 1;
-			else
-				start +=  *(start + 1) + 16;
+			size_t len = optlen( start );
+			start += len + 1;
 			if(count_opts)
 				++option_count_;
 		}
@@ -709,6 +823,20 @@ namespace wiselib
 	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::is_fencepost(uint8_t optnum) const
 	{
 		return (optnum > 0 && optnum % 14 == 0);
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::optlen(block_data_t * optheader) const
+	{
+		size_t len = *optheader & 0x0f;
+		if( len == 15 )
+		{
+			len += *(optheader + 1);
+		}
+		return len;
 	}
 
 }
