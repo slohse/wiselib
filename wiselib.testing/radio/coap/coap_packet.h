@@ -231,7 +231,7 @@ namespace wiselib
 			options_[i] = NULL;
 		}
 
-		payload_ = NULL;
+		payload_ = storage_ + storage_size_;
 		end_of_options_ = storage_;
 		data_length_ = 0;
 		option_count_ = 0;
@@ -334,7 +334,7 @@ namespace wiselib
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_data( block_data_t* data , size_t length)
 	{
 		// we put data at the very end
-		block_data_t *payload = storage_ + ( (storage_size_ - 1) - length );
+		block_data_t *payload = storage_ + ( (storage_size_) - length );
 		if( payload <= end_of_options_  )
 			return ERR_NOMEM;
 		data_length_ = length;
@@ -495,10 +495,15 @@ namespace wiselib
 	size_t storage_size_>
 	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::serialize_length() const
 	{
+#ifdef BOOST_TEST_DECL
+		cout << (int) end_of_options_ << " - " << (int) storage_ << " = " << (size_t) (end_of_options_ - storage_) << "\n";
+		cout << (int) storage_ << " + " << (int) storage_size_ << " = " << (size_t) (storage_ + storage_size_) << "\n";
+		cout << (size_t) (storage_ + storage_size_) << " - " << (int) payload_ << " = " << (size_t) ((storage_ + storage_size_) - payload_) << "\n";
+#endif
 		// header (4 bytes) + options + payload
 		return (size_t) ( 4 +
 		         ( end_of_options_ - storage_ ) +
-		         ( storage_ + ( storage_size_ - 1 ) - payload_ ));
+		         ( storage_ + ( storage_size_ ) - payload_ ));
 	}
 
 	template<typename OsModel_P,
@@ -513,10 +518,18 @@ namespace wiselib
 		datastream[2] = (this->msg_id() & 0xff00) >> 8;
 		datastream[3] = (this->msg_id() & 0x00ff);
 
-		size_t len = 4;
-		len += memcpy( (datastream + 4), storage_, (size_t) (( (block_data_t*) end_of_options_ ) - ((block_data_t*) storage_) ) );
-		len += memcpy( datastream + 4 + (end_of_options_ - storage_),
+#ifdef BOOST_TEST_DECL
+		cout << (int) end_of_options_ << " - " << (int) storage_ << " = " << (size_t) (end_of_options_ - storage_) << "\n";
+		cout << (int) storage_ << " + " << (int) storage_size_ << " = " << (size_t) (storage_ + storage_size_) << "\n";
+		cout << (size_t) (storage_ + storage_size_) << " - " << (int) payload_ << " = " << (size_t) ((storage_ + storage_size_) - payload_) << "\n";
+#endif
+
+		size_t len = 4;;
+		memcpy( (datastream + 4), storage_, (size_t) (end_of_options_ - storage_) );
+		len += (size_t) (end_of_options_ - storage_);
+		memcpy( datastream + 4 + (end_of_options_ - storage_),
 		        payload_, (size_t) ((storage_ + storage_size_) - payload_ ) );
+		len += (size_t) ((storage_ + storage_size_) - payload_ );
 
 		return len;
 	}
