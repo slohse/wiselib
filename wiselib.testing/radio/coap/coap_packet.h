@@ -119,9 +119,17 @@ namespace wiselib
 		 */
 		int set_data( block_data_t* data , size_t length);
 
+		int set_option( CoapOptionNum option_number, uint32_t value );
+		int set_option( CoapOptionNum option_number, const string_t &value );
+		int set_option( CoapOptionNum option_number, const OpaqueData &value );
+
 		int add_option( CoapOptionNum option_number, uint32_t value );
 		int add_option( CoapOptionNum option_number, const string_t &value );
 		int add_option( CoapOptionNum option_number, const OpaqueData &value );
+
+		int get_option( CoapOptionNum option_number, uint32_t &value );
+		int get_option( CoapOptionNum option_number, string_t &value );
+		int get_option( CoapOptionNum option_number, OpaqueData &value );
 
 		int remove_option( CoapOptionNum option_number );
 
@@ -377,6 +385,36 @@ namespace wiselib
 	}
 
 	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_option( CoapOptionNum option_number, uint32_t value )
+	{
+		remove_option(option_number);
+		return add_option( option_number, value );
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_option( CoapOptionNum option_number, const string_t &value )
+	{
+		remove_option(option_number);
+		return add_option( option_number, value );
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_option( CoapOptionNum option_number, const OpaqueData &value )
+	{
+		remove_option(option_number);
+		return add_option( option_number, value );
+	}
+
+	template<typename OsModel_P,
 		typename Radio_P,
 		typename String_T,
 		size_t storage_size_>
@@ -423,22 +461,60 @@ namespace wiselib
 			return ERR_WRONG_TYPE;
 		}
 
+		// reserve some additional space for option headers
+		block_data_t insert[ value.length() + 10 ];
+		size_t num_segments = 0;
+		size_t serial_len = 0;
+		size_t segment_start = 0;
+
 		if( option_number == COAP_OPT_LOCATION_PATH
 		   || option_number  == COAP_OPT_URI_PATH )
 		{
-			// TODO
+			if( value.c_str()[segment_start] == '/' )
+				++segment_start;
+			serial_len = make_string_segments(value.c_str() + segment_start,
+			              '/', option_number, insert, num_segments );
 		}
 		else if ( option_number == COAP_OPT_LOCATION_QUERY
 		         || option_number  == COAP_OPT_URI_QUERY )
 		{
-			// TODO
+			if( value.c_str()[segment_start] == '/' )
+				++segment_start;
+			if( value.c_str()[segment_start] == '?' )
+				++segment_start;
+			serial_len = make_string_segments(value.c_str(),
+			              '&', option_number, insert, num_segments );
 		}
 		else
 		{
-			// TODO
+			if( value.length() <= COAP_STRING_OPTS_MAXLEN )
+			{
+				memcpy(insert, value.c_str(), value.length());
+				serial_len = value.length();
+				num_segments = 1;
+			}
+			else
+			{
+				size_t copylen = 0;
+				do
+				{
+					*(insert + serial_len) = COAP_LONG_OPTION;
+					++serial_len;
+					*(insert + serial_len) = 0xff;
+					++serial_len;
+					copylen = value.length() - num_segments * 270;
+					if( copylen > 270 )
+						copylen = 270;
+					memcpy( insert + serial_len,
+					        value.c_str() + segment_start, copylen);
+					serial_len += copylen;
+					++num_segments;
+					segment_start += copylen;
+				} while( segment_start < value.length() );
+			}
 		}
 
-		return SUCCESS;
+		return set_option( option_number, insert, serial_len, num_segments );
 	}
 
 	template<typename OsModel_P,
@@ -463,6 +539,63 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::get_option( CoapOptionNum option_number, uint32_t &value )
+	{
+		if( options_[option_number] != NULL )
+		{
+			value = 0;
+			block_data_t *raw = options_[option_number];
+			size_t len = *raw & 0xf;
+			size_t pos = 1;
+
+			switch( len )
+			{
+			case 4:
+				value = *(raw + pos);
+				++pos;
+			case 3:
+				value = (value << 8) | (raw + pos);
+				++pos;
+			case 2:
+				value = (value << 8) | (raw + pos);
+				++pos;
+			case 1:
+				value = (value << 8) | (raw + pos);
+				++pos;
+			case 0:
+				// do nothing
+				break;
+			default:
+				// uint option longer than 4. SHOULD NOT HAPPEN!!!
+				return ERR_OPT_TOO_LONG;
+			}
+			return SUCCESS;
+		}
+		return ERR_OPT_NOT_SET;
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::get_option( CoapOptionNum option_number, string_t &value )
+	{
+		// TODO
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::get_option( CoapOptionNum option_number, OpaqueData &value )
+	{
+		// TODO
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::remove_option( CoapOptionNum option_number )
 	{
 		block_data_t *removal_start = options_[COAP_OPT_IF_NONE_MATCH];
@@ -481,7 +614,7 @@ namespace wiselib
 				cout << "Num of Segments: " << num_segments << "\n";
 #endif
 				curr_segment_len = *(removal_start + removal_len) & 0x0f;
-				if( curr_segment_len == 15 )
+				if( curr_segment_len == COAP_LONG_OPTION )
 				{
 					curr_segment_len += *(removal_start + removal_len + 1) + 2;
 				}
@@ -671,7 +804,7 @@ namespace wiselib
 		if( num_of_opts == 1)
 		{
 			overhead_len = 1;
-			if( len > 14 )
+			if( len >= COAP_LONG_OPTION )
 				++overhead_len;
 		}
 
@@ -795,14 +928,14 @@ namespace wiselib
 		*put_here = ( *put_here & 0x0f ) | ((num - prev) << 4);
 		if( num_of_opts == 1 )
 		{
-			if( len < 15 )
+			if( len < COAP_LONG_OPTION )
 			{
 				*put_here = ( *put_here & 0xf0 ) | (len & 0x0f);
 			}
 			else
 			{
 				*put_here = ( *put_here & 0xf0 ) | 0x0f;
-				*(put_here + 1) = (len - 15);
+				*(put_here + 1) = (len - COAP_LONG_OPTION);
 			}
 		}
 
@@ -869,7 +1002,7 @@ namespace wiselib
 	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::optlen(block_data_t * optheader) const
 	{
 		size_t len = *optheader & 0x0f;
-		if( len == 15 )
+		if( len == COAP_LONG_OPTION )
 		{
 			len += *(optheader + 1);
 		}
@@ -905,14 +1038,14 @@ namespace wiselib
 		cout << "CoapPacket::add_string_segments> found segment at "
 		     << segment_start << " length " << length << "\n";
 #endif
-				if( length > 15 && length <= 270 )
+				if( length >= COAP_LONG_OPTION && length <= COAP_STRING_OPTS_MAXLEN )
 				{
 					*(result + result_pos) = 0x0f;
 					++result_pos;
-					*(result + result_pos) = (block_data_t) length - 15;
+					*(result + result_pos) = (block_data_t) length - COAP_LONG_OPTION;
 					++result_pos;
 				}
-				else if ( length <= 15 )
+				else if ( length < COAP_LONG_OPTION )
 				{
 					*(result + result_pos) = (block_data_t) length;
 					++result_pos;
