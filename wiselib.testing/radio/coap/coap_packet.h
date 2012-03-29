@@ -98,6 +98,28 @@ namespace wiselib
 		void set_msg_id( coap_msg_id_t msg_id );
 
 		/**
+		 * Returns the token by which request/response matching can be done.
+		 * @param token reference to OpaqueData object, will contain message token afterwards
+		 */
+		void token( OpaqueData &token );
+
+		/**
+		 * Sets the token by which request/response matching can be done.
+		 * @param token new message ID
+		 */
+		void set_token( const OpaqueData &token );
+
+		string_t uri_path();
+
+		int set_uri_path( string_t &path );
+
+		int set_uri_query( string_t &query );
+
+		void set_uri_port( uint32_t port );
+
+		uint32_t uri_port();
+
+		/**
 		 * Returns a pointer to the payload section of the packet
 		 * @return pointer to payload
 		 */
@@ -182,7 +204,7 @@ namespace wiselib
 		// contains Options and Data
 		block_data_t storage_[storage_size_];
 
-		int set_option(CoapOptionNum num, block_data_t *serial_opt, size_t len, size_t num_of_opts = 1);
+		int add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts = 1);
 		void scan_opts( block_data_t *start, CoapOptionNum prev, bool count_opts = false );
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
 		bool is_fencepost(uint8_t optnum) const;
@@ -389,6 +411,90 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
+	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::token( OpaqueData &token )
+	{
+#ifdef BOOST_TEST_DECL
+		cout << "token(): ";
+#endif
+		if( get_option( COAP_OPT_TOKEN, token ) != SUCCESS )
+		{
+#ifdef BOOST_TEST_DECL
+		cout << "token is set";
+#endif
+			token = OpaqueData();
+		}
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_token( const OpaqueData &token )
+	{
+		remove_option( COAP_OPT_TOKEN );
+		if( token != OpaqueData() )
+		{
+			add_option( COAP_OPT_TOKEN, token );
+		}
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	String_T CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::uri_path()
+	{
+		string_t path = string_t();
+		get_option( COAP_OPT_URI_PATH, path );
+		return path;
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_path( string_t &path )
+	{
+		return set_option( COAP_OPT_URI_PATH, path );
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_query( string_t &query )
+	{
+		return set_option( COAP_OPT_URI_QUERY, query );
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_port( uint32_t port )
+	{
+		remove_option( COAP_OPT_URI_PORT );
+		if( port != COAP_STD_PORT )
+		{
+			add_option( COAP_OPT_URI_PORT, port );
+		}
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	uint32_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::uri_port()
+	{
+		uint32_t port = COAP_STD_PORT;
+		get_option( COAP_OPT_URI_PORT, port );
+		return port;
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_option( CoapOptionNum option_number, uint32_t value )
 	{
 		remove_option(option_number);
@@ -444,7 +550,7 @@ namespace wiselib
 		else if ( serial[0]  != 0 )
 			highest_non_zero_byte = 1;
 
-		return set_option( option_number, serial, highest_non_zero_byte );
+		return add_option( option_number, serial, highest_non_zero_byte );
 	}
 
 	template<typename OsModel_P,
@@ -515,7 +621,7 @@ namespace wiselib
 			}
 		}
 
-		return set_option( option_number, insert, serial_len, num_segments );
+		return add_option( option_number, insert, serial_len, num_segments );
 	}
 
 	template<typename OsModel_P,
@@ -533,7 +639,7 @@ namespace wiselib
 			return ERR_WRONG_TYPE;
 		}
 
-		return set_option( option_number, value.value(), value.length() );
+		return add_option( option_number, value.value(), value.length() );
 	}
 
 	template<typename OsModel_P,
@@ -608,7 +714,15 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::get_option( CoapOptionNum option_number, OpaqueData &value )
 	{
-		// TODO
+		if( options_[option_number] == NULL )
+			return ERR_OPT_NOT_SET;
+
+		size_t len = optlen( options_[option_number] );
+		size_t value_start = (len >= 15) ? 2 : 1;
+
+		value.set( options_[option_number] + value_start, len );
+
+		return SUCCESS;
 	}
 
 	template<typename OsModel_P,
@@ -617,7 +731,10 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::remove_option( CoapOptionNum option_number )
 	{
-		block_data_t *removal_start = options_[COAP_OPT_IF_NONE_MATCH];
+#ifdef BOOST_TEST_DECL
+		cout << "remove_option( " << (int) option_number << " )> removing opt \n";
+#endif
+		block_data_t *removal_start = options_[option_number];
 		size_t removal_len = 0;
 		size_t num_segments = 0;
 		size_t curr_segment_len;
@@ -626,11 +743,11 @@ namespace wiselib
 			do
 			{
 #ifdef BOOST_TEST_DECL
-				cout << "Num of Segments: " << num_segments << "\n";
+				cout << "remove_option( " << (int) option_number << " )> Num of Segments: " << num_segments << "\n";
 #endif
 				++num_segments;
 #ifdef BOOST_TEST_DECL
-				cout << "Num of Segments: " << num_segments << "\n";
+				cout << "remove_option( " << (int) option_number << " )> Num of Segments: " << num_segments << "\n";
 #endif
 				curr_segment_len = *(removal_start + removal_len) & 0x0f;
 				if( curr_segment_len == COAP_LONG_OPTION )
@@ -644,7 +761,7 @@ namespace wiselib
 
 				removal_len += curr_segment_len;
 #ifdef BOOST_TEST_DECL
-				cout << "Do-while pass " << num_segments << "\n";
+				cout << "remove_option( " << (int) option_number << " )> Do-while pass " << num_segments << "\n";
 #endif
 			} while( (removal_start + removal_len) < end_of_options_
 			         && ( *(removal_start + removal_len) & 0xf0 ) == 0 );
@@ -712,7 +829,7 @@ namespace wiselib
 	{
 		if( opt_if_none_match )
 		{
-			return set_option(COAP_OPT_IF_NONE_MATCH , NULL, 0 );
+			return add_option(COAP_OPT_IF_NONE_MATCH , NULL, 0 );
 		}
 		else
 		{
@@ -812,7 +929,7 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_option(CoapOptionNum num, block_data_t *serial_opt, size_t len, size_t num_of_opts)
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts)
 	{
 		// TODO: evtl vorangehende und folgende fenceposts entfernen
 		CoapOptionNum prev = (CoapOptionNum) 0;
@@ -849,6 +966,8 @@ namespace wiselib
 						// small enough, we can ommit the fencepost
 						CoapOptionNum nextnext = (CoapOptionNum) ( next +
 						        // get the next option header
+								// considering the fenceposts length is only a
+								// precaution, it should be zero
 						        ( ( *( options_[next]
 						        + ( *(options_[next]) & 0x0f ) + 1 )
 						        // bitwise AND and shift to get the delta
@@ -1097,20 +1216,22 @@ namespace wiselib
 			block_data_t swap;
 			block_data_t *pos = options_[optnum];
 			block_data_t *nextpos;
+			size_t value_start;
 			size_t curr_segment_len;
 			do
 			{
 				curr_segment_len = optlen( pos );
 
 				if( curr_segment_len < 15 )
-					nextpos = pos + curr_segment_len + 1;
+					value_start = 1;
 				else
-					nextpos = pos + curr_segment_len + 2;
+					value_start = 2;
 
+				nextpos = pos + curr_segment_len + value_start;
 				swap = *(nextpos);
 				*nextpos = (block_data_t) '\0';
 
-				result.append(pos);
+				result.append( pos + value_start );
 				*nextpos = swap;
 
 				if( (nextpos < end_of_options_ ) && ( swap & 0xf0 ) == 0 )
