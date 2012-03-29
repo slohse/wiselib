@@ -187,7 +187,8 @@ namespace wiselib
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
 		bool is_fencepost(uint8_t optnum) const;
 		size_t optlen(block_data_t * optheader) const;
-		size_t make_string_segments( char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *segments, size_t &num_segments ) const;
+		size_t make_segments_from_string( char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *segments, size_t &num_segments ) const;
+		void make_string_from_segments( char delimiter, CoapOptionNum optnum, string_t &result ) const;
 
 	};
 
@@ -472,7 +473,7 @@ namespace wiselib
 		{
 			if( value.c_str()[segment_start] == '/' )
 				++segment_start;
-			serial_len = make_string_segments(value.c_str() + segment_start,
+			serial_len = make_segments_from_string(value.c_str() + segment_start,
 			              '/', option_number, insert, num_segments );
 		}
 		else if ( option_number == COAP_OPT_LOCATION_QUERY
@@ -482,7 +483,7 @@ namespace wiselib
 				++segment_start;
 			if( value.c_str()[segment_start] == '?' )
 				++segment_start;
-			serial_len = make_string_segments(value.c_str(),
+			serial_len = make_segments_from_string(value.c_str(),
 			              '&', option_number, insert, num_segments );
 		}
 		else
@@ -580,7 +581,25 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::get_option( CoapOptionNum option_number, string_t &value )
 	{
-		// TODO
+		if( options_[option_number] == NULL )
+			return ERR_OPT_NOT_SET;
+
+		if( option_number == COAP_OPT_LOCATION_PATH
+				|| option_number  == COAP_OPT_URI_PATH )
+		{
+			make_string_from_segments ( '/', option_number, value );
+		}
+		else if ( option_number == COAP_OPT_LOCATION_QUERY
+				|| option_number  == COAP_OPT_URI_QUERY )
+		{
+			make_string_from_segments ( '&', option_number, value );
+		}
+		else
+		{
+			// TODO: testen ob das funtioniert
+			make_string_from_segments ( '\0', option_number, value );
+		}
+		return SUCCESS;
 	}
 
 	template<typename OsModel_P,
@@ -1014,7 +1033,7 @@ namespace wiselib
 	typename String_T,
 	size_t storage_size_>
 	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
-	::make_string_segments( char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *result, size_t &num_segments ) const
+	::make_segments_from_string( char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *result, size_t &num_segments ) const
 	{
 #ifdef BOOST_TEST_DECL
 		cout << "CoapPacket::add_string_segments> string '"
@@ -1062,6 +1081,45 @@ namespace wiselib
 		} while( cstr[position] != '\0' );
 
 		return result_pos;
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
+	::make_string_from_segments( char delimiter, CoapOptionNum optnum, string_t &result ) const
+	{
+		result = "";
+		if( options_[optnum] != NULL )
+		{
+			char terminated_delimiter[] = { delimiter, '\0' };
+			block_data_t swap;
+			block_data_t *pos = options_[optnum];
+			block_data_t *nextpos;
+			size_t curr_segment_len;
+			do
+			{
+				curr_segment_len = optlen( pos );
+
+				if( curr_segment_len < 15 )
+					nextpos = pos + curr_segment_len + 1;
+				else
+					nextpos = pos + curr_segment_len + 2;
+
+				swap = *(nextpos);
+				*nextpos = (block_data_t) '\0';
+
+				result.append(pos);
+				*nextpos = swap;
+
+				if( (nextpos < end_of_options_ ) && ( swap & 0xf0 ) == 0 )
+				{
+					result.append( terminated_delimiter );
+				}
+			} while ( pos < end_of_options_ && ( swap & 0xf0 ) == 0 );
+		}
+
 	}
 
 }
