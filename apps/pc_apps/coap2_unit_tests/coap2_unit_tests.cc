@@ -181,20 +181,25 @@ BOOST_FIXTURE_TEST_CASE( Boundary_Condition_Options_string_delimiters, FacetsFix
 	size_t packet_serialize_length_actual;
 
 	string_t slash_uri = string_t("/uri_with_slash/at/beginning/and/end/");
+	string_t uri_query = string_t("/?param1=7&op=+&muh=maeh");
 
 	packet.set_uri_path( slash_uri );
+	packet.set_uri_query( uri_query );
 
-	block_data_t packet_expected[ ] = { 0x55, COAP_CODE_EMPTY, 0x00, 0x00 ,
+	block_data_t packet_expected[ ] = { 0x58, COAP_CODE_EMPTY, 0x00, 0x00 ,
 	                    // uri_path, length 9, "uri_with_slash"
 	                    0x9E, 'u', 'r', 'i', '_', 'w', 'i', 't', 'h', '_', 's', 'l', 'a', 's', 'h',
 	                    // uri_path, length 2, "at"
 	                    0x02, 'a', 't',
 	                    0x09, 'b', 'e', 'g', 'i', 'n', 'n', 'i', 'n', 'g',
 	                    0x03, 'a', 'n', 'd',
-	                    0x03, 'e', 'n', 'd'
+	                    0x03, 'e', 'n', 'd',
+	                    0x68, 'p', 'a', 'r', 'a', 'm', '1', '=', '7',
+	                    0x04, 'o', 'p', '=', '+',
+	                    0x08, 'm', 'u', 'h', '=', 'm', 'a', 'e', 'h'
 	                    };
 
-	packet_serialize_length_expected = 40;
+	packet_serialize_length_expected = 63;
 
 	packet_serialize_length_actual = packet.serialize( packet_actual );
 
@@ -215,7 +220,9 @@ BOOST_FIXTURE_TEST_CASE( Boundary_Condition_Options_string_length, FacetsFixture
 
 	string_t fifteen_uri = string_t("uri_15_char_len/segment");
 
-	packet.set_uri_path( fifteen_uri );
+	BOOST_CHECK_EQUAL( packet.set_uri_path( fifteen_uri ), coap_packet_t::SUCCESS );
+
+	// TODO Längencheck mit dynamischen String und Länge > 270
 
 	block_data_t packet_expected[ ] = { 0x52, COAP_CODE_EMPTY, 0x00, 0x00 ,
 	                    // uri_path, length 15, "uri_15_char_len"
@@ -231,6 +238,83 @@ BOOST_FIXTURE_TEST_CASE( Boundary_Condition_Options_string_length, FacetsFixture
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 			packet_expected, packet_expected + packet_serialize_length_expected );
 }
+
+BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
+{
+	coap_packet_t packet;
+	block_data_t packet_actual[ 200 ];
+
+	size_t packet_serialize_length_expected;
+	size_t packet_serialize_length_actual;
+
+	packet.set_option( COAP_OPT_MAX_AGE, 0x12345678 );
+
+	block_data_t packet_expected[ ] = { 0x51, COAP_CODE_EMPTY, 0x00, 0x00,
+	                    0x24, 0x12, 0x34, 0x56, 0x78 };
+	packet_serialize_length_expected = 9;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
+	packet.set_option( COAP_OPT_MAX_AGE, 0x12000000 );
+	packet_expected[6] = 0;
+	packet_expected[7] = 0;
+	packet_expected[8] = 0;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
+	packet.set_option( COAP_OPT_MAX_AGE, 0x800000 );
+	packet_expected[5] = 0x80;
+	packet_expected[6] = 0;
+	packet_expected[7] = 0;
+	packet_serialize_length_expected = 8;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
+	packet.set_option( COAP_OPT_MAX_AGE, 0x0300 );
+	packet_expected[5] = 0x03;
+	packet_expected[6] = 0;
+	packet_serialize_length_expected = 7;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
+	packet.set_option( COAP_OPT_MAX_AGE, 0x05 );
+	packet_expected[5] = 0x05;
+	packet_serialize_length_expected = 6;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
+	packet.set_option( COAP_OPT_MAX_AGE, 0 );
+	packet_serialize_length_expected = 5;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
+}
+
+
 
 
 BOOST_AUTO_TEST_SUITE_END()
