@@ -3,6 +3,7 @@
 
 #include "coap.h"
 
+#define SINGLE_OPTION_NO_HEADER		0
 
 namespace wiselib
 {
@@ -204,12 +205,12 @@ namespace wiselib
 		// contains Options and Data
 		block_data_t storage_[storage_size_];
 
-		int add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts = 1);
+		int add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts = SINGLE_OPTION_NO_HEADER );
 		void scan_opts( block_data_t *start, CoapOptionNum prev, bool count_opts = false );
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
 		bool is_fencepost(uint8_t optnum) const;
 		size_t optlen(block_data_t * optheader) const;
-		size_t make_segments_from_string( char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *segments, size_t &num_segments ) const;
+		size_t make_segments_from_string( const char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *segments, size_t &num_segments ) const;
 		void make_string_from_segments( char delimiter, CoapOptionNum optnum, string_t &result ) const;
 
 	};
@@ -574,29 +575,31 @@ namespace wiselib
 		size_t serial_len = 0;
 		size_t segment_start = 0;
 
+		const char* c_str = (const_cast<string_t&>(value)).c_str();
+
 		if( option_number == COAP_OPT_LOCATION_PATH
 		   || option_number  == COAP_OPT_URI_PATH )
 		{
-			if( value.c_str()[segment_start] == '/' )
+			if( c_str[segment_start] == '/' )
 				++segment_start;
-			serial_len = make_segments_from_string(value.c_str() + segment_start,
+			serial_len = make_segments_from_string(c_str + segment_start,
 			              '/', option_number, insert, num_segments );
 		}
 		else if ( option_number == COAP_OPT_LOCATION_QUERY
 		         || option_number  == COAP_OPT_URI_QUERY )
 		{
-			if( value.c_str()[segment_start] == '/' )
+			if( c_str[segment_start] == '/' )
 				++segment_start;
-			if( value.c_str()[segment_start] == '?' )
+			if( c_str[segment_start] == '?' )
 				++segment_start;
-			serial_len = make_segments_from_string(value.c_str(),
+			serial_len = make_segments_from_string( c_str,
 			              '&', option_number, insert, num_segments );
 		}
 		else
 		{
 			if( value.length() <= COAP_STRING_OPTS_MAXLEN )
 			{
-				memcpy(insert, value.c_str(), value.length());
+				memcpy(insert, c_str, value.length());
 				serial_len = value.length();
 				num_segments = 1;
 			}
@@ -613,7 +616,7 @@ namespace wiselib
 					if( copylen > 270 )
 						copylen = 270;
 					memcpy( insert + serial_len,
-					        value.c_str() + segment_start, copylen);
+					        c_str + segment_start, copylen);
 					serial_len += copylen;
 					++num_segments;
 					segment_start += copylen;
@@ -931,13 +934,16 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts)
 	{
+#ifdef BOOST_TEST_DECL
+		cout << "add_option( " << (int) num << " )> len " << len << " num_of_opts " << num_of_opts << "\n";
+#endif
 		// TODO: evtl vorangehende und folgende fenceposts entfernen
 		CoapOptionNum prev = (CoapOptionNum) 0;
 		CoapOptionNum next = (CoapOptionNum) 0;
 		uint8_t fencepost = 0;
 		// only add header when a single option is added
 		size_t overhead_len = 0;
-		if( num_of_opts == 1)
+		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
 		{
 			overhead_len = 1;
 			if( len >= COAP_LONG_OPTION )
@@ -1064,7 +1070,7 @@ namespace wiselib
 		}
 		// if multiple options are inserted only add delta, otherwise add size too
 		*put_here = ( *put_here & 0x0f ) | ((num - prev) << 4);
-		if( num_of_opts == 1 )
+		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
 		{
 			if( len < COAP_LONG_OPTION )
 			{
@@ -1084,7 +1090,10 @@ namespace wiselib
 		}
 		scan_opts( put_here, prev );
 
-		option_count_ += num_of_opts;
+		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
+			++option_count_;
+		else
+			option_count_ += num_of_opts;
 
 		return SUCCESS;
 	}
@@ -1152,7 +1161,7 @@ namespace wiselib
 	typename String_T,
 	size_t storage_size_>
 	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
-	::make_segments_from_string( char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *result, size_t &num_segments ) const
+	::make_segments_from_string( const char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *result, size_t &num_segments ) const
 	{
 #ifdef BOOST_TEST_DECL
 		cout << "CoapPacket::add_string_segments> string '"
@@ -1165,9 +1174,10 @@ namespace wiselib
 		num_segments = 0;
 		if(cstr[position] == '\0')
 			return 0;
-		do
+		for( ; position <= strlen(cstr); ++position )
 		{
-			if( cstr[position] == delimiter )
+			if( cstr[position] == delimiter ||
+			    ( cstr[position] == '\0' && cstr[position - 1] != delimiter ) )
 			{
 				if( (length = position - segment_start ) == 0)
 					return 0;
@@ -1191,14 +1201,17 @@ namespace wiselib
 				else
 					return 0;
 
-				memcpy(result + result_pos, cstr + position, length );
+				memcpy(result + result_pos, cstr + segment_start, length );
 				result_pos += length;
 				++num_segments;
 				segment_start = position + 1;
 			}
-			++position;
-		} while( cstr[position] != '\0' );
+		}
 
+#ifdef BOOST_TEST_DECL
+		cout << "CoapPacket::make_segments> found " << num_segments << " segments, wrote "
+		     << result_pos << " bytes\n";
+#endif
 		return result_pos;
 	}
 
