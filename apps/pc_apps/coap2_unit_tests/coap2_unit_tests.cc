@@ -14,6 +14,8 @@
 
 using namespace wiselib;
 
+//#define VERBOSE_DEBUG
+
 typedef PCOsModel Os;
 typedef wiselib::StaticString string_t;
 typedef CoapPacket<Os, UnitTestRadio, string_t>::coap_packet_t coap_packet_t;
@@ -96,13 +98,10 @@ BOOST_FIXTURE_TEST_CASE( Serialize_fence_posts, FacetsFixture )
 	block_data_t packet_expected[] = { 0x52, COAP_CODE_EMPTY, 0x00, 0x00,
 			( ( COAP_OPT_FENCEPOST & 0x0F) << 4 ), ( ( 7 & 0x0F) << 4 ) };
 	size_t packet_serialize_length_actual = packet.serialize( packet_actual );
-	cout << "serialize passed \n";
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 				packet_expected, packet_expected + packet_serialize_length_expected );
 
-	cout << "checking serialized packet passed \n";
 	packet.set_opt_if_none_match( false );
-	cout << "setting opt_if_none_match false passed \n";
 
 	block_data_t vanilla_packet_expected[] = { 0x50, COAP_CODE_EMPTY, 0x00, 0x00 };
 
@@ -271,6 +270,7 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 			packet_expected, packet_expected + packet_serialize_length_expected );
 
 	packet.set_option( COAP_OPT_MAX_AGE, 0x800000 );
+	packet_expected[4] = 0x23;
 	packet_expected[5] = 0x80;
 	packet_expected[6] = 0;
 	packet_expected[7] = 0;
@@ -283,6 +283,7 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 			packet_expected, packet_expected + packet_serialize_length_expected );
 
 	packet.set_option( COAP_OPT_MAX_AGE, 0x0300 );
+	packet_expected[4] = 0x22;
 	packet_expected[5] = 0x03;
 	packet_expected[6] = 0;
 	packet_serialize_length_expected = 7;
@@ -294,6 +295,7 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 			packet_expected, packet_expected + packet_serialize_length_expected );
 
 	packet.set_option( COAP_OPT_MAX_AGE, 0x05 );
+	packet_expected[4] = 0x21;
 	packet_expected[5] = 0x05;
 	packet_serialize_length_expected = 6;
 
@@ -304,6 +306,7 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 			packet_expected, packet_expected + packet_serialize_length_expected );
 
 	packet.set_option( COAP_OPT_MAX_AGE, 0 );
+	packet_expected[4] = 0x20;
 	packet_serialize_length_expected = 5;
 
 	packet_serialize_length_actual = packet.serialize( packet_actual );

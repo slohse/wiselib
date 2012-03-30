@@ -53,7 +53,8 @@ enum CoapType
 	COAP_MSG_TYPE_RST = 3
 };
 
-#define COAP_LONG_OPTION	15
+static const uint8_t COAP_LONG_OPTION = 15;
+static const uint8_t COAP_END_OF_OPTIONS_MARKER = 0xf0;
 
 enum CoapOptionNum
 {
