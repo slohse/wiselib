@@ -204,6 +204,10 @@ namespace wiselib
 		coap_msg_id_t msg_id_;
 		CoapType type_;
 		CoapCode code_;
+		// only relevant when an error occurs
+		CoapCode error_code_;
+		CoapOptionNum error_option_;
+		// Coap Version
 		uint8_t version_;
 
 		block_data_t* options_[COAP_OPTION_ARRAY_SIZE];
@@ -212,9 +216,10 @@ namespace wiselib
 
 		int add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts = SINGLE_OPTION_NO_HEADER );
 		void scan_opts( block_data_t *start, CoapOptionNum prev );
-		int initial_scan_opts( size_t num_of_opts );
+		int initial_scan_opts( size_t num_of_opts, size_t message_length );
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
-		bool is_fencepost(uint8_t optnum) const;
+		bool is_fencepost( CoapOptionNum optnum) const;
+		bool is_critical( CoapOptionNum option_number ) const;
 		size_t optlen(block_data_t * optheader) const;
 		size_t make_segments_from_string( const char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *segments, size_t &num_segments ) const;
 		void make_string_from_segments( char delimiter, CoapOptionNum optnum, string_t &result ) const;
@@ -383,7 +388,7 @@ namespace wiselib
 			return ERR_NOMEM;
 		data_length_ = length;
 		payload_ = payload;
-		memcpy(payload_, data, data_length_ );
+		memmove(payload_, data, data_length_ );
 		return SUCCESS;
 	}
 
@@ -1143,11 +1148,13 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::initial_scan_opts( size_t num_of_opts )
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::initial_scan_opts( size_t num_of_opts, size_t message_length )
 	{
 		block_data_t *curr_position = storage_;
 		option_count_ = 0;
-		CoapOptionNum current= 0;
+		CoapOptionNum current = (CoapOptionNum) 0;
+		CoapOptionNum previous = (CoapOptionNum) 0;
+		size_t opt_length;
 
 		while( ( option_count_ < num_of_opts  || num_of_opts == 15 ) )
 		{
@@ -1156,13 +1163,94 @@ namespace wiselib
 			    && *curr_position == COAP_END_OF_OPTIONS_MARKER )
 				break;
 
+			current = previous + ( ( *curr_position & 0xf0) >> 4);
 
-			if( curr_position >= (storage_ + storage_size_) )
+			// length of option plus header
+			opt_length = *curr_position & 0x0f;
+			if( opt_length == COAP_LONG_OPTION )
+				opt_length = *(curr_position + 1) + 17;
+			else
+				++opt_length;
+
+			if( current == previous
+			    && !COAP_OPT_CAN_OCCUR_MULTIPLE[current] )
 			{
+				// option is critical
+				if ( is_critical( current ) )
+				{
+					error_code_ = COAP_CODE_BAD_OPTION;
+					error_option_ = current;
+					return ERR_MULTIPLE_OCCURENCES_OF_CRITICAL_OPTION;
+				}
+				// otherwise ignore
+				++option_count_;
+				previous = current;
+				curr_position += opt_length;
+				continue;
+			}
 
+			// check for unknown options
+			if ( ( current > COAP_LARGEST_OPTION_NUMBER )
+			     || ( COAP_OPTION_FORMAT[current] == COAP_FORMAT_UNKNOWN ) )
+			{
+				// option is critical
+				if ( is_critical( current ) )
+				{
+					error_code_ = COAP_CODE_BAD_OPTION;
+					error_option_ = current;
+					return ERR_UNKNOWN_CRITICAL_OPTION;
+				}
+				// otherwise ignore
+				++option_count_;
+				previous = current;
+				curr_position += opt_length;
+				continue;
+			}
+
+			if( COAP_OPTION_FORMAT[current] == COAP_FORMAT_STRING
+			    && opt_length == 0 )
+			{
+				if ( is_critical( current ) )
+				{
+					error_code_ = COAP_CODE_BAD_OPTION;
+					error_option_ = current;
+					return ERR_EMPTY_STRING_OPTION;
+				}
+				// otherwise ignore
+				++option_count_;
+				previous = current;
+				curr_position += opt_length;
+				continue;
+			}
+
+			if( current != previous )
+			{
+				options_[ current ] = curr_position;
+			}
+
+			++option_count_;
+			previous = current;
+			curr_position += opt_length;
+
+			if( curr_position >= (storage_ + storage_size_)
+			    || curr_position >= ( storage_ + message_length ) )
+			{
+				error_code_ = COAP_CODE_BAD_REQUEST;
+				error_option_ = current;
+				return ERR_OPTIONS_EXCEED_PACKET_LENGTH;
 			}
 		}
 
+		// Rest is data
+		if( curr_position < ( storage_ + message_length ) )
+		{
+			int status = set_data(curr_position,
+					message_length - ( curr_position - storage_ ) );
+			if( status != SUCCESS )
+				return status;
+		}
+
+		return SUCCESS;
 	}
 
 	template<typename OsModel_P,
@@ -1178,9 +1266,19 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::is_fencepost(uint8_t optnum) const
+	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::is_fencepost(CoapOptionNum optnum) const
 	{
 		return (optnum > 0 && optnum % 14 == 0);
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::is_critical( CoapOptionNum option_number ) const
+	{
+		// odd option numbers are critical
+		return( option_number & 0x01 );
 	}
 
 	template<typename OsModel_P,
