@@ -323,6 +323,9 @@ namespace wiselib
 			size_t option_count = coap_first_byte & 0x0f;
 			code_ = (CoapCode) read<OsModel , block_data_t , uint8_t >( datastream +1 );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
+#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
+		cout << "parse_message> version " << version_ << " type " << type_ << " code " << code_ << " msg_id " << hex << msg_id_ << dec << "\n";
+#endif
 
 			memcpy( storage_, datastream + COAP_START_OF_OPTIONS, length - COAP_START_OF_OPTIONS );
 
@@ -475,19 +478,10 @@ namespace wiselib
 	size_t storage_size_>
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::token( OpaqueData &token )
 	{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "token(): ";
-#endif
 		if( get_option( COAP_OPT_TOKEN, token ) != SUCCESS )
 		{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "token is set";
-#endif
 			token = OpaqueData();
 		}
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "\n";
-#endif
 	}
 
 	template<typename OsModel_P,
@@ -957,43 +951,25 @@ namespace wiselib
 	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
 	::serialize( block_data_t *datastream ) const
 	{
+#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
+		cout << "serialize> version " << version_ << " type " << type_ << " code " << code_ << " msg_id " << hex << msg_id_ << dec << "\n";
+#endif
 		datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | (( option_count()) & 0x0f);
 		datastream[1] = code();
 		datastream[2] = (this->msg_id() & 0xff00) >> 8;
 		datastream[3] = (this->msg_id() & 0x00ff);
 
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << (int) end_of_options_ << " - " << (int) storage_ << " = " << (size_t) (end_of_options_ - storage_) << "\n";
-		cout << (int) storage_ << " + " << (int) storage_size_ << " = " << (int) (storage_ + storage_size_) << "\n";
-		cout << (int) (storage_ + storage_size_) << " - " << (int) payload_ << " = " << (size_t) ((storage_ + storage_size_) - payload_) << "\n";
+		cout << "serialize> " << hex << datastream[0] << " " << datastream[1] << " " << datastream[2] << " " << datastream[3] << " " << dec << "\n";
 #endif
 
 		size_t len = 4;
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "copying " << (size_t) (end_of_options_ - storage_)
-		     << " bytes from " << hex << (unsigned int) storage_
-		     << " to " << (unsigned int) (datastream + 4) << "\n";
-#endif
 		memcpy( datastream + len, storage_, (size_t) (end_of_options_ - storage_) );
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "checkpoint option copy\n";
-#endif
 		len += (size_t) (end_of_options_ - storage_);
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "copying " << (size_t) ((storage_ + storage_size_) - payload_ )
-		     << " bytes from " << hex << (unsigned int) payload_
-		     << " to " << (unsigned int) (datastream + 4 + (size_t) (end_of_options_ - storage_)) << "\n";
-#endif
 		memcpy( datastream + len,
 		        payload_, data_length_ );
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "checkpoint payload copy\n";
-#endif
 		len += (size_t) ((storage_ + storage_size_) - payload_ );
 
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "return from serialize with length " << dec << len << "\n";
-#endif
 		return len;
 	}
 
@@ -1424,6 +1400,9 @@ namespace wiselib
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
 	::make_string_from_segments( char delimiter, CoapOptionNum optnum, string_t &result ) const
 	{
+#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
+		cout << "CoapPacket::make_string> delimiter " << delimiter << "\n";
+#endif
 		result = "";
 		if( options_[optnum] != NULL )
 		{
@@ -1445,6 +1424,14 @@ namespace wiselib
 				nextpos = pos + curr_segment_len + value_start;
 				swap = *(nextpos);
 				*nextpos = (block_data_t) '\0';
+
+				FAIL_COMPILATION_HERE
+				TODO
+				:)
+#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
+
+		cout << "CoapPacket::make_string> delimiter " << delimiter << "\n";
+#endif
 
 				result.append( (char*) ( pos + value_start ) );
 				*nextpos = swap;
