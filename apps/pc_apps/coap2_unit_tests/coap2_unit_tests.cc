@@ -1,4 +1,5 @@
 #define BOOST_TEST_MODULE CoapTest
+#define VERBOSE_DEBUG
 #include <boost/test/included/unit_test.hpp>
 #include <string>
 #include <list>
@@ -14,7 +15,7 @@
 
 using namespace wiselib;
 
-//#define VERBOSE_DEBUG
+
 
 typedef PCOsModel Os;
 typedef wiselib::StaticString string_t;
@@ -317,7 +318,34 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 
 }
 
+BOOST_FIXTURE_TEST_CASE( parse_and_uri_path, FacetsFixture )
+{
 
+	size_t packet_length = 26;
+
+	block_data_t packet_stream[ ] = { 0x43, COAP_CODE_GET, 0xa4, 0xf2,
+			// Uri-Path, length 7, "storage"
+			0x97, 0x73, 0x74, 0x6f, 0x72, 0x61, 0x67, 0x65,
+			// Uri-Path, length 11, "KAESEKUCHEN"
+			0x0b, 0x4b, 0x41, 0x45, 0x53, 0x45, 0x4b, 0x55, 0x43, 0x48, 0x45, 0x4e,
+			// If-None-Match with one unneccessary value Byte
+			0xc1, 0x00 };
+
+	coap_packet_t packet;
+
+	packet.parse_message( packet_stream, packet_length );
+	cout << "parsing checkpoint\n";
+
+	string expected_path( "storage/KAESEKUCHEN" );
+	string actual_path( packet.uri_path().c_str() );
+	cout << "uri_path checkpoint\n";
+
+	BOOST_CHECK_EQUAL( expected_path, actual_path );
+
+	BOOST_CHECK( packet.opt_if_none_match() );
+	cout << "opt_if_none_match checkpoint\n";
+
+}
 
 
 BOOST_AUTO_TEST_SUITE_END()
