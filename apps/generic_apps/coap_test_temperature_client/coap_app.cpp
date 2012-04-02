@@ -55,7 +55,7 @@ public:
 
 	void receive_coap( wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
 	{
-		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_r packet = message.message();
+		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t & packet = message.message();
 		if( packet.is_response() )
 		{
 			if( packet.data_length() > 0 && packet.data_length() < 5)

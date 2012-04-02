@@ -245,7 +245,7 @@ class ExampleApplication
 
       void receive_coap( wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
       {
-    	  wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_r packet = message.message();
+    	  wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t & packet = message.message();
 #ifdef COAP_APP_DEBUG
     	  debug_->debug( "Node %i -- ExampleApp::receive_coap> received from node %i\n", radio_->id(), message.correspondent() );
 #endif
