@@ -14,7 +14,7 @@
 
 #include "stdlib.h"
 
-//#define COAP_APP_DEBUG
+#define COAP_APP_DEBUG
 
 
 typedef wiselib::OSMODEL Os;
@@ -273,7 +273,7 @@ class ExampleApplication
     			  debug_->debug( "Node %i -- ExampleApp::receive_coap> request for resource %s\n", radio_->id(), math.c_str() );
 #endif
     			  wiselib::list_static<Os, wiselib::StaticString, 10> query;
-    			  packet.get_options( COAP_OPT_URI_QUERY, query );
+    			  packet.get_query_list( COAP_OPT_URI_QUERY, query );
     			  int32_t received_num1 = 0;
     			  int32_t received_num2 = 0;
     			  char received_op = '+';

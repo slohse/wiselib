@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE CoapTest
-#define VERBOSE_DEBUG
-#define DEBUG_COAPRADIO
+//#define VERBOSE_DEBUG
+//#define DEBUG_COAPRADIO
 #include <boost/test/included/unit_test.hpp>
 #include <string>
 #include <list>
@@ -193,6 +193,56 @@ BOOST_FIXTURE_TEST_CASE( Serialize_msg_id_token, FacetsFixture )
 	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 					packet_expected3, packet_expected3 + packet_serialize_length_expected );
+
+}
+
+BOOST_FIXTURE_TEST_CASE( Uri_Host_and_port, FacetsFixture )
+{
+	coap_packet_t packet;
+	block_data_t packet_actual[ 200 ];
+
+	size_t packet_serialize_length_expected;
+	size_t packet_serialize_length_actual;
+
+	packet.set_msg_id( 0xbeef );
+	string_t uri_host("CoapHost");
+	string uri_host_expected( uri_host.c_str() );
+	packet.set_option(COAP_OPT_URI_HOST, uri_host);
+
+	packet.get_option(COAP_OPT_URI_HOST, uri_host);
+	string uri_host_actual( uri_host.c_str() );
+
+	BOOST_CHECK_EQUAL( uri_host_expected, uri_host_actual );
+
+	packet.set_uri_port( 5889 );
+
+	block_data_t packet_expected[ ] = { 0x52, COAP_CODE_EMPTY, 0xbe, 0xef,
+			// Uri Host, length 8, "CoapHost"
+			0x58, 'C', 'o', 'a', 'p', 'H', 'o', 's', 't',
+			// Port option, length 2
+			0x22, 0x17, 0x01
+			};
+
+	packet_serialize_length_expected = 16;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
+	packet.set_uri_port( COAP_STD_PORT );
+
+	packet_serialize_length_expected = 13;
+	packet_expected[0] = 0x51;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
 
 }
 

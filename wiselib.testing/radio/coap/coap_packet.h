@@ -106,6 +106,8 @@ namespace wiselib
 		 */
 		void set_msg_id( coap_msg_id_t msg_id );
 
+		uint32_t what_options_are_set() const;
+
 		/**
 		 * Returns the token by which request/response matching can be done.
 		 * @param token reference to OpaqueData object, will contain message token afterwards
@@ -123,6 +125,9 @@ namespace wiselib
 		int set_uri_path( string_t &path );
 
 		int set_uri_query( string_t &query );
+
+		template<typename list_t>
+		int get_query_list( CoapOptionNum optnum, list_t &result );
 
 		void set_uri_port( uint32_t port );
 
@@ -194,6 +199,7 @@ namespace wiselib
 			ERR_UNKNOWN_OPT,
 			ERR_OPT_NOT_SET,
 			ERR_OPT_TOO_LONG,
+			ERR_METHOD_NOT_APPLICABLE,
 			// packet parsing errors
 			ERR_OPTIONS_EXCEED_PACKET_LENGTH,
 			ERR_UNKNOWN_CRITICAL_OPTION,
@@ -497,6 +503,21 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
+	uint32_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::what_options_are_set() const
+	{
+		uint32_t result = 0;
+		for( size_t i = 0; i < COAP_OPTION_ARRAY_SIZE; ++i )
+		{
+			if( options_[i] != NULL )
+				result |= 1 << i;
+		}
+		return result;
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::token( OpaqueData &token )
 	{
 		if( get_option( COAP_OPT_TOKEN, token ) != SUCCESS )
@@ -548,6 +569,50 @@ namespace wiselib
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_query( string_t &query )
 	{
 		return set_option( COAP_OPT_URI_QUERY, query );
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	template<typename list_t>
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
+	::get_query_list( CoapOptionNum optnum, list_t &result )
+	{
+		if ( optnum != COAP_OPT_LOCATION_QUERY
+		     && optnum != COAP_OPT_URI_QUERY )
+			return ERR_METHOD_NOT_APPLICABLE;
+
+		if( options_[optnum] == NULL )
+			return ERR_OPT_NOT_SET;
+
+		result.clear();
+		string_t curr_segment;
+		block_data_t swap;
+		block_data_t *pos = options_[optnum];
+		block_data_t *nextpos;
+		size_t value_start;
+		size_t curr_segment_len;
+		do
+		{
+			curr_segment_len = optlen( pos );
+
+			if( curr_segment_len < 15 )
+				value_start = 1;
+			else
+				value_start = 2;
+
+			nextpos = pos + curr_segment_len + value_start;
+			swap = *(nextpos);
+			*nextpos = (block_data_t) '\0';
+			curr_segment = (char*) ( pos + value_start );
+			result.push_back( curr_segment );
+			*nextpos = swap;
+
+			pos = nextpos;
+		} while ( pos < end_of_options_ && ( swap & 0xf0 ) == 0 );
+
+		return SUCCESS;
 	}
 
 	template<typename OsModel_P,
@@ -693,7 +758,7 @@ namespace wiselib
 			{
 				memcpy(insert, c_str, value.length());
 				serial_len = value.length();
-				num_segments = 1;
+				num_segments = 0;
 			}
 			else
 			{
@@ -1101,7 +1166,7 @@ namespace wiselib
 				// if the delta to the option before the fencepost is
 				// small enough, we can ommit the fencepost
 				CoapOptionNum prevprev = (CoapOptionNum) ( prev -
-						( *( options_[prev] ) && 0xf0) >> 4 );
+						( ( *( options_[prev] ) && 0xf0) >> 4 ) );
 				if( num - prevprev <= 15 )
 				{
 					put_here = options_[prev];
@@ -1466,10 +1531,6 @@ namespace wiselib
 				nextpos = pos + curr_segment_len + value_start;
 				swap = *(nextpos);
 				*nextpos = (block_data_t) '\0';
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "CoapPacket::make_string> appending '" << (char*) ( pos + value_start ) << "'\n";
-#endif
-
 				result.append( (char*) ( pos + value_start ) );
 				*nextpos = swap;
 
