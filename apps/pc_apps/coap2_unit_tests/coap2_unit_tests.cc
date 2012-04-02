@@ -248,7 +248,52 @@ BOOST_FIXTURE_TEST_CASE( Uri_Host_and_port, FacetsFixture )
 
 BOOST_FIXTURE_TEST_CASE( Serialize_payload, FacetsFixture )
 {
-	// TODO
+
+	coap_packet_t packet;
+	block_data_t packet_actual[ 200 ];
+
+	size_t packet_serialize_length_expected;
+	size_t packet_serialize_length_actual;
+
+	packet.set_msg_id( 0xbeef );
+	string_t uri_host("CoapHost");
+	packet.set_option(COAP_OPT_URI_HOST, uri_host);
+	packet.set_uri_port( 5889 );
+	string_t slash_uri("/uri_with_slash/at/beginning/and/end/");
+	string_t uri_query("/?param1=7&op=+&muh=maeh");
+	packet.set_uri_path( slash_uri );
+	packet.set_uri_query( uri_query );
+
+	string_t hithere("Hi there!");
+	packet.set_data( (block_data_t*) hithere.c_str(), 9 );
+
+
+	block_data_t packet_expected[ ] = { 0x5A, COAP_CODE_EMPTY, 0xbe, 0xef,
+			// Uri Host, length 8, "CoapHost"
+			0x58, 'C', 'o', 'a', 'p', 'H', 'o', 's', 't',
+			// Port option, length 2
+			0x22, 0x17, 0x01,
+			 // uri_path, length 14, "uri_with_slash"
+			0x2E, 'u', 'r', 'i', '_', 'w', 'i', 't', 'h', '_', 's', 'l', 'a', 's', 'h',
+			// uri_path, length 2, "at"
+			0x02, 'a', 't',
+			0x09, 'b', 'e', 'g', 'i', 'n', 'n', 'i', 'n', 'g',
+			0x03, 'a', 'n', 'd',
+			0x03, 'e', 'n', 'd',
+			0x68, 'p', 'a', 'r', 'a', 'm', '1', '=', '7',
+			0x04, 'o', 'p', '=', '+',
+			0x08, 'm', 'u', 'h', '=', 'm', 'a', 'e', 'h',
+			// payload
+			'H', 'i', ' ', 't', 'h', 'e', 'r', 'e', '!'
+			};
+	packet_serialize_length_expected = 84;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
 }
 
 BOOST_FIXTURE_TEST_CASE( Boundary_Condition_Options_string_delimiters, FacetsFixture )
