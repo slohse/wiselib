@@ -453,6 +453,8 @@ template<typename OsModel_P,
 
 		void unreg_timer_action( unsigned int idx );
 
+		void error_response( int error, ReceivedMessage& message );
+
 	};
 
 
@@ -603,7 +605,6 @@ template<typename OsModel_P,
 		memcpy( buf + 1, data, len );
 		radio_->send(receiver, len + 1, buf);
 #else
-		debug_->debug( "Node %i -- CoapRadio::send( %x, %i, %x\n", id(), receiver, len, (int) data );
 		radio_->send(receiver, len, data);
 #endif
 
@@ -870,10 +871,17 @@ template<typename OsModel_P,
 						}
 					}
 				}
+				else if( err_code == coap_packet_t::ERR_NOT_COAP
+				         || err_code == coap_packet_t::ERR_WRONG_COAP_VERSION )
+				{
+					// ignore
+					// wrong Coap Version is a good indicator for "isn't
+					// actually CoAP", so better ignore
+				}
 				else
 				{
-					// TODO
-					return;
+					ReceivedMessage& received_error = *( queue_message( ReceivedMessage( packet, from ), received_ ) );
+					error_response( err_code, received_error );
 				}
 #if COAP_PREFACE_MSG_ID == 1
 			}
@@ -1527,14 +1535,63 @@ template<typename OsModel_P,
 	}
 
 	template<typename OsModel_P,
-			typename Radio_P,
-			typename Timer_P,
-			typename Debug_P,
-			typename Rand_P,
-			typename String_T>
+	typename Radio_P,
+	typename Timer_P,
+	typename Debug_P,
+	typename Rand_P,
+	typename String_T>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::unreg_timer_action( unsigned int idx )
 	{
 		timers_.at( idx ) = TimerAction();
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename Timer_P,
+	typename Debug_P,
+	typename Rand_P,
+	typename String_T>
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::error_response( int error, ReceivedMessage& message )
+	{
+		coap_packet_t packet = message.message();
+		CoapCode err_coap_code;
+		CoapOptionNum err_optnum;
+		packet.get_error_context( err_coap_code, err_optnum);
+		block_data_t * error_description = NULL;
+		int len = 0;
+#if ( COAP_HUMAN_READABLE_ERRORS == 0 )
+		block_data_t error_description_uint[ sizeof( error ) + sizeof( CoapOptionNum ) ];
+		len = write<OsModel , block_data_t , typeof(error) >( error_description_uint, error );
+		len += write<OsModel , block_data_t , CoapOptionNum >( error_description_uint + len, err_optnum );
+		error_description = error_description_uint;
+#elif ( COAP_HUMAN_READABLE_ERRORS == 1 )
+		char error_description_str[COAP_ERROR_STRING_LEN];
+		switch( error)
+		{
+		case ERR_OPTIONS_EXCEED_PACKET_LENGTH:
+			len = sprintf(error_description_str, "Error: Options exceed packet length, last parsed option: %i", err_optnum );
+			break;
+		case ERR_UNKNOWN_CRITICAL_OPTION:
+			len = sprintf(error_description_str, "Error: Unknown critical option %i ", err_optnum );
+			break;
+		case ERR_MULTIPLE_OCCURENCES_OF_CRITICAL_OPTION:
+			len = sprintf(error_description_str, "Error: Undue multiple occurences of option %i ", err_optnum );
+			break;
+		case ERR_EMPTY_STRING_OPTION:
+			len = sprintf(error_description_str, "Error: Empty String option %i ", err_optnum );
+			break;
+		case ERR_NOT_COAP:
+			// should not happen as these are already sorted out in receive()
+			break;
+		case ERR_WRONG_COAP_VERSION:
+			// should not happen as these are already sorted out in receive()
+			break;
+		default:
+			len = sprintf(error_description_str, "Error: Unknown error %i, last option before error: %i ", error, err_optnum );
+		}
+		error_description = (block_data_t *) error_description_str;
+#endif
+		reply( message, error_description, len, err_coap_code );
 	}
 }
 

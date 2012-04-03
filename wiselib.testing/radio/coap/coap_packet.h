@@ -187,6 +187,8 @@ namespace wiselib
 		 */
 		size_t serialize( block_data_t *datastream ) const;
 
+		void get_error_context( CoapCode &error_code, CoapOptionNum &error_option);
+
 		enum error_code
 		{
 			// inherited from concepts::BasicReturnValues_concept
@@ -741,9 +743,9 @@ namespace wiselib
 		if( option_number == COAP_OPT_LOCATION_PATH
 		   || option_number  == COAP_OPT_URI_PATH )
 		{
-			if( c_str[segment_start] == '/' && value.length() > segment_start )
+			if( (size_t) value.length() > segment_start && c_str[segment_start] == '/' )
 				++segment_start;
-			if( value.length() > segment_start )
+			if( (size_t) value.length() > segment_start )
 			{
 				serial_len = make_segments_from_string(c_str + segment_start,
 				          '/', option_number, insert, num_segments );
@@ -754,11 +756,11 @@ namespace wiselib
 		else if ( option_number == COAP_OPT_LOCATION_QUERY
 		         || option_number  == COAP_OPT_URI_QUERY )
 		{
-			if( value.length() > segment_start && c_str[segment_start] == '/' )
+			if( (size_t) value.length() > segment_start && c_str[segment_start] == '/' )
 				++segment_start;
-			if( value.length() > segment_start && c_str[segment_start] == '?' )
+			if( (size_t) value.length() > segment_start && c_str[segment_start] == '?' )
 				++segment_start;
-			if( value.length() > segment_start )
+			if( (size_t) value.length() > segment_start )
 			{
 				serial_len = make_segments_from_string( c_str + segment_start,
 				             '&', option_number, insert, num_segments );
@@ -1090,7 +1092,15 @@ namespace wiselib
 		return len;
 	}
 
-
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::get_error_context( CoapCode &error_code, CoapOptionNum &error_option)
+	{
+		error_code = error_code_;
+		error_option = error_option_;
+	}
 
 //-----------------------------------------------------------------------------
 // Private methods start here

@@ -388,6 +388,14 @@
 						<useDefaultCommand>true</useDefaultCommand>
 						<runAllBuilders>true</runAllBuilders>
 					</target>
+					<target name="tinyos-telosb" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+						<buildCommand>make</buildCommand>
+						<buildArguments/>
+						<buildTarget>tinyos-telosb</buildTarget>
+						<stopOnError>true</stopOnError>
+						<useDefaultCommand>true</useDefaultCommand>
+						<runAllBuilders>true</runAllBuilders>
+					</target>
 				</buildTargets>
 			</storageModule>
 		</cconfiguration>
