@@ -28,7 +28,11 @@ public:
 		radio_ = &wiselib::FacetProvider<Os, Os::Radio>::get_facet( value );
 		timer_ = &wiselib::FacetProvider<Os, Os::Timer>::get_facet( value );
 		debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
+		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
 		//
+		cradio_.init( *radio_, *timer_, *debug_, *rand_ );
+		cradio_.enable_radio();
+
 		debug_->debug( "node %x > Temperature CoAP Client booting\n", radio_->id() );
 
 		server_id_ = 0x2015;
@@ -70,6 +74,7 @@ private:
 	Os::Radio::self_pointer_t radio_;
 	Os::Timer::self_pointer_t timer_;
 	Os::Debug::self_pointer_t debug_;
+	Os::Rand::self_pointer_t rand_;
 
 	wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
 
