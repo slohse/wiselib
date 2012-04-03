@@ -725,9 +725,13 @@ namespace wiselib
 		{
 			return ERR_WRONG_TYPE;
 		}
+		if( value.length() == 0 )
+		{
+			return SUCCESS;
+		}
 
 		// reserve some additional space for option headers
-		block_data_t insert[ value.length() + 10 ];
+		block_data_t insert[ value.length() + 20 ];
 		size_t num_segments = 0;
 		size_t serial_len = 0;
 		size_t segment_start = 0;
@@ -737,20 +741,30 @@ namespace wiselib
 		if( option_number == COAP_OPT_LOCATION_PATH
 		   || option_number  == COAP_OPT_URI_PATH )
 		{
-			if( c_str[segment_start] == '/' )
+			if( c_str[segment_start] == '/' && value.length() > segment_start )
 				++segment_start;
-			serial_len = make_segments_from_string(c_str + segment_start,
-			              '/', option_number, insert, num_segments );
+			if( value.length() > segment_start )
+			{
+				serial_len = make_segments_from_string(c_str + segment_start,
+				          '/', option_number, insert, num_segments );
+			}
+			else
+				return SUCCESS;
 		}
 		else if ( option_number == COAP_OPT_LOCATION_QUERY
 		         || option_number  == COAP_OPT_URI_QUERY )
 		{
-			if( c_str[segment_start] == '/' )
+			if( value.length() > segment_start && c_str[segment_start] == '/' )
 				++segment_start;
-			if( c_str[segment_start] == '?' )
+			if( value.length() > segment_start && c_str[segment_start] == '?' )
 				++segment_start;
-			serial_len = make_segments_from_string( c_str + segment_start,
-			              '&', option_number, insert, num_segments );
+			if( value.length() > segment_start )
+			{
+				serial_len = make_segments_from_string( c_str + segment_start,
+				             '&', option_number, insert, num_segments );
+			}
+			else
+				return SUCCESS;
 		}
 		else
 		{

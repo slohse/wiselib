@@ -603,6 +603,7 @@ template<typename OsModel_P,
 		memcpy( buf + 1, data, len );
 		radio_->send(receiver, len + 1, buf);
 #else
+		debug_->debug( "Node %i -- CoapRadio::send( %x, %i, %x\n", id(), receiver, len, (int) data );
 		radio_->send(receiver, len, data);
 #endif
 
