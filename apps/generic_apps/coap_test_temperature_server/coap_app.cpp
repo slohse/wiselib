@@ -50,6 +50,17 @@ public:
 				sizeof(wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>),
 				sizeof(wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t));
 
+		CoapCode testcode = COAP_CODE_EMPTY;
+		debug_->debug( "Code Empty (0) = %i, bzw %x\n", testcode, testcode);
+		testcode = COAP_CODE_GET;
+		debug_->debug( "Code GET (1) = %i, bzw %x\n", testcode, testcode);
+		testcode = COAP_CODE_CONTENT;
+		debug_->debug( "Code Content (69) = %i, bzw %x\n", testcode, testcode);
+		testcode = COAP_CODE_NOT_FOUND;
+		debug_->debug( "Code Not Found (132) = %i, bzw %x\n", testcode, testcode);
+		testcode = (CoapCode) -1;
+		debug_->debug( "Code (-1) = %i, bzw %x\n", testcode, testcode);
+
 		temp_uri_path_ = wiselib::StaticString("temperature");
 		em_ = new isense::EnvironmentModule(value);
 
@@ -78,8 +89,20 @@ public:
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
-		debug_->debug( "node %x > received raw message from %x, len %i\n",
-				radio_->id(), from, len );
+		debug_->debug( "node %x > received raw message from %x, len %i, pointer %x \n",
+				radio_->id(), from, len, (uint32_t) buf );
+/*		char strbuf[200];
+		size_t strlen = 0;
+		for(size_t i = 0; i < len / 4; ++i)
+		{
+			strlen += sprintf( strbuf + strlen - 1, "%x, %x, %x, %x, ",
+					(int) *(buf + i*4),
+					(int) *(buf + i*4 + 1),
+					(int) *(buf + i*4 + 2),
+					(int) *(buf + i*4 + 3) );
+		}
+		debug_->debug( "node %x > content: %s\n", radio_->id(), strbuf );
+		*/
 	}
 
 	void receive_coap( wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )

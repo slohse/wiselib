@@ -215,6 +215,7 @@ namespace wiselib
 	private:
 #ifdef DEBUG_COAPRADIO_TEST_XX
 	public:
+		block_data_t *datastream_p;
 #endif
 		// points to beginning of payload
 		block_data_t *payload_;
@@ -337,13 +338,16 @@ namespace wiselib
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "parse_message> length " << length << "\n";
 #endif
+#ifdef DEBUG_COAPRADIO_TEST_XX
+		datastream_p = datastream;
+#endif
 		// clear everything
 		init();
 
 		// can this possibly be a coap packet?
 		if( length >= COAP_START_OF_OPTIONS )
 		{
-			uint8_t coap_first_byte = read<OsModel , block_data_t , uint8_t >( datastream );
+			uint8_t coap_first_byte = *( datastream );
 			version_ = coap_first_byte >> 6 ;
 			if( version_ != COAP_VERSION )
 			{
@@ -351,9 +355,9 @@ namespace wiselib
 				error_option_ = COAP_OPT_NOOPT;
 				return ERR_WRONG_COAP_VERSION;
 			}
-			type_ = (CoapType) ( ( coap_first_byte & 0x30 ) >> 4 );
+			type_ = (CoapType) ( ( ( coap_first_byte & 0x30 ) >> 4 ) & 0x03 );
 			size_t option_count = coap_first_byte & 0x0f;
-			code_ = (CoapCode) read<OsModel , block_data_t , uint8_t >( datastream +1 );
+			code_ = (CoapCode) ( *( datastream +1 ) & 0xff );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "parse_message> version " << version_ << " type " << type_ << " code " << code_ << " msg_id " << hex << msg_id_ << dec << "\n";

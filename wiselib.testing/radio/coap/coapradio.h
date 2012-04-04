@@ -768,12 +768,17 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 				debug_->debug( "Node %i -- CoapRadio::receive> parsing message, length %i\n", id(), (len - msg_id_t_size) );
 #endif
-				int err_code = packet.parse_message( data + msg_id_t_size, len - msg_id_t_size );
+#ifdef DEBUG_COAPRADIO_TEST_XX
+				debug_->debug( "Node %i -- CoapRadio::receive> pointer %x passing %x to parse\n",
+						id(), (uint32_t) data, (uint32_t) (data + msg_id_t_size ) );
+#endif
+				int err_code = packet.parse_message( (block_data_t*) (data + msg_id_t_size), len - msg_id_t_size );
 #ifdef DEBUG_COAPRADIO
 				debug_->debug( "CoapRadio::receive> parse_message returned %i\n", err_code );
 #endif
 #ifdef DEBUG_COAPRADIO_TEST_XX
-				debug_->debug( "Node %i -- CoapRadio::receive> packet: version %x type %x code %x msg_id %x\n",
+				debug_->debug( "Node %x -- CoapRadio::receive> packet: pointer %x\n", id(), (uint32_t) packet.datastream_p );
+				debug_->debug( "Node %x -- CoapRadio::receive> packet: version %x type %x code %x msg_id %x\n",
 						id(), packet.version_, packet.type_, packet.code_ , packet.msg_id_ );
 #endif
 				if( err_code == SUCCESS )
