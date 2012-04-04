@@ -1,6 +1,7 @@
 /*
  * Simple Wiselib Example
  */
+#define DEBUG_COAPRADIO_TEST
 #include "external_interface/external_interface.h"
 #include "algorithms/routing/tree/tree_routing.h"
 
@@ -76,10 +77,12 @@ public:
 
 	void receive_coap( wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
 	{
+		debug_->debug( "node %x > received message\n", radio_->id() );
 		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t & packet = message.message();
 
 		if( packet.is_request() && packet.uri_path() == temp_uri_path_ )
 		{
+			debug_->debug( "node %x > is request for temperature\n", radio_->id() );
 			cradio_.reply( message, (uint8_t*) temperature_str_, temperature_str_len_ );
 		}
 	}

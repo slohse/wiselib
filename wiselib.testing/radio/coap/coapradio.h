@@ -596,8 +596,8 @@ template<typename OsModel_P,
 			typename String_T>
 	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send (node_id_t receiver, size_t len, block_data_t *data )
 	{
-#ifdef DEBUG_COAPRADIO
-			debug_->debug( "Node %i -- CoapRadio::send \n", id() );
+#ifdef DEBUG_COAPRADIO_TEST
+			debug_->debug( "Node %x -- CoapRadio::sending %x message of length %i \n", id(), receiver, len );
 #endif
 #if COAP_PREFACE_MSG_ID == 1
 		block_data_t buf[len+1];
@@ -632,8 +632,8 @@ template<typename OsModel_P,
 #endif
 		block_data_t buf[message.serialize_length()];
 
-		message.serialize(buf);
-		int status = send(receiver, message.serialize_length(), buf);
+		size_t len = message.serialize(buf);
+		int status = send(receiver, len, buf);
 
 		if(status != SUCCESS )
 			return NULL;
@@ -721,8 +721,8 @@ template<typename OsModel_P,
 				<< ", Len " << len
 				<< "\n";
 #endif
-#ifdef DEBUG_COAPRADIO
-				debug_->debug( "Node %i -- CoapRadio::receive> received message from %i, length %i\n", id(), from, len );
+#ifdef DEBUG_COAPRADIO_TEST
+				debug_->debug( "Node %x -- CoapRadio::receive> received message from %i, length %i\n", id(), from, len );
 #endif
 		// do not receive own messages
 		if (radio_->id() == from) {

@@ -1,6 +1,7 @@
 /*
  * Simple Wiselib Example
  */
+//#define DEBUG_COAPRADIO_TEST
 #include "external_interface/external_interface.h"
 #include "algorithms/routing/tree/tree_routing.h"
 
@@ -42,13 +43,16 @@ public:
 		// (yes, even though the server only measures every 10 seconds - we want
 		// to evaluate the protocol, not the temperature sensor...)
 		timer_->set_timer<ExampleApplication,
-							&ExampleApplication::get_temperature_loop>( 1000, this, 0 );
+				&ExampleApplication::get_temperature_loop>( 1000, this, 0 );
 
 	}
 	// --------------------------------------------------------------------
 	void get_temperature_loop( void* )
 	{
+		debug_->debug( "node %x > GET temperature\n", radio_->id() );
 		cradio_.get< ExampleApplication, &ExampleApplication::receive_coap>( server_id_, temp_uri_path_, wiselib::StaticString(), this );
+		timer_->set_timer<ExampleApplication,
+				&ExampleApplication::get_temperature_loop>( 5000, this, 0 );
 	}
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
@@ -59,9 +63,11 @@ public:
 
 	void receive_coap( wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
 	{
+		debug_->debug( "node %x > received message\n", radio_->id() );
 		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t & packet = message.message();
 		if( packet.is_response() )
 		{
+			debug_->debug( "node %x > is response\n", radio_->id() );
 			if( packet.data_length() > 0 && packet.data_length() < 5)
 			{
 				memcpy(temperature_str_, packet.data(), packet.data_length() );
