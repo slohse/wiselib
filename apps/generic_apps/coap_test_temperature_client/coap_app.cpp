@@ -3,7 +3,6 @@
  */
 //#define DEBUG_COAPRADIO_TEST
 #include "external_interface/external_interface.h"
-#include "algorithms/routing/tree/tree_routing.h"
 
 #include "radio/coap/coap_packet.h"
 #include "radio/coap/coapradio.h"
