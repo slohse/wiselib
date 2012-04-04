@@ -213,6 +213,9 @@ namespace wiselib
 
 
 	private:
+#ifdef DEBUG_COAPRADIO_TEST_XX
+	public:
+#endif
 		// points to beginning of payload
 		block_data_t *payload_;
 		// marks the first byte PAST the last option
@@ -220,11 +223,11 @@ namespace wiselib
 		size_t data_length_;
 		size_t option_count_;
 		coap_msg_id_t msg_id_;
-		CoapType type_;
-		CoapCode code_;
+		uint8_t type_;
+		uint8_t code_;
 		// only relevant when an error occurs
-		CoapCode error_code_;
-		CoapOptionNum error_option_;
+		uint8_t error_code_;
+		uint8_t error_option_;
 		// Coap Version
 		uint8_t version_;
 
@@ -348,13 +351,14 @@ namespace wiselib
 				error_option_ = COAP_OPT_NOOPT;
 				return ERR_WRONG_COAP_VERSION;
 			}
-			type_ = (CoapType) ( ( coap_first_byte & 0x30 ) >> 4 );
+			type_ = ( coap_first_byte & 0x30 ) >> 4 ;
 			size_t option_count = coap_first_byte & 0x0f;
-			code_ = (CoapCode) read<OsModel , block_data_t , uint8_t >( datastream +1 );
+			code_ = read<OsModel , block_data_t , uint8_t >( datastream +1 );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "parse_message> version " << version_ << " type " << type_ << " code " << code_ << " msg_id " << hex << msg_id_ << dec << "\n";
 #endif
+
 
 			memcpy( storage_, datastream + COAP_START_OF_OPTIONS, length - COAP_START_OF_OPTIONS );
 
@@ -392,7 +396,7 @@ namespace wiselib
 	size_t storage_size_>
 	CoapType CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::type() const
 	{
-		return type_;
+		return ((CoapType) type_);
 	}
 
 	template<typename OsModel_P,
@@ -401,7 +405,7 @@ namespace wiselib
 	size_t storage_size_>
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_type( CoapType type )
 	{
-		type_ = type;
+		type_ = (uint8_t) type;
 	}
 
 	template<typename OsModel_P,
@@ -410,7 +414,7 @@ namespace wiselib
 	size_t storage_size_>
 	CoapCode CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::code() const
 	{
-		return code_;
+		return ((CoapCode) code_ );
 	}
 
 	template<typename OsModel_P,
@@ -419,7 +423,7 @@ namespace wiselib
 	size_t storage_size_>
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::set_code( CoapCode code )
 	{
-		code_ = code;
+		code_ = (uint8_t) code;
 	}
 
 	template<typename OsModel_P,
@@ -428,7 +432,7 @@ namespace wiselib
 	size_t storage_size_>
 	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::is_request() const
 	{
-		return( code() >= COAP_REQUEST_CODE_RANGE_MIN && code() <= COAP_REQUEST_CODE_RANGE_MAX );
+		return( code_ >= COAP_REQUEST_CODE_RANGE_MIN && code_ <= COAP_REQUEST_CODE_RANGE_MAX );
 	}
 
 	template<typename OsModel_P,
@@ -437,7 +441,7 @@ namespace wiselib
 	size_t storage_size_>
 	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::is_response() const
 	{
-		return( code() >= COAP_RESPONSE_CODE_RANGE_MIN && code() <= COAP_RESPONSE_CODE_RANGE_MAX );
+		return( code_ >= COAP_RESPONSE_CODE_RANGE_MIN && code_ <= COAP_RESPONSE_CODE_RANGE_MAX );
 	}
 
 	template<typename OsModel_P,
@@ -1098,8 +1102,8 @@ namespace wiselib
 	size_t storage_size_>
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::get_error_context( CoapCode &error_code, CoapOptionNum &error_option)
 	{
-		error_code = error_code_;
-		error_option = error_option_;
+		error_code = (CoapCode) error_code_;
+		error_option = (CoapOptionNum) error_option_;
 	}
 
 //-----------------------------------------------------------------------------

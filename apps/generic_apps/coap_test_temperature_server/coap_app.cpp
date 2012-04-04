@@ -1,7 +1,7 @@
 /*
  * Simple Wiselib Example
  */
-#define DEBUG_COAPRADIO_TEST
+#define DEBUG_COAPRADIO_TEST_XX
 #include "external_interface/external_interface.h"
 
 #include "radio/coap/coap_packet.h"
@@ -45,6 +45,10 @@ public:
 		temperature_str_len_ = sprintf( temperature_str_, "%i", temperature_ );
 		//
 		debug_->debug( "node %x > Temperature CoAP Service booting\n", radio_->id() );
+		debug_->debug( "node %x > sizeof(coap_packet_t) = %i, sizeof(coapradio_t) = %i",
+				radio_->id(),
+				sizeof(wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>),
+				sizeof(wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t));
 
 		temp_uri_path_ = wiselib::StaticString("temperature");
 		em_ = new isense::EnvironmentModule(value);
@@ -60,6 +64,9 @@ public:
 			cradio_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap>( temp_uri_path_, this );
 		}
 
+		recv_callback_id_ = radio_->reg_recv_callback<ExampleApplication,
+					&ExampleApplication::receive_radio_message > ( this );
+
 	}
 	// --------------------------------------------------------------------
 	void temperature_loop( void* )
@@ -71,7 +78,8 @@ public:
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
-
+		debug_->debug( "node %x > received raw message from %x, len %i\n",
+				radio_->id(), from, len );
 	}
 
 	void receive_coap( wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
@@ -91,6 +99,7 @@ private:
 	Os::Debug::self_pointer_t debug_;
 	Os::Rand::self_pointer_t rand_;
 
+	int recv_callback_id_;
 	isense::EnvironmentModule* em_;
 
 	wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;

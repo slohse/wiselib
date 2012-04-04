@@ -721,7 +721,7 @@ template<typename OsModel_P,
 				<< ", Len " << len
 				<< "\n";
 #endif
-#ifdef DEBUG_COAPRADIO_TEST
+#ifdef DEBUG_COAPRADIO
 				debug_->debug( "Node %x -- CoapRadio::receive> received message from %i, length %i\n", id(), from, len );
 #endif
 		// do not receive own messages
@@ -769,8 +769,12 @@ template<typename OsModel_P,
 				debug_->debug( "Node %i -- CoapRadio::receive> parsing message, length %i\n", id(), (len - msg_id_t_size) );
 #endif
 				int err_code = packet.parse_message( data + msg_id_t_size, len - msg_id_t_size );
-#ifdef DEBUG_COAPRADIO_PC
-				cout << "CoapRadio::receive> parse_message returned " << (int) err_code << "\n";
+#ifdef DEBUG_COAPRADIO
+				debug_->debug( "CoapRadio::receive> parse_message returned %i\n", err_code );
+#endif
+#ifdef DEBUG_COAPRADIO_TEST_XX
+				debug_->debug( "Node %i -- CoapRadio::receive> packet: version %x type %x code %x msg_id %x\n",
+						id(), packet.version_, packet.type_, packet.code_ , packet.msg_id_ );
 #endif
 				if( err_code == SUCCESS )
 				{
@@ -831,6 +835,9 @@ template<typename OsModel_P,
 						}
 						else
 						{
+#ifdef DEBUG_COAPRADIO_TEST_XX
+				debug_->debug( "Node %i -- CoapRadio::receive> code %i\n", radio_->id(), packet.code() );
+#endif
 							if( packet.is_request() )
 							{
 								handle_request( received_message );
@@ -844,7 +851,7 @@ template<typename OsModel_P,
 								char * error_description = NULL;
 								int len = 0;
 #if COAP_HUMAN_READABLE_ERRORS == 1
-								char error_description_str[MAX_STRING_LENGTH];
+								char error_description_str[COAP_ERROR_STRING_LEN];
 								len = sprintf( error_description, "Unknown Code %i", packet.code() );
 								error_description = error_description_str;
 #endif
@@ -1424,7 +1431,7 @@ template<typename OsModel_P,
 			char * error_description = NULL;
 			int len = 0;
 #if COAP_HUMAN_READABLE_ERRORS == 1
-			char error_description_str[MAX_STRING_LENGTH];
+			char error_description_str[COAP_ERROR_STRING_LEN];
 			len = sprintf(error_description, "Resource %s not found.", request_res.c_str() );
 			error_description = error_description_str;
 #endif
