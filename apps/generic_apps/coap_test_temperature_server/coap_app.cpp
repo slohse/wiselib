@@ -1,7 +1,7 @@
 /*
  * Simple Wiselib Example
  */
-#define DEBUG_COAPRADIO_TEST_XX
+//#define DEBUG_COAPRADIO_TEST_XX
 #include "external_interface/external_interface.h"
 
 #include "radio/coap/coap_packet.h"
@@ -91,6 +91,10 @@ public:
 	{
 		debug_->debug( "node %x > received raw message from %x, len %i, pointer %x \n",
 				radio_->id(), from, len, (uint32_t) buf );
+//		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t packet;
+//		packet.parse_message(buf, len);
+//		debug_->debug( "Node %x -- CoapRadio::receive> packet: version %x type %x code %x msg_id %x\n",
+//				radio_->id(), packet.version(), packet.type(), packet.code() , packet.msg_id() );
 /*		char strbuf[200];
 		size_t strlen = 0;
 		for(size_t i = 0; i < len / 4; ++i)

@@ -41,7 +41,7 @@ namespace wiselib
 		 * @param length length of the datastream
 		 * @return error code
 		 */
-		int parse_message( block_data_t *datastream, size_t length );
+		int parse_message( block_data_t *datastream, size_t length, typename OsModel::Debug *debug_ );
 
 		/**
 		 * Returns the CoAP version number of the packet
@@ -215,7 +215,7 @@ namespace wiselib
 	private:
 #ifdef DEBUG_COAPRADIO_TEST_XX
 	public:
-		block_data_t *datastream_p;
+		volatile block_data_t *datastream_p;
 #endif
 		// points to beginning of payload
 		block_data_t *payload_;
@@ -322,6 +322,9 @@ namespace wiselib
 		{
 			options_[i] = NULL;
 		}
+//#ifdef DEBUG_COAPRADIO_TEST_XX
+//		datastream_p = (uint8_t*) 0xaffedead;
+//#endif
 
 		payload_ = storage_ + storage_size_;
 		end_of_options_ = storage_;
@@ -333,32 +336,32 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::parse_message( block_data_t *datastream, size_t length )
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::parse_message( block_data_t *datastream, size_t length, typename OsModel::Debug *debug_ )
 	{
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "parse_message> length " << length << "\n";
 #endif
-#ifdef DEBUG_COAPRADIO_TEST_XX
-		datastream_p = datastream;
-#endif
 		// clear everything
 		init();
+		debug_->debug("parse_message: pointer %x, len %i", (int) datastream, length );
 
 		// can this possibly be a coap packet?
 		if( length >= COAP_START_OF_OPTIONS )
 		{
-			uint8_t coap_first_byte = *( datastream );
+			uint8_t coap_first_byte = read<OsModel , block_data_t , uint8_t >( datastream );
 			version_ = coap_first_byte >> 6 ;
+			debug_->debug("parse_message: version %i", version_ );
 			if( version_ != COAP_VERSION )
 			{
 				error_code_ = COAP_CODE_NOT_IMPLEMENTED;
 				error_option_ = COAP_OPT_NOOPT;
 				return ERR_WRONG_COAP_VERSION;
 			}
-			type_ = (CoapType) ( ( ( coap_first_byte & 0x30 ) >> 4 ) & 0x03 );
+			type_ = (CoapType) ( ( coap_first_byte & 0x30 ) >> 4 );
 			size_t option_count = coap_first_byte & 0x0f;
 			code_ = (CoapCode) ( *( datastream +1 ) & 0xff );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
+			debug_->debug("parse_message: type %i, oc %i, code %i, msg_id %i", type_, option_count, code_, msg_id_ );
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "parse_message> version " << version_ << " type " << type_ << " code " << code_ << " msg_id " << hex << msg_id_ << dec << "\n";
 #endif
