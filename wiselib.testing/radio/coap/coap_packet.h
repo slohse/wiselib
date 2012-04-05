@@ -213,10 +213,6 @@ namespace wiselib
 
 
 	private:
-#ifdef DEBUG_COAPRADIO_TEST_XX
-	public:
-		volatile block_data_t *datastream_p;
-#endif
 		// points to beginning of payload
 		block_data_t *payload_;
 		// marks the first byte PAST the last option

@@ -1,7 +1,7 @@
 /*
  * Simple Wiselib Example
  */
-//#define DEBUG_COAPRADIO_TEST_XX
+#define DEBUG_COAPRADIO_TEST_XX
 #include "external_interface/external_interface.h"
 
 #include "radio/coap/coap_packet.h"
