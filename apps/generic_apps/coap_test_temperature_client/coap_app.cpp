@@ -35,7 +35,7 @@ public:
 
 		debug_->debug( "node %x > Temperature CoAP Client booting\n", radio_->id() );
 
-		server_id_ = 0x2015;
+		server_id_ = 0x201c;
 		temp_uri_path_ = wiselib::StaticString("temperature");
 
 		// request temperature every second

@@ -28,7 +28,7 @@ public:
 
 	void read_temperature()
 	{
-		temperature_ = em_->temp_sensor()->temperature();
+		temperature_ = 23;
 		temperature_str_len_ = sprintf( temperature_str_, "%i", temperature_ );
 	}
 
@@ -45,35 +45,8 @@ public:
 		temperature_str_len_ = sprintf( temperature_str_, "%i", temperature_ );
 		//
 		debug_->debug( "node %x > Temperature CoAP Service booting\n", radio_->id() );
-		debug_->debug( "node %x > sizeof(coap_packet_t) = %i, sizeof(coapradio_t) = %i",
-				radio_->id(),
-				sizeof(wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>),
-				sizeof(wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t));
-
-		CoapCode testcode = COAP_CODE_EMPTY;
-		debug_->debug( "Code Empty (0) = %i, bzw %x\n", testcode, testcode);
-		testcode = COAP_CODE_GET;
-		debug_->debug( "Code GET (1) = %i, bzw %x\n", testcode, testcode);
-		testcode = COAP_CODE_CONTENT;
-		debug_->debug( "Code Content (69) = %i, bzw %x\n", testcode, testcode);
-		testcode = COAP_CODE_NOT_FOUND;
-		debug_->debug( "Code Not Found (132) = %i, bzw %x\n", testcode, testcode);
-		testcode = (CoapCode) -1;
-		debug_->debug( "Code (-1) = %i, bzw %x\n", testcode, testcode);
 
 		temp_uri_path_ = wiselib::StaticString("temperature");
-		em_ = new isense::EnvironmentModule(value);
-
-		if (em_->temp_sensor() != NULL)
-		{
-			em_->temp_sensor()->enable();
-			read_temperature();
-			debug_->debug( "node %x > Temperature Sensor enabled, current Temperature: %i °C\n", radio_->id(), temperature_ );
-			// measure temperature every 10 seconds
-			timer_->set_timer<ExampleApplication,
-					&ExampleApplication::temperature_loop>( 10000, this, 0 );
-			cradio_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap>( temp_uri_path_, this );
-		}
 
 		recv_callback_id_ = radio_->reg_recv_callback<ExampleApplication,
 					&ExampleApplication::receive_radio_message > ( this );

@@ -449,9 +449,9 @@ template<typename OsModel_P,
 
 		void timeout ( void * action );
 
-		unsigned int reg_timer_action( TimerAction *action );
+		int reg_timer_action( TimerAction *action );
 
-		void unreg_timer_action( unsigned int idx );
+		void unreg_timer_action( int idx );
 
 		void error_response( int error, ReceivedMessage& message );
 
@@ -1473,7 +1473,7 @@ template<typename OsModel_P,
 			typename String_T>
 	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::timeout ( void * action )
 	{
-		TimerAction& act = timers_.at( (unsigned int) action );
+		TimerAction& act = timers_.at( (int) action );
 
 		if ( act.type_ == TIMER_RETRANSMIT )
 		{
@@ -1499,7 +1499,7 @@ template<typename OsModel_P,
 			}
 			else
 			{
-				unreg_timer_action( ( unsigned int ) action );
+				unreg_timer_action( (int ) action );
 			}
 		}
 		else if ( act.type_ == TIMER_ACK )
@@ -1522,23 +1522,23 @@ template<typename OsModel_P,
 		typename Debug_P,
 		typename Rand_P,
 		typename String_T>
-	unsigned int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::reg_timer_action( TimerAction *action )
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::reg_timer_action( TimerAction *action )
 	{
 		if ( timers_.empty() )
 		{
 			timers_.assign( COAPRADIO_TIMER_ACTION_SIZE, TimerAction() );
 		}
 
-		for ( unsigned int i = 0; i < timers_.size(); ++i )
+		for ( size_t i = 0; i < timers_.size(); ++i )
 		{
 			if ( timers_.at(i) == TimerAction() )
 			{
 				timers_.at(i) = (*action);
-				return i;
+				return ( (int) i );
 			}
 		}
 
-		return NULL;
+		return -1;
 	}
 
 	template<typename OsModel_P,
@@ -1547,9 +1547,12 @@ template<typename OsModel_P,
 	typename Debug_P,
 	typename Rand_P,
 	typename String_T>
-	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::unreg_timer_action( unsigned int idx )
+	void CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::unreg_timer_action( int idx )
 	{
-		timers_.at( idx ) = TimerAction();
+		if( idx > 0 && idx < ( (int) timers_.size() ) )
+		{
+			timers_.at( idx ) = TimerAction();
+		}
 	}
 
 	template<typename OsModel_P,
