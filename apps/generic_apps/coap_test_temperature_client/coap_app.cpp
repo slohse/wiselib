@@ -35,7 +35,7 @@ public:
 
 		debug_->debug( "node %x > Temperature CoAP Client booting\n", radio_->id() );
 
-		server_id_ = 0x201c;
+		server_id_ = 0x2014;
 		temp_uri_path_ = wiselib::StaticString("temperature");
 
 		// request temperature every second
@@ -62,16 +62,20 @@ public:
 
 	void receive_coap( wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
 	{
-		debug_->debug( "node %x > received message\n", radio_->id() );
+//		debug_->debug( "node %x > received message\n", radio_->id() );
 		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t & packet = message.message();
 		if( packet.is_response() )
 		{
-			debug_->debug( "node %x > is response\n", radio_->id() );
+/*			debug_->debug( "node %x > is response, code %i.%i data len %i\n",
+					radio_->id(),
+					(packet.code() & 0xE0) >> 5, (packet.code() & 0x1f),
+					packet.data_length() );
+*/
 			if( packet.data_length() > 0 && packet.data_length() < 5)
 			{
 				memcpy(temperature_str_, packet.data(), packet.data_length() );
 				temperature_str_[ packet.data_length() ] = '\0';
-				debug_->debug( "node %x > Temperature: %s °C\n", radio_->id(), temperature_str_ );
+				debug_->debug( "node %x > Temperature: %s C\n", radio_->id(), temperature_str_ );
 			}
 		}
 	}

@@ -239,6 +239,14 @@ template<typename OsModel_P,
 			ERR_NOTIMPL = OsModel::ERR_NOTIMPL
 		};
 
+		enum path_compare
+		{
+			EQUAL,
+			LHS_IS_SUBRESOURCE,
+			RHS_IS_SUBRESOURCE,
+			NOT_EQUAL
+		};
+
 	private:
 #ifdef BOOST_TEST_DECL
 		// *cough* ugly hackery
@@ -454,6 +462,8 @@ template<typename OsModel_P,
 		void unreg_timer_action( int idx );
 
 		void error_response( int error, ReceivedMessage& message );
+
+		int path_cmp( const string_t &lhs, const string_t &rhs);
 
 	};
 
@@ -835,9 +845,6 @@ template<typename OsModel_P,
 						}
 						else
 						{
-#ifdef DEBUG_COAPRADIO_TEST_XX
-				debug_->debug( "Node %i -- CoapRadio::receive> code %i\n", radio_->id(), packet.code() );
-#endif
 							if( packet.is_request() )
 							{
 								handle_request( received_message );
@@ -1393,7 +1400,7 @@ template<typename OsModel_P,
 		string_t request_res = message.message().uri_path();
 		bool resource_found = false;
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("Node %i -- CoapRadio::handle_request> looking for resource '%s'\n", id(), request_res.c_str() );
+		debug_->debug("Node %x -- CoapRadio::handle_request> looking for resource '%s'\n", id(), request_res.c_str() );
 #endif
 #ifdef DEBUG_COAPRADIO_PC
 				cout << "CoapRadio::handle_request> looking for resource '"
@@ -1405,18 +1412,15 @@ template<typename OsModel_P,
 			{
 				available_res = resources_.at(i).resource_path();
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("Node %i -- CoapRadio::handle_request> found resource '%s'\n", id(), available_res.c_str() );
+		debug_->debug("Node %x -- CoapRadio::handle_request> found resource '%s'\n", id(), available_res.c_str() );
 #endif
 				// in order to match a resource, the requested uri must match a resource, or it must be a sub-element of a resource,
 				// which means the next symbol in the request must be a slash
-				if( ( available_res.length() == request_res.length()
-						&& strncmp(available_res.c_str(), request_res.c_str(), available_res.length()) == 0 )
-					|| (available_res.length() < request_res.length()
-						&& strncmp(available_res.c_str(), request_res.c_str(), available_res.length()) == 0
-						&& strncmp(request_res.c_str() + available_res.length(), "/", 1)) )
+				if( path_cmp( request_res, available_res ) == EQUAL
+				    || path_cmp( request_res, available_res ) == LHS_IS_SUBRESOURCE )
 				{
 #ifdef DEBUG_COAPRADIO
-		debug_->debug("Node %i -- CoapRadio::handle_request> resource match, calling callback\n", id() );
+		debug_->debug("Node %x -- CoapRadio::handle_request> resource match, calling callback\n", id() );
 #endif
 					resources_.at(i).callback()( message );
 					resource_found = true;
@@ -1428,6 +1432,7 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO_PC
 				cout << "CoapRadio::handle_request> resource not found, sending 4.04'\n";
 #endif
+
 			char * error_description = NULL;
 			int len = 0;
 #if COAP_HUMAN_READABLE_ERRORS == 1
@@ -1578,22 +1583,22 @@ template<typename OsModel_P,
 		char error_description_str[COAP_ERROR_STRING_LEN];
 		switch( error)
 		{
-		case ERR_OPTIONS_EXCEED_PACKET_LENGTH:
+		case coappacket_t::ERR_OPTIONS_EXCEED_PACKET_LENGTH:
 			len = sprintf(error_description_str, "Error: Options exceed packet length, last parsed option: %i", err_optnum );
 			break;
-		case ERR_UNKNOWN_CRITICAL_OPTION:
+		case coappacket_t::ERR_UNKNOWN_CRITICAL_OPTION:
 			len = sprintf(error_description_str, "Error: Unknown critical option %i ", err_optnum );
 			break;
-		case ERR_MULTIPLE_OCCURENCES_OF_CRITICAL_OPTION:
+		case coappacket_t::ERR_MULTIPLE_OCCURENCES_OF_CRITICAL_OPTION:
 			len = sprintf(error_description_str, "Error: Undue multiple occurences of option %i ", err_optnum );
 			break;
-		case ERR_EMPTY_STRING_OPTION:
+		case coappacket_t::ERR_EMPTY_STRING_OPTION:
 			len = sprintf(error_description_str, "Error: Empty String option %i ", err_optnum );
 			break;
-		case ERR_NOT_COAP:
+		case coappacket_t::ERR_NOT_COAP:
 			// should not happen as these are already sorted out in receive()
 			break;
-		case ERR_WRONG_COAP_VERSION:
+		case coappacket_t::ERR_WRONG_COAP_VERSION:
 			// should not happen as these are already sorted out in receive()
 			break;
 		default:
@@ -1602,6 +1607,38 @@ template<typename OsModel_P,
 		error_description = (block_data_t *) error_description_str;
 #endif
 		reply( message, error_description, len, err_coap_code );
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename Timer_P,
+	typename Debug_P,
+	typename Rand_P,
+	typename String_T>
+	int CoapRadio<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::path_cmp(const string_t &lhs, const string_t &rhs)
+	{
+		for( size_t i = 0; ; ++i )
+		{
+			if( i == lhs.length() )
+			{
+				if( i == rhs.length() )
+					return EQUAL;
+				else if( rhs[i] == '/' )
+					return LHS_IS_SUBRESOURCE;
+				else
+					return NOT_EQUAL;
+			}
+			if( i == rhs.length() )
+			{
+				if( lhs[i] == '/' )
+					return RHS_IS_SUBRESOURCE;
+				else
+					return NOT_EQUAL;
+			}
+
+			if( lhs[i] != rhs[i] )
+				return NOT_EQUAL;
+		}
 	}
 }
 

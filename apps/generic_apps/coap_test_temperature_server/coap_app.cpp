@@ -41,15 +41,18 @@ public:
 		cradio_.init( *radio_, *timer_, *debug_, *rand_ );
 		cradio_.enable_radio();
 
-		temperature_ = -1;
+		temperature_ = -5;
 		temperature_str_len_ = sprintf( temperature_str_, "%i", temperature_ );
 		//
 		debug_->debug( "node %x > Temperature CoAP Service booting\n", radio_->id() );
 
 		temp_uri_path_ = wiselib::StaticString("temperature");
 
-		recv_callback_id_ = radio_->reg_recv_callback<ExampleApplication,
-					&ExampleApplication::receive_radio_message > ( this );
+		cradio_.reg_resource_callback< ExampleApplication,
+				&ExampleApplication::receive_coap>( temp_uri_path_, this );
+
+//		recv_callback_id_ = radio_->reg_recv_callback<ExampleApplication,
+//					&ExampleApplication::receive_radio_message > ( this );
 
 	}
 	// --------------------------------------------------------------------
@@ -84,12 +87,11 @@ public:
 
 	void receive_coap( wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
 	{
-		debug_->debug( "node %x > received message\n", radio_->id() );
 		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t & packet = message.message();
 
 		if( packet.is_request() && packet.uri_path() == temp_uri_path_ )
 		{
-			debug_->debug( "node %x > is request for temperature\n", radio_->id() );
+			debug_->debug( "node %x > received request for temperature\n", radio_->id() );
 			cradio_.reply( message, (uint8_t*) temperature_str_, temperature_str_len_ );
 		}
 	}
