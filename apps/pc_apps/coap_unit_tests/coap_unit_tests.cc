@@ -240,7 +240,7 @@ BOOST_FIXTURE_TEST_CASE( parse_and_uri_path, FacetsFixture )
 
 BOOST_AUTO_TEST_SUITE_END()
 
-//-----------------------------------------------------------------------
+//#############################################################################
 
 BOOST_AUTO_TEST_SUITE(CoapRadio)
 
