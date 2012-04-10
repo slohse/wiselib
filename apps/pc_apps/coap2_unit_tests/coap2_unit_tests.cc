@@ -8,11 +8,18 @@
 #include "external_interface/pc/pc_os_model.h"
 #include "external_interface/pc/pc_timer.h"
 
+#ifdef COAP_DYNAMIC
+#define COAPSERVICE		CoapServiceDynamic
+#else
+#include "radio/coap/coap_packet_static.h"
+#include "radio/coap/coap_service_static.h"
+#define COAPSERVICE		CoapServiceStatic
+#endif
+
 #include "util/pstl/static_string.h"
-#include "radio/coap/coap_packet.h"
-#include "radio/coap/coapradio.h"
 #include "unit_test_radio.h"
 #include "timer_stub.h"
+
 
 
 using namespace wiselib;
@@ -20,7 +27,7 @@ using namespace wiselib;
 typedef PCOsModel Os;
 typedef wiselib::StaticString string_t;
 typedef CoapPacket<Os, UnitTestRadio, string_t>::coap_packet_t coap_packet_t;
-typedef CoapRadio<Os, UnitTestRadio, DummyTimerModel, Os::Debug, Os::Rand, string_t> coapradio_t;
+typedef COAPSERVICE<Os, UnitTestRadio, DummyTimerModel, Os::Debug, Os::Rand, string_t> coapradio_t;
 typedef UnitTestRadio::block_data_t block_data_t;
 typedef UnitTestRadio::node_id_t node_id_t;
 
@@ -477,7 +484,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 //#############################################################################
 
-BOOST_AUTO_TEST_SUITE(CoapRadio)
+BOOST_AUTO_TEST_SUITE(CoapService)
 
 BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 {
