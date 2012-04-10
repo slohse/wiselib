@@ -11,8 +11,6 @@
 
 #include "stdlib.h"
 #include "string.h"
-#include <isense/modules/environment_module/environment_module.h>
-#include <isense/modules/environment_module/temp_sensor.h>
 
 #define COAP_APP_DEBUG
 
@@ -102,7 +100,6 @@ private:
 	Os::Rand::self_pointer_t rand_;
 
 	int recv_callback_id_;
-	isense::EnvironmentModule* em_;
 
 	wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
 
