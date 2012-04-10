@@ -4,8 +4,8 @@
 #define DEBUG_COAPRADIO_TEST_XX
 #include "external_interface/external_interface.h"
 
-#include "radio/coap/coap_packet.h"
-#include "radio/coap/coapradio.h"
+#include "radio/coap/coap_packet_static.h"
+#include "radio/coap/coap_service_static.h"
 
 #include "util/pstl/static_string.h"
 
@@ -83,7 +83,7 @@ public:
 		*/
 	}
 
-	void receive_coap( wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
+	void receive_coap( wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
 	{
 		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t & packet = message.message();
 
@@ -101,7 +101,7 @@ private:
 
 	int recv_callback_id_;
 
-	wiselib::CoapRadio<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
+	wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
 
 	wiselib::StaticString temp_uri_path_;
 
