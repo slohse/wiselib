@@ -1,5 +1,5 @@
 #define BOOST_TEST_MODULE CoapTest
-//#define VERBOSE_DEBUG
+#define VERBOSE_DEBUG
 //#define DEBUG_COAPRADIO
 #include <boost/test/included/unit_test.hpp>
 #include <string>
@@ -465,16 +465,13 @@ BOOST_FIXTURE_TEST_CASE( parse_and_uri_path, FacetsFixture )
 	coap_packet_t packet;
 
 	packet.parse_message( packet_stream, packet_length );
-	cout << "parsing checkpoint\n";
 
 	string expected_path( "storage/KAESEKUCHEN" );
 	string actual_path( packet.uri_path().c_str() );
-	cout << "uri_path checkpoint\n";
 
 	BOOST_CHECK_EQUAL( expected_path, actual_path );
 
 	BOOST_CHECK( packet.opt_if_none_match() );
-	cout << "opt_if_none_match checkpoint\n";
 
 }
 
@@ -537,7 +534,7 @@ BOOST_FIXTURE_TEST_CASE( unlimited_options, FacetsFixture )
 	                    0x02, '1', '3',
 	                    0x02, '1', '4',
 	                    0x6F, 0x00, 'o', 'p', 't', 'i', 'o', 'n', '_', 'c', 'o', 'u', 'n', 't', '=', '1', '5',
-	                    0xF0
+	                    COAP_END_OF_OPTIONS_MARKER
 	                    };
 
 	packet_serialize_length_expected = 73;
@@ -555,6 +552,79 @@ BOOST_FIXTURE_TEST_CASE( unlimited_options, FacetsFixture )
 	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 			packet_expected, packet_expected + packet_serialize_length_expected );
+}
+
+BOOST_FIXTURE_TEST_CASE( unlimited_options_0xf_delta_boundary_condition, FacetsFixture )
+{
+	coap_packet_t packet;
+	block_data_t packet_actual[ 200 ];
+
+	size_t packet_serialize_length_expected;
+	size_t packet_serialize_length_actual;
+
+	string_t location_path = string_t("/location/path/with/a/lot/of/segments/8/9/10/11/12/13");
+
+	packet.set_option( COAP_OPT_LOCATION_PATH, location_path );
+	packet.set_opt_if_none_match(true);
+
+	block_data_t packet_expected[ ] = { 0x5E, COAP_CODE_EMPTY, 0x00, 0x00 ,
+	                    // location path
+	                    0x68, 'l', 'o', 'c', 'a', 't', 'i', 'o', 'n',
+	                    0x04, 'p', 'a', 't', 'h',
+	                    0x04, 'w', 'i', 't', 'h',
+	                    0x01, 'a',
+	                    0x03, 'l', 'o', 't',
+	                    0x02, 'o', 'f',
+	                    0x08, 's', 'e', 'g', 'm', 'e', 'n', 't', 's',
+	                    0x01, '8',
+	                    0x01, '9',
+	                    0x02, '1', '0',
+	                    0x02, '1', '1',
+	                    0x02, '1', '2',
+	                    0x02, '1', '3',
+	                    // if none match
+	                    0xf0
+	                    };
+
+	packet_serialize_length_expected = 58;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
+	packet.set_option( COAP_OPT_MAX_AGE, 1337 );
+
+	block_data_t packet_expected2[ ] = { 0x5F, COAP_CODE_EMPTY, 0x00, 0x00 ,
+	                    // max age
+	                    0x22, 0x05, 0x39,
+	                    // location_path
+	                    0x48, 'l', 'o', 'c', 'a', 't', 'i', 'o', 'n',
+	                    0x04, 'p', 'a', 't', 'h',
+	                    0x04, 'w', 'i', 't', 'h',
+	                    0x01, 'a',
+	                    0x03, 'l', 'o', 't',
+	                    0x02, 'o', 'f',
+	                    0x08, 's', 'e', 'g', 'm', 'e', 'n', 't', 's',
+	                    0x01, '8',
+	                    0x01, '9',
+	                    0x02, '1', '0',
+	                    0x02, '1', '1',
+	                    0x02, '1', '2',
+	                    0x02, '1', '3',
+	                    // fencepost because delta 0xf0 isn't allowed anymore
+	                    0x80,
+	                    // if none match
+	                    0x70,
+	                    COAP_END_OF_OPTIONS_MARKER
+	                    };
+
+	packet_serialize_length_expected = 63;
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected2, packet_expected2 + packet_serialize_length_expected );
 }
 
 

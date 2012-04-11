@@ -708,7 +708,7 @@ namespace wiselib
 			highest_non_zero_byte = 4;
 
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "add_option(uint)> value: "<< hex << value
+		cout << "add_option(uint)> value: 0x"<< hex << value
 		     << ", serial: " << serial[ 0 ] << ", " << serial[ 1 ] << ", "
 		     << serial[ 2 ] << ", " << serial[ 3 ]
 		     << ", highest non-zero byte: " << dec << highest_non_zero_byte
@@ -1255,6 +1255,9 @@ namespace wiselib
 
 		// move following options back
 		size_t bytes_needed = len + overhead_len - fenceposts_omitted_len;
+#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
+		cout << "bytes needed: " << bytes_needed <<"\n";
+#endif
 		if( end_of_options_ + bytes_needed >= payload_ )
 			return ERR_NOMEM;
 		if( put_here < end_of_options_ )
@@ -1418,7 +1421,7 @@ namespace wiselib
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::scan_opts( block_data_t *start, CoapOptionNum prev)
 	{
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "scan_opts> start: " << (unsigned int) start << ", num: " << prev <<"\n";
+		cout << "scan_opts> start: " << (unsigned int) start << ", prev: " << prev <<"\n";
 #endif
 
 		uint8_t delta = 0;
