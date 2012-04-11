@@ -478,6 +478,85 @@ BOOST_FIXTURE_TEST_CASE( parse_and_uri_path, FacetsFixture )
 
 }
 
+BOOST_FIXTURE_TEST_CASE( unlimited_options, FacetsFixture )
+{
+	coap_packet_t packet;
+	block_data_t packet_actual[ 200 ];
+
+	size_t packet_serialize_length_expected;
+	size_t packet_serialize_length_actual;
+
+	string_t uri_path = string_t("/uri/path/with/a/lot/of/segments/8/9/10/11/12/13/14");
+
+	packet.set_uri_path( uri_path );
+
+	block_data_t packet_expected[ ] = { 0x5E, COAP_CODE_EMPTY, 0x00, 0x00 ,
+	                    // uri_path, length 3, "uri"
+	                    0x93, 'u', 'r', 'i',
+	                    0x04, 'p', 'a', 't', 'h',
+	                    0x04, 'w', 'i', 't', 'h',
+	                    0x01, 'a',
+	                    0x03, 'l', 'o', 't',
+	                    0x02, 'o', 'f',
+	                    0x08, 's', 'e', 'g', 'm', 'e', 'n', 't', 's',
+	                    0x01, '8',
+	                    0x01, '9',
+	                    0x02, '1', '0',
+	                    0x02, '1', '1',
+	                    0x02, '1', '2',
+	                    0x02, '1', '3',
+	                    0x02, '1', '4'
+	                    };
+
+	packet_serialize_length_expected = 55;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
+	string_t uri_query = string_t("option_count=15");
+
+	packet.set_uri_query( uri_query );
+
+	block_data_t packet_expected2[ ] = { 0x5F, COAP_CODE_EMPTY, 0x00, 0x00 ,
+	                    // uri_path, length 3, "uri"
+	                    0x93, 'u', 'r', 'i',
+	                    0x04, 'p', 'a', 't', 'h',
+	                    0x04, 'w', 'i', 't', 'h',
+	                    0x01, 'a',
+	                    0x03, 'l', 'o', 't',
+	                    0x02, 'o', 'f',
+	                    0x08, 's', 'e', 'g', 'm', 'e', 'n', 't', 's',
+	                    0x01, '8',
+	                    0x01, '9',
+	                    0x02, '1', '0',
+	                    0x02, '1', '1',
+	                    0x02, '1', '2',
+	                    0x02, '1', '3',
+	                    0x02, '1', '4',
+	                    0x6F, 0x00, 'o', 'p', 't', 'i', 'o', 'n', '_', 'c', 'o', 'u', 'n', 't', '=', '1', '5',
+	                    0xF0
+	                    };
+
+	packet_serialize_length_expected = 73;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected2, packet_expected2 + packet_serialize_length_expected );
+
+	packet.remove_option( COAP_OPT_URI_QUERY );
+
+	packet_serialize_length_expected = 55;
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
