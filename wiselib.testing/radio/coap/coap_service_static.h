@@ -778,7 +778,7 @@ template<typename OsModel_P,
 #ifdef DEBUG_COAPRADIO
 				debug_->debug( "Node %i -- CoapRadio::receive> parsing message, length %i\n", id(), (len - msg_id_t_size) );
 #endif
-				int err_code = packet.parse_message( data + msg_id_t_size, len - msg_id_t_size );
+				int err_code = packet.parse_message( data + msg_id_t_size, len - msg_id_t_size, debug_ );
 #ifdef DEBUG_COAPRADIO
 				debug_->debug( "CoapRadio::receive> parse_message returned %i\n", err_code );
 #endif

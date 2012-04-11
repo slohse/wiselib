@@ -41,7 +41,7 @@ namespace wiselib
 		 * @param length length of the datastream
 		 * @return error code
 		 */
-		int parse_message( block_data_t *datastream, size_t length );
+		int parse_message( block_data_t *datastream, size_t length, typename OsModel::Debug *debug_ );
 
 		/**
 		 * Returns the CoAP version number of the packet
@@ -219,14 +219,14 @@ namespace wiselib
 		block_data_t *end_of_options_;
 		size_t data_length_;
 		size_t option_count_;
-		coap_msg_id_t msg_id_;
-		CoapType type_;
-		CoapCode code_;
+		volatile coap_msg_id_t msg_id_;
+		volatile uint8_t type_;
+		volatile uint8_t code_;
 		// only relevant when an error occurs
-		CoapCode error_code_;
-		CoapOptionNum error_option_;
+		uint8_t error_code_;
+		uint8_t error_option_;
 		// Coap Version
-		uint8_t version_;
+		volatile uint8_t version_;
 
 		block_data_t* options_[COAP_OPTION_ARRAY_SIZE];
 		// contains Options and Data
@@ -334,7 +334,7 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::parse_message( block_data_t *datastream, size_t length)
+	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::parse_message( block_data_t *datastream, size_t length, typename OsModel::Debug *debug_ )
 	{
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "parse_message> length " << length << "\n";
@@ -353,10 +353,11 @@ namespace wiselib
 				error_option_ = COAP_OPT_NOOPT;
 				return ERR_WRONG_COAP_VERSION;
 			}
-			type_ = (CoapType) ( ( coap_first_byte & 0x30 ) >> 4 );
+			type_ = ( coap_first_byte & 0x30 ) >> 4 ;
 			size_t option_count = coap_first_byte & 0x0f;
-			code_ = (CoapCode) ( *( datastream +1 ) & 0xff );
+			code_ = read<OsModel , block_data_t , uint8_t >( datastream +1 );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
+			debug_->debug("CoapPacket::parse_message> type %x, code %x, msg_id %x", type_, code_, msg_id_ );
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "parse_message> version " << version_ << " type " << type_ << " code " << code_ << " msg_id " << hex << msg_id_ << dec << "\n";
 #endif
@@ -398,7 +399,7 @@ namespace wiselib
 	size_t storage_size_>
 	CoapType CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::type() const
 	{
-		return type_;
+		return (CoapType) type_;
 	}
 
 	template<typename OsModel_P,
@@ -416,7 +417,7 @@ namespace wiselib
 	size_t storage_size_>
 	CoapCode CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::code() const
 	{
-		return code_;
+		return (CoapCode) code_;
 	}
 
 	template<typename OsModel_P,
@@ -1111,8 +1112,8 @@ namespace wiselib
 	size_t storage_size_>
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::get_error_context( CoapCode &error_code, CoapOptionNum &error_option)
 	{
-		error_code = error_code_;
-		error_option = error_option_;
+		error_code = (CoapCode) error_code_;
+		error_option = (CoapOptionNum) error_option_;
 	}
 
 //-----------------------------------------------------------------------------
@@ -1176,7 +1177,7 @@ namespace wiselib
 						        // bitwise AND and shift to get the delta
 						        & 0xf0) >> 4 ));
 
-						if( nextnext - num <= 15 )
+						if( nextnext - num <= max_delta )
 						{
 							options_[next] = NULL;
 							next = nextnext;
@@ -1211,7 +1212,7 @@ namespace wiselib
 				// small enough, we can ommit the fencepost
 				CoapOptionNum prevprev = (CoapOptionNum) ( prev -
 						( ( *( options_[prev] ) && 0xf0) >> 4 ) );
-				if( num - prevprev <= 15 )
+				if( num - prevprev <= max_delta )
 				{
 					put_here = options_[prev];
 					options_[prev] = NULL;
