@@ -236,7 +236,7 @@ namespace wiselib
 		int add_end_of_opts_marker();
 		void remove_end_of_opts_marker();
 		bool is_end_of_opts_marker( block_data_t *option_header);
-		void scan_opts( block_data_t *start, CoapOptionNum prev );
+		void scan_opts( block_data_t *start, uint8_t prev );
 		int initial_scan_opts( size_t num_of_opts, size_t message_length );
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
 		bool is_fencepost( CoapOptionNum optnum) const;
@@ -321,9 +321,6 @@ namespace wiselib
 		{
 			options_[i] = NULL;
 		}
-//#ifdef DEBUG_COAPRADIO_TEST_XX
-//		datastream_p = (uint8_t*) 0xaffedead;
-//#endif
 
 		payload_ = storage_ + storage_size_;
 		end_of_options_ = storage_;
@@ -1105,7 +1102,14 @@ namespace wiselib
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "serialize> version " << version_ << " type " << type_ << " code " << code_ << " msg_id " << hex << msg_id_ << dec << "\n";
 #endif
-		datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | (( option_count()) & 0x0f);
+		if( option_count_ >= COAP_UNLIMITED_OPTIONS )
+		{
+			datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | COAP_UNLIMITED_OPTIONS;
+		}
+		else
+		{
+			datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | (( option_count()) & 0x0f);
+		}
 		datastream[1] = code();
 		datastream[2] = (this->msg_id() & 0xff00) >> 8;
 		datastream[3] = (this->msg_id() & 0x00ff);
@@ -1262,6 +1266,9 @@ namespace wiselib
 			return ERR_NOMEM;
 		if( put_here < end_of_options_ )
 		{
+#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
+		cout << "moving options back\n";
+#endif
 			// correcting delta of following option
 			*next_opt_start = ( *next_opt_start & 0x0f )
 			                  | (block_data_t) ((next - num) << 4);
@@ -1307,25 +1314,27 @@ namespace wiselib
 		{
 			put_here += len;
 		}
-		scan_opts( put_here, prev );
 
-		// remove all deltas equal to COAP_END_OF_OPTIONS_MARKER if
-		// inserting the options resulted in crossing the
-		//  COAP_UNLIMITED_OPTIONS "border"
-		if( option_count_ < COAP_UNLIMITED_OPTIONS
-		    && ( option_count_ + num_of_opts >= COAP_UNLIMITED_OPTIONS
-		         || ( num_of_opts == SINGLE_OPTION_NO_HEADER
-		              && ( option_count_ + 1 ) >= COAP_UNLIMITED_OPTIONS ) ) )
-		{
-			int status = add_end_of_opts_marker();
-			if( status != SUCCESS )
-				return status;
-		}
+		scan_opts( put_here, prev );
 
 		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
 			++option_count_;
 		else
 			option_count_ += num_of_opts;
+
+
+		// remove all deltas equal to COAP_END_OF_OPTIONS_MARKER if
+		// inserting the options resulted in crossing the
+		//  COAP_UNLIMITED_OPTIONS "border"
+		if( option_count_ >= COAP_UNLIMITED_OPTIONS
+		    && ( option_count_ - num_of_opts < COAP_UNLIMITED_OPTIONS
+		         || ( num_of_opts == SINGLE_OPTION_NO_HEADER
+		              && ( option_count_ - 1 ) < COAP_UNLIMITED_OPTIONS ) ) )
+		{
+			int status = add_end_of_opts_marker();
+			if( status != SUCCESS )
+				return status;
+		}
 
 		return SUCCESS;
 	}
@@ -1340,28 +1349,43 @@ namespace wiselib
 		block_data_t *move_back_start;
 		for( size_t i = 0; i < COAP_OPTION_ARRAY_SIZE; ++i)
 		{
-			if( options_[i] != NULL
-			    && ( i - prev ) == COAP_MAX_DELTA_DEFAULT )
+			if( options_[i] != NULL )
 			{
-				if( end_of_options_ + 1 > payload_ )
-					return ERR_NOMEM;
-				move_back_start = options_[i];
-				memmove( ( move_back_start + 1 ),
-				         move_back_start,
-				         (size_t) ( end_of_options_ - move_back_start ) );
-				options_[i] = move_back_start + 1;
-				*move_back_start = next_fencepost_delta( prev ) << 4;
-				CoapOptionNum fencepost = (CoapOptionNum) ( prev + next_fencepost_delta( prev ) );
-				*options_[i] = ((*options_[i]) & 0x0f) | ( ( i - fencepost ) << 4 );
-				options_[fencepost] = move_back_start;
-				++end_of_options_;
+#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
+		cout << "add_EOOM> option " << i <<" present at "
+		     << hex << (int) options_[i] << dec << " Prev: " << prev << "\n";
+#endif
+				if( ( i - prev ) == COAP_MAX_DELTA_DEFAULT )
+				{
+#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
+		cout << "add_EOOM> delta is 15! inserting fencepost at ";
+#endif
+					if( end_of_options_ + 1 > payload_ )
+						return ERR_NOMEM;
+					move_back_start = options_[i];
+					memmove( ( move_back_start + 1 ),
+					         move_back_start,
+					         (size_t) ( end_of_options_ - move_back_start ) );
+					options_[i] = move_back_start + 1;
+					*move_back_start = next_fencepost_delta( prev ) << 4;
+					uint8_t fencepost = ( prev + next_fencepost_delta( prev ) );
+#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
+		cout << (int) fencepost << "\n";
+#endif
+					*(options_[i]) = (*(options_[i]) & 0x0f) | ( ( i - fencepost ) << 4 );
+					options_[fencepost] = move_back_start;
+					++end_of_options_;
+					++option_count_;
+				}
+				prev = i;
 			}
-			prev = i;
 		}
 		if( end_of_options_ + 1 > payload_ )
 			return ERR_NOMEM;
 		*end_of_options_ = COAP_END_OF_OPTIONS_MARKER;
 		++end_of_options_;
+
+		scan_opts( storage_, 0 );
 
 		return SUCCESS;
 	}
@@ -1418,10 +1442,12 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::scan_opts( block_data_t *start, CoapOptionNum prev)
+	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::scan_opts( block_data_t *start, uint8_t prev)
 	{
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "scan_opts> start: " << (unsigned int) start << ", prev: " << prev <<"\n";
+		cout << "scan_opts> start: " << (unsigned int) start
+		     << "( " << (unsigned int) (start - storage_)
+		     << " elements from beginning), prev: " << prev <<"\n";
 #endif
 
 		uint8_t delta = 0;
@@ -1430,8 +1456,20 @@ namespace wiselib
 			if( is_end_of_opts_marker( start ) )
 				break;
 			if( (delta = (((*start) & 0xf0) >> 4)) != 0 )
+			{
 				options_[ prev + delta ] = start;
-			size_t len = optlen( start );
+#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
+		cout << "scan_opts> found " << prev + delta
+		     << " at " << hex << (int) start << dec <<"\n";
+#endif
+				prev = prev + delta;
+			}
+			size_t len = *start & 0x0f;
+			if( len == COAP_LONG_OPTION )
+			{
+				len += *(start + 1);
+				++len;
+			}
 			start += len + 1;
 		}
 	}

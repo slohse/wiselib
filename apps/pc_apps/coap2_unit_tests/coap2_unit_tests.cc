@@ -475,6 +475,56 @@ BOOST_FIXTURE_TEST_CASE( parse_and_uri_path, FacetsFixture )
 
 }
 
+BOOST_FIXTURE_TEST_CASE( inserting_options_before_others, FacetsFixture )
+{
+	coap_packet_t packet;
+	block_data_t packet_actual[ 200 ];
+
+	size_t packet_serialize_length_expected;
+	size_t packet_serialize_length_actual;
+
+	string_t location_path = string_t("/location/path/");
+
+	packet.set_option( COAP_OPT_LOCATION_PATH, location_path );
+	packet.set_opt_if_none_match(true);
+
+	block_data_t packet_expected[ ] = { 0x53, COAP_CODE_EMPTY, 0x00, 0x00 ,
+	                    // location path
+	                    0x68, 'l', 'o', 'c', 'a', 't', 'i', 'o', 'n',
+	                    0x04, 'p', 'a', 't', 'h',
+	                    // if none match
+	                    0xf0
+	                    };
+
+	packet_serialize_length_expected = 19;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
+	packet.set_option( COAP_OPT_MAX_AGE, 1337 );
+
+	block_data_t packet_expected2[ ] = { 0x54, COAP_CODE_EMPTY, 0x00, 0x00 ,
+	                    // max age
+	                    0x22, 0x05, 0x39,
+	                    // location_path
+	                    0x48, 'l', 'o', 'c', 'a', 't', 'i', 'o', 'n',
+	                    0x04, 'p', 'a', 't', 'h',
+	                    // if none match
+	                    0xf0,
+	                    };
+
+	packet_serialize_length_expected = 22;
+
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected2, packet_expected2 + packet_serialize_length_expected );
+}
+
 BOOST_FIXTURE_TEST_CASE( unlimited_options, FacetsFixture )
 {
 	coap_packet_t packet;
@@ -621,6 +671,7 @@ BOOST_FIXTURE_TEST_CASE( unlimited_options_0xf_delta_boundary_condition, FacetsF
 	                    };
 
 	packet_serialize_length_expected = 63;
+	packet_serialize_length_actual = packet.serialize( packet_actual );
 
 	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
