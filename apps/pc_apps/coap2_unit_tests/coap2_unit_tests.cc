@@ -676,6 +676,15 @@ BOOST_FIXTURE_TEST_CASE( unlimited_options_0xf_delta_boundary_condition, FacetsF
 	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 			packet_expected2, packet_expected2 + packet_serialize_length_expected );
+
+	packet.remove_option( COAP_OPT_MAX_AGE );
+
+	packet_serialize_length_expected = 58;
+	packet_serialize_length_actual = packet.serialize( packet_actual );
+	BOOST_CHECK_EQUAL( packet_serialize_length_expected, packet_serialize_length_actual );
+	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
+			packet_expected, packet_expected + packet_serialize_length_expected );
+
 }
 
 

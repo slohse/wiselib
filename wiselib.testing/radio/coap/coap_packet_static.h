@@ -239,8 +239,8 @@ namespace wiselib
 		void scan_opts( block_data_t *start, uint8_t prev );
 		int initial_scan_opts( size_t num_of_opts, size_t message_length );
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
-		bool is_fencepost( CoapOptionNum optnum) const;
-		bool is_critical( CoapOptionNum option_number ) const;
+		bool is_fencepost( uint8_t optnum) const;
+		bool is_critical( uint8_t option_number ) const;
 		size_t optlen(block_data_t * optheader) const;
 		size_t make_segments_from_string( const char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *segments, size_t &num_segments ) const;
 		void make_string_from_segments( char delimiter, CoapOptionNum optnum, string_t &result );
@@ -940,6 +940,8 @@ namespace wiselib
 
 		if( removal_start != NULL )
 		{
+			uint8_t prev = (option_number - ( ((*removal_start) & 0xf0 ) >> 4));
+			uint8_t next = 0;
 			do
 			{
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
@@ -966,26 +968,10 @@ namespace wiselib
 			} while( (removal_start + removal_len) < end_of_options_
 			         && ( *(removal_start + removal_len) & 0xf0 ) == 0 );
 
-			// insert a new fencepost if necessary
-			if( (removal_start + removal_len ) < end_of_options_ )
-			{
-				if( ( ( ( ( (*removal_start) & 0xf0 ) >> 4)
-				    + ( ( *(removal_start + removal_len )  & 0xf0 ) >> 4 ) ) > max_delta )
-				    && !is_end_of_opts_marker(removal_start + removal_len))
-				{
-					*removal_start = next_fencepost_delta( option_number
-					                 - ( ( (*removal_start) & 0xf0 ) >> 4) ) << 4;
-					++removal_start;
-					--removal_len;
-					--num_segments;
-				}
-			}
-
 			// if the removed option is the last option and the one
 			// before is a fencepost, remove the fencepost
 			if( (removal_start + removal_len) >= end_of_options_ )
 			{
-				CoapOptionNum prev = (CoapOptionNum) (option_number - ( ((*removal_start) & 0xf0 ) >> 4));
 				if(is_fencepost( prev ))
 				{
 					removal_start = options_[ prev ];
@@ -994,6 +980,21 @@ namespace wiselib
 					++num_segments;
 				}
 			}
+			else
+			{
+				// insert a new fencepost if necessary
+				next = option_number + ( ( (*(removal_start + removal_len)) & 0xf0 ) >> 4);
+				if( ( next - prev ) > max_delta
+				    && !is_end_of_opts_marker(removal_start + removal_len))
+				{
+					uint8_t fencepost_delta = next_fencepost_delta( option_number
+							- ( ( (*removal_start) & 0xf0 ) >> 4) );
+					*removal_start = fencepost_delta << 4;
+					++removal_start;
+					--removal_len;
+					--num_segments;
+					prev += fencepost_delta;
+				}
 
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "entferne " << removal_len << " bytes in "
@@ -1001,15 +1002,23 @@ namespace wiselib
 		cout << "memmove bewegt "
 		     << size_t (end_of_options_ - (removal_start + removal_len) )
 		     << " bytes\n";
+		cout << "prev " << prev << ", option_number " << option_number
+		     << ", next " << next << "\n";
 #endif
 
-			memmove( removal_start,
-					removal_start + removal_len,
-					size_t (end_of_options_ - (removal_start + removal_len) ) );
+				// move following options
+				memmove( removal_start,
+				         removal_start + removal_len,
+				         size_t (end_of_options_ - (removal_start + removal_len) ) );
+				*removal_start = (*removal_start & 0x0f) | ( ( next - prev ) << 4 );
+			}
+
 			options_[ option_number ] = NULL;
 
 			end_of_options_ -= removal_len;
 			option_count_ -= num_segments;
+
+			scan_opts( removal_start, prev );
 
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "alter oc " << (option_count_ + num_segments)
@@ -1423,6 +1432,8 @@ namespace wiselib
 			}
 		}
 
+		scan_opts( storage_, 0 );
+
 		// remove COAP_END_OF_OPTIONS_MARKER
 		--end_of_options_;
 	}
@@ -1457,6 +1468,8 @@ namespace wiselib
 				break;
 			if( (delta = (((*start) & 0xf0) >> 4)) != 0 )
 			{
+				if( prev + delta > COAP_LARGEST_OPTION_NUMBER )
+					break;
 				options_[ prev + delta ] = start;
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "scan_opts> found " << prev + delta
@@ -1482,8 +1495,8 @@ namespace wiselib
 	{
 		block_data_t *curr_position = storage_;
 		option_count_ = 0;
-		CoapOptionNum current = (CoapOptionNum) 0;
-		CoapOptionNum previous = (CoapOptionNum) 0;
+		uint8_t current = 0;
+		uint8_t previous = 0;
 		size_t opt_length;
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "initial_scan_opts> num opts " << num_of_opts << " length " << message_length <<"\n";
@@ -1494,7 +1507,7 @@ namespace wiselib
 			if( is_end_of_opts_marker( curr_position ) )
 				break;
 
-			current = (CoapOptionNum) ( previous + ( ( *curr_position & 0xf0) >> 4) );
+			current = previous + ( ( *curr_position & 0xf0) >> 4);
 
 			// length of option plus header
 			opt_length = *curr_position & 0x0f;
@@ -1612,7 +1625,7 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::is_fencepost(CoapOptionNum optnum) const
+	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::is_fencepost(uint8_t optnum) const
 	{
 		return (optnum > 0 && optnum % 14 == 0);
 	}
@@ -1621,7 +1634,7 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::is_critical( CoapOptionNum option_number ) const
+	bool CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::is_critical( uint8_t option_number ) const
 	{
 		// odd option numbers are critical
 		return( option_number & 0x01 );
