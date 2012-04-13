@@ -26,8 +26,8 @@ using namespace wiselib;
 
 typedef PCOsModel Os;
 typedef wiselib::StaticString string_t;
-typedef CoapPacket<Os, UnitTestRadio, string_t>::coap_packet_t coap_packet_t;
 typedef COAPSERVICE<Os, UnitTestRadio, DummyTimerModel, Os::Debug, Os::Rand, string_t> coapradio_t;
+typedef coapradio_t::coap_packet_t coap_packet_t;
 typedef UnitTestRadio::block_data_t block_data_t;
 typedef UnitTestRadio::node_id_t node_id_t;
 
