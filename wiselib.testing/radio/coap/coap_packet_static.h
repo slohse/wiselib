@@ -1025,8 +1025,17 @@ namespace wiselib
 		     << " neuer oc " << option_count_
 		     << "end_of_opts pointer " << hex << (int)  end_of_options_ << dec << "\n";
 #endif
-			if( option_count_ + num_segments >= COAP_UNLIMITED_OPTIONS
+			// remove End of Options marker if there are fewer than 15 options
+			// now, OR if there are exactly 15 and one of them is a fencepost
+			// inserted because a delta of exactly 15 would have to be used
+			// otherwise
+			if( ( option_count_ + num_segments >= COAP_UNLIMITED_OPTIONS
 			    && option_count_ < COAP_UNLIMITED_OPTIONS )
+			    || ( option_count_ == COAP_UNLIMITED_OPTIONS
+			       && options_[COAP_OPT_FENCEPOST] != NULL
+			       && ( *(options_[COAP_OPT_FENCEPOST]) & 0xf0 )
+			          + ( *(options_[COAP_OPT_FENCEPOST] + 1) & 0xf0 )
+			          == COAP_END_OF_OPTIONS_MARKER ) )
 			{
 #if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
 		cout << "remove_end_of_opts_marker\n";
@@ -1428,6 +1437,7 @@ namespace wiselib
 					*options_[next] = ((*options_[next]) & 0x0f)
 					                  | COAP_END_OF_OPTIONS_MARKER;
 					--option_count_;
+					--end_of_options_;
 				}
 			}
 		}
