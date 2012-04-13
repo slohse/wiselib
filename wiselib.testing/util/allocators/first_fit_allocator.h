@@ -1,16 +1,32 @@
+/***************************************************************************
+ ** This file is part of the generic algorithm library Wiselib.           **
+ ** Copyright (C) 2008,2009 by the Wisebed (www.wisebed.eu) project.      **
+ **                                                                       **
+ ** The Wiselib is free software: you can redistribute it and/or modify   **
+ ** it under the terms of the GNU Lesser General Public License as        **
+ ** published by the Free Software Foundation, either version 3 of the    **
+ ** License, or (at your option) any later version.                       **
+ **                                                                       **
+ ** The Wiselib is distributed in the hope that it will be useful,        **
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of        **
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         **
+ ** GNU Lesser General Public License for more details.                   **
+ **                                                                       **
+ ** You should have received a copy of the GNU Lesser General Public      **
+ ** License along with the Wiselib.                                       **
+ ** If not, see <http://www.gnu.org/licenses/>.                           **
+ ***************************************************************************/
+
 
 #ifndef __WISELIB_UTIL_ALLOCATORS_FIRST_FIT_ALLOCATOR_H
 #define __WISELIB_UTIL_ALLOCATORS_FIRST_FIT_ALLOCATOR_H
 
-#ifndef ALLOCATOR_KEEP_STATS
-	#define ALLOCATOR_KEEP_STATS 0
-#endif // ALLOCATOR_KEEP_STATS
+//#define ALLOCATOR_USE_RTTI 1
 
 #ifdef PC
 	#undef NDEBUG
 	#include <cassert>
 #endif
-
 
 #ifndef assert
 	#define assert(X)
@@ -22,6 +38,11 @@
 	#include <iomanip>
 #endif
 
+#include <util/global_pointer.h>
+
+#if ALLOCATOR_USE_RTTI
+#include <typeinfo>
+#endif
 
 template<typename T>
 void* operator new(size_t size, T* place) {
@@ -71,7 +92,9 @@ class FirstFitAllocator {
 		class Chunk;
 		typedef OsModel_P OsModel;
 		typedef FirstFitAllocator<OsModel_P, BUFFER_SIZE, MAX_CHUNKS> self_type;
-		typedef self_type* self_pointer_t;
+		//typedef self_type* self_pointer_t;
+		typedef GlobalPointer<self_type> self_pointer_t;
+
 		typedef typename OsModel::size_t size_t;
 		typedef typename OsModel::block_data_t block_data_t;
 		
@@ -187,16 +210,32 @@ class FirstFitAllocator {
 		
 		template<typename T>
 		pointer_t<T> allocate() {
+			#if ALLOCATOR_USE_RTTI
+			allocated_types_[typeid(T).name()]++;
+			type_sizes_[typeid(T).name()] += sizeof(T);
+			#endif
+			//printf("%p -> allocate %d\n", this, sizeof(T));
+			assert(sizeof(T) != 0);
 			return pointer_t<T>(allocate_chunk<T>());
 		}
 		
 		template<typename T>
 		array_pointer_t<T> allocate_array(typename OsModel::size_t n) {
+			#if ALLOCATOR_USE_RTTI
+			allocated_types_[std::string(typeid(T).name()) + "[]"]++;
+			type_sizes_[std::string(typeid(T).name()) + "[]"] += sizeof(T) * n;
+			#endif
+			assert(sizeof(T) != 0);
+			assert(n != 0);
 			return array_pointer_t<T>(allocate_chunk<T>(n));
 		}
 		
 		template<typename T>
 		int free(pointer_t<T> p) {
+			#if ALLOCATOR_USE_RTTI
+			allocated_types_[typeid(T).name()]--;
+			type_sizes_[typeid(T).name()] -= p.chunk_->size_;
+			#endif
 			p->~T();
 			free_chunk(p.chunk_ - reserved_);
 			return SUCCESS;
@@ -204,6 +243,10 @@ class FirstFitAllocator {
 	
 		template<typename T>
 		int free_array(array_pointer_t<T> p) {
+			#if ALLOCATOR_USE_RTTI
+			allocated_types_[std::string(typeid(T).name()) + "[]"]--;
+			type_sizes_[std::string(typeid(T).name()) + "[]"] -= p.chunk_->size_;
+			#endif
 			free_chunk(p.chunk_ - reserved_);
 			return SUCCESS;
 		}
@@ -229,6 +272,13 @@ class FirstFitAllocator {
 			for(typename std::map<size_t,size_t>::iterator iter=sizes.begin(); iter!=sizes.end(); ++iter) {
 				std::cout << iter->second << "x " << iter->first << " = " << (iter->first * iter->second) << " bytes" << std::endl;
 			}
+			
+			#if ALLOCATOR_USE_RTTI
+			std::cout << "\n" << "RTTI Info:" << std::endl;
+			for(typename std::map<std::string, int>::iterator iter=allocated_types_.begin(); iter!=allocated_types_.end(); ++iter) {
+				std::cout << iter->second << "x  (tot. " << type_sizes_[iter->first] << " bytes): " << iter->first << std::endl;
+			}
+			#endif
 		}
 		#endif
 	#endif
@@ -237,6 +287,11 @@ class FirstFitAllocator {
 			
 	//private:
 		
+#if ALLOCATOR_USE_RTTI
+		std::map<std::string, int> allocated_types_;
+		std::map<std::string, int> type_sizes_;
+#endif
+
 		class Chunk {
 			public:
 				enum { NONE = static_cast<chunk_index_t>(-1) };
@@ -253,7 +308,7 @@ class FirstFitAllocator {
 				void set_size(memory_size_t s) { size_ = s; }
 				
 				
-			private:
+			//private:
 				memory_size_t size_;
 				chunk_index_t next_;
 				block_data_t *start_;
