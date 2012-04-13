@@ -1,10 +1,6 @@
 #ifndef COAP_H
 #define COAP_H
 
-
-//#define DEBUG_COAPRADIO
-
-
 #include "external_interface/external_interface.h"
 #include "util/serialization/simple_types.h"
 #include "util/pstl/static_string.h"

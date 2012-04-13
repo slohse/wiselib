@@ -334,9 +334,6 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::parse_message( block_data_t *datastream, size_t length )
 	{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "parse_message> length " << length << "\n";
-#endif
 		// clear everything
 		init();
 
@@ -355,17 +352,10 @@ namespace wiselib
 			size_t option_count = coap_first_byte & 0x0f;
 			code_ = read<OsModel , block_data_t , uint8_t >( datastream +1 );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "parse_message> version " << version_ << " type " << type_ << " code " << code_ << " msg_id " << hex << msg_id_ << dec << "\n";
-#endif
-
 
 			memcpy( storage_, datastream + COAP_START_OF_OPTIONS, length - COAP_START_OF_OPTIONS );
 
 			int status = initial_scan_opts( option_count, length - COAP_START_OF_OPTIONS );
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "parse_message> status " << status << "\n";
-#endif
 			return status;
 		}
 		// can't make any sense of it
@@ -551,9 +541,6 @@ namespace wiselib
 	size_t storage_size_>
 	String_T CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::uri_path()
 	{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "uri_path()\n";
-#endif
 		string_t path = string_t();
 		get_option( COAP_OPT_URI_PATH, path );
 		return path;
@@ -703,14 +690,6 @@ namespace wiselib
 			highest_non_zero_byte = 3;
 		else if ( serial[3] != 0 )
 			highest_non_zero_byte = 4;
-
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "add_option(uint)> value: 0x"<< hex << value
-		     << ", serial: " << serial[ 0 ] << ", " << serial[ 1 ] << ", "
-		     << serial[ 2 ] << ", " << serial[ 3 ]
-		     << ", highest non-zero byte: " << dec << highest_non_zero_byte
-		     << "\n";
-#endif
 
 		return add_option( option_number,
 		                   serial + highest_non_zero_byte - 1,
@@ -867,35 +846,21 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::get_option( CoapOptionNum option_number, string_t &value )
 	{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "get_option( " << (int) option_number << ", string_t ), options_[ "
-		     << option_number << " ] = " << hex << (int) options_[option_number]
-		     << dec << "\n";
-#endif
 		if( options_[option_number] == NULL )
 			return ERR_OPT_NOT_SET;
 
 		if( option_number == COAP_OPT_LOCATION_PATH
 				|| option_number  == COAP_OPT_URI_PATH )
 		{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "get_option( " << (int) option_number << ", string_t )> *_PATH\n";
-#endif
 			make_string_from_segments ( '/', option_number, value );
 		}
 		else if ( option_number == COAP_OPT_LOCATION_QUERY
 				|| option_number  == COAP_OPT_URI_QUERY )
 		{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "get_option( " << (int) option_number << ", string_t )> *_QUERY\n";
-#endif
 			make_string_from_segments ( '&', option_number, value );
 		}
 		else
 		{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "get_option( " << (int) option_number << ", string_t )> else\n";
-#endif
 			// TODO: testen ob das funtioniert
 			make_string_from_segments ( '\0', option_number, value );
 		}
@@ -925,9 +890,6 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::remove_option( CoapOptionNum option_number )
 	{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "remove_option( " << (int) option_number << " )> removing opt \n";
-#endif
 		block_data_t *removal_start = options_[option_number];
 		size_t removal_len = 0;
 		size_t num_segments = 0;
@@ -944,13 +906,7 @@ namespace wiselib
 			uint8_t next = 0;
 			do
 			{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-				cout << "remove_option( " << (int) option_number << " )> Num of Segments: " << num_segments << "\n";
-#endif
 				++num_segments;
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-				cout << "remove_option( " << (int) option_number << " )> Num of Segments: " << num_segments << "\n";
-#endif
 				curr_segment_len = *(removal_start + removal_len) & 0x0f;
 				if( curr_segment_len == COAP_LONG_OPTION )
 				{
@@ -962,9 +918,6 @@ namespace wiselib
 				}
 
 				removal_len += curr_segment_len;
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-				cout << "remove_option( " << (int) option_number << " )> Do-while pass " << num_segments << "\n";
-#endif
 			} while( (removal_start + removal_len) < end_of_options_
 			         && ( *(removal_start + removal_len) & 0xf0 ) == 0 );
 
@@ -996,16 +949,6 @@ namespace wiselib
 					prev += fencepost_delta;
 				}
 
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "entferne " << removal_len << " bytes in "
-		     << num_segments << " segmenten" << "\n";
-		cout << "memmove bewegt "
-		     << size_t (end_of_options_ - (removal_start + removal_len) )
-		     << " bytes\n";
-		cout << "prev " << prev << ", option_number " << option_number
-		     << ", next " << next << "\n";
-#endif
-
 				// move following options
 				memmove( removal_start,
 				         removal_start + removal_len,
@@ -1020,11 +963,6 @@ namespace wiselib
 
 			scan_opts( removal_start, prev );
 
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "alter oc " << (option_count_ + num_segments)
-		     << " neuer oc " << option_count_
-		     << "end_of_opts pointer " << hex << (int)  end_of_options_ << dec << "\n";
-#endif
 			// remove End of Options marker if there are fewer than 15 options
 			// now, OR if there are exactly 15 and one of them is a fencepost
 			// inserted because a delta of exactly 15 would have to be used
@@ -1037,13 +975,7 @@ namespace wiselib
 			          + ( *(options_[COAP_OPT_FENCEPOST] + 1) & 0xf0 )
 			          == COAP_END_OF_OPTIONS_MARKER ) )
 			{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "remove_end_of_opts_marker\n";
-#endif
 				remove_end_of_opts_marker();
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "neuer end_of_opts pointer " << hex << (int) end_of_options_ << dec << "\n";
-#endif
 			}
 		}
 		return SUCCESS;
@@ -1117,9 +1049,6 @@ namespace wiselib
 	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
 	::serialize( block_data_t *datastream ) const
 	{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "serialize> version " << version_ << " type " << type_ << " code " << code_ << " msg_id " << hex << msg_id_ << dec << "\n";
-#endif
 		if( option_count_ >= COAP_UNLIMITED_OPTIONS )
 		{
 			datastream[0] = ((version() & 0x03) << 6) | ((type() & 0x03) << 4) | COAP_UNLIMITED_OPTIONS;
@@ -1131,10 +1060,6 @@ namespace wiselib
 		datastream[1] = code();
 		datastream[2] = (this->msg_id() & 0xff00) >> 8;
 		datastream[3] = (this->msg_id() & 0x00ff);
-
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "serialize> " << hex << datastream[0] << " " << datastream[1] << " " << datastream[2] << " " << datastream[3] << " " << dec << "\n";
-#endif
 
 		size_t len = 4;
 		memcpy( datastream + len, storage_, (size_t) (end_of_options_ - storage_) );
@@ -1165,9 +1090,6 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts)
 	{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "add_option( " << (int) num << " )> len " << len << " num_of_opts " << num_of_opts << "\n";
-#endif
 		CoapOptionNum prev = (CoapOptionNum) 0;
 		CoapOptionNum next = (CoapOptionNum) 0;
 		uint8_t fencepost = 0;
@@ -1269,24 +1191,12 @@ namespace wiselib
 			fencepost = next_fencepost_delta( prev );
 		}
 
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "overhead len: " << overhead_len << ", fp omit len: " << fenceposts_omitted_len << " \n";
-		cout << "prev: " << prev << ", next: " << next << "\n";
-		cout << "fencepost: " << fencepost << "\n";
-#endif
-
 		// move following options back
 		size_t bytes_needed = len + overhead_len - fenceposts_omitted_len;
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "bytes needed: " << bytes_needed <<"\n";
-#endif
 		if( end_of_options_ + bytes_needed >= payload_ )
 			return ERR_NOMEM;
 		if( put_here < end_of_options_ )
 		{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "moving options back\n";
-#endif
 			// correcting delta of following option
 			*next_opt_start = ( *next_opt_start & 0x0f )
 			                  | (block_data_t) ((next - num) << 4);
@@ -1297,13 +1207,7 @@ namespace wiselib
 		}
 
 		memcpy( put_here + (bytes_needed - len), serial_opt, len );
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "end_of_options_: " << (unsigned int) end_of_options_ <<"\n";
-#endif
 		end_of_options_ += bytes_needed;
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "end_of_options_: " << (unsigned int) end_of_options_ <<"\n";
-#endif
 		if( fencepost != 0)
 		{
 			*put_here = fencepost << 4;
@@ -1369,15 +1273,8 @@ namespace wiselib
 		{
 			if( options_[i] != NULL )
 			{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "add_EOOM> option " << i <<" present at "
-		     << hex << (int) options_[i] << dec << " Prev: " << prev << "\n";
-#endif
 				if( ( i - prev ) == COAP_MAX_DELTA_DEFAULT )
 				{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "add_EOOM> delta is 15! inserting fencepost at ";
-#endif
 					if( end_of_options_ + 1 > payload_ )
 						return ERR_NOMEM;
 					move_back_start = options_[i];
@@ -1387,9 +1284,6 @@ namespace wiselib
 					options_[i] = move_back_start + 1;
 					*move_back_start = next_fencepost_delta( prev ) << 4;
 					uint8_t fencepost = ( prev + next_fencepost_delta( prev ) );
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << (int) fencepost << "\n";
-#endif
 					*(options_[i]) = (*(options_[i]) & 0x0f) | ( ( i - fencepost ) << 4 );
 					options_[fencepost] = move_back_start;
 					++end_of_options_;
@@ -1465,12 +1359,6 @@ namespace wiselib
 	size_t storage_size_>
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>::scan_opts( block_data_t *start, uint8_t prev)
 	{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "scan_opts> start: " << (unsigned int) start
-		     << "( " << (unsigned int) (start - storage_)
-		     << " elements from beginning), prev: " << prev <<"\n";
-#endif
-
 		uint8_t delta = 0;
 		while( start < end_of_options_ )
 		{
@@ -1481,10 +1369,6 @@ namespace wiselib
 				if( prev + delta > COAP_LARGEST_OPTION_NUMBER )
 					break;
 				options_[ prev + delta ] = start;
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "scan_opts> found " << prev + delta
-		     << " at " << hex << (int) start << dec <<"\n";
-#endif
 				prev = prev + delta;
 			}
 			size_t len = *start & 0x0f;
@@ -1508,9 +1392,6 @@ namespace wiselib
 		uint8_t current = 0;
 		uint8_t previous = 0;
 		size_t opt_length;
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "initial_scan_opts> num opts " << num_of_opts << " length " << message_length <<"\n";
-#endif
 		while( ( option_count_ < num_of_opts  || num_of_opts == COAP_UNLIMITED_OPTIONS ) )
 		{
 			// end of options
@@ -1525,10 +1406,6 @@ namespace wiselib
 				opt_length = *(curr_position + 1) + 17;
 			else
 				++opt_length;
-
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "initial_scan_opts> found option " << (int) current << " length " << opt_length <<"\n";
-#endif
 
 			if( current == previous
 			    && !COAP_OPT_CAN_OCCUR_MULTIPLE[current] )
@@ -1583,10 +1460,6 @@ namespace wiselib
 
 			if( current != previous )
 			{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "initial_scan_opts> setting options_[ " << (int) current << " ] = "
-		     << hex << (int) curr_position << dec << "\n";
-#endif
 				options_[ current ] = curr_position;
 			}
 
@@ -1605,10 +1478,6 @@ namespace wiselib
 		}
 
 		end_of_options_ = curr_position;
-
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "initial_scan_opts> " << option_count_ << " options found\n";
-#endif
 
 		// Rest is data
 		if( curr_position < ( storage_ + message_length ) )
@@ -1671,10 +1540,6 @@ namespace wiselib
 	size_t CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
 	::make_segments_from_string( const char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *result, size_t &num_segments ) const
 	{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "CoapPacket::add_string_segments> string '"
-		     << cstr << "', delimiter " << delimiter << "\n";
-#endif
 		size_t result_pos = 0;
 		size_t position = 0;
 		size_t segment_start = 0;
@@ -1690,10 +1555,6 @@ namespace wiselib
 				if( (length = position - segment_start ) == 0)
 					return 0;
 
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "CoapPacket::add_string_segments> found segment at "
-		     << segment_start << " length " << length << "\n";
-#endif
 				if( length >= COAP_LONG_OPTION && length <= COAP_STRING_OPTS_MAXLEN )
 				{
 					*(result + result_pos) = 0x0f;
@@ -1716,10 +1577,6 @@ namespace wiselib
 			}
 		}
 
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "CoapPacket::make_segments> found " << num_segments << " segments, wrote "
-		     << result_pos << " bytes\n";
-#endif
 		return result_pos;
 	}
 
@@ -1730,9 +1587,6 @@ namespace wiselib
 	void CoapPacket<OsModel_P, Radio_P, String_T, storage_size_>
 	::make_string_from_segments( char delimiter, CoapOptionNum optnum, string_t &result )
 	{
-#if (defined BOOST_TEST_DECL && defined VERBOSE_DEBUG )
-		cout << "CoapPacket::make_string> delimiter " << delimiter << "\n";
-#endif
 		result = "";
 		if( options_[optnum] != NULL )
 		{
