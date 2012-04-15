@@ -23,9 +23,9 @@ using namespace std;
 #define COAP_DEFAULT_STORAGE_SIZE		127
 
 // Size of message buffer that saves sent and received messages for a while
-#define COAPRADIO_SENT_LIST_SIZE		10
-#define COAPRADIO_RECEIVED_LIST_SIZE		10
-#define COAPRADIO_RESOURCES_SIZE		5
+static const size_t COAPRADIO_SENT_LIST_SIZE = 10;
+static const size_t COAPRADIO_RECEIVED_LIST_SIZE = 10;
+static const size_t COAPRADIO_RESOURCES_SIZE = 5;
 #define COAPRADIO_TIMER_ACTION_SIZE		10
 
 

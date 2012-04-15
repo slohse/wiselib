@@ -13,7 +13,10 @@ template<typename OsModel_P,
 	typename Timer_P = typename OsModel_P::Timer,
 	typename Debug_P = typename OsModel_P::Debug,
 	typename Rand_P = typename OsModel_P::Rand,
-	typename String_T = wiselib::StaticString>
+	typename String_T = wiselib::StaticString,
+	typename OsModel_P::size_t sent_list_size_ = COAPRADIO_SENT_LIST_SIZE,
+	typename OsModel_P::size_t received_list_size_ = COAPRADIO_RECEIVED_LIST_SIZE,
+	typename OsModel_P::size_t resources_list_size_ = COAPRADIO_RESOURCES_SIZE>
 	class CoapServiceStatic
 	{
 
@@ -28,15 +31,16 @@ template<typename OsModel_P,
 		typedef Rand_P Rand;
 		typedef String_T string_t;
 
+		typedef typename OsModel::size_t os_size_t;
+
 		typedef typename Radio::node_id_t node_id_t;
 		typedef typename Radio::size_t size_t;
 		typedef typename Radio::block_data_t block_data_t;
 		typedef typename Radio::message_id_t message_id_t;
 
-		typedef CoapServiceStatic<OsModel, Radio, Timer, Debug, Rand, string_t> self_type;
-		typedef self_type* self_pointer_t;
-
-		typedef CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T> self_t;
+		typedef CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_> self_t;
+		typedef self_t self_type;
+		typedef self_t* self_pointer_t;
 		typedef self_t CoapServiceStatic_t;
 
 		typedef typename CoapPacketStatic<OsModel, Radio, string_t>::coap_packet_t coap_packet_t;
@@ -104,7 +108,7 @@ template<typename OsModel_P,
 			}
 
 		private:
-			template<typename __os, typename __radio, typename __timer, typename __debug, typename __rand, typename __string> friend class CoapServiceStatic;
+			friend class CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>;
 			coap_packet_t message_;
 			// in this case the sender
 			node_id_t correspondent_;
@@ -419,8 +423,8 @@ template<typename OsModel_P,
 			bool operator!=( const TimerAction &rhs ) { return !( *this == rhs ); }
 		};
 
-		typedef list_static<OsModel, ReceivedMessage, COAPRADIO_RECEIVED_LIST_SIZE> received_list_t;
-		typedef list_static<OsModel, SentMessage, COAPRADIO_SENT_LIST_SIZE> sent_list_t;
+		typedef list_static<OsModel, ReceivedMessage, received_list_size_> received_list_t;
+		typedef list_static<OsModel, SentMessage, sent_list_size_> sent_list_t;
 
 		Radio *radio_;
 		Timer *timer_;
@@ -474,8 +478,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::CoapServiceStatic()
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::CoapServiceStatic()
 	{
 		//init();
 	}
@@ -485,8 +492,11 @@ template<typename OsModel_P,
 		typename Timer_P,
 		typename Debug_P,
 		typename Rand_P,
-		typename String_T>
-	CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::~CoapServiceStatic()
+		typename String_T,
+		typename OsModel_P::size_t sent_list_size_,
+		typename OsModel_P::size_t received_list_size_,
+		typename OsModel_P::size_t resources_list_size_>
+	CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::~CoapServiceStatic()
 	{
 
 	}
@@ -496,8 +506,11 @@ template<typename OsModel_P,
 		typename Timer_P,
 		typename Debug_P,
 		typename Rand_P,
-			typename String_T>
-	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::destruct()
+		typename String_T,
+		typename OsModel_P::size_t sent_list_size_,
+		typename OsModel_P::size_t received_list_size_,
+		typename OsModel_P::size_t resources_list_size_>
+	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::destruct()
 	{
 		return SUCCESS;
 	}
@@ -507,8 +520,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::init()
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::init()
 	{
 		// TODO: WTF!!!
 		return SUCCESS;
@@ -519,8 +535,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::init(Radio& radio,
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::init(Radio& radio,
 				Timer& timer,
 				Debug& debug,
 				Rand& rand )
@@ -543,8 +562,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::enable_radio()
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::enable_radio()
 	{
 		//enable normal radio
 		radio_->enable_radio();
@@ -560,8 +582,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::disable_radio()
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::disable_radio()
 	{
 		radio_->unreg_recv_callback(recv_callback_id_);
 		return SUCCESS;
@@ -572,8 +597,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	typename Radio_P::node_id_t CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::id ()
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	typename Radio_P::node_id_t CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::id ()
 	{
 		return radio_->id();
 	}
@@ -583,8 +611,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send (node_id_t receiver, size_t len, block_data_t *data )
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::send (node_id_t receiver, size_t len, block_data_t *data )
 	{
 #if COAP_PREFACE_MSG_ID == 1
 		block_data_t buf[len+1];
@@ -603,9 +634,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ReceivedMessage& ) >
-	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_as_is(node_id_t receiver, const coap_packet_t & message, T *callback)
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
+	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::send_coap_as_is(node_id_t receiver, const coap_packet_t & message, T *callback)
 	{
 		block_data_t buf[message.serialize_length()];
 
@@ -640,9 +674,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ReceivedMessage& ) >
-	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_gen_msg_id(node_id_t receiver, coap_packet_t & message, T *callback)
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
+	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::send_coap_gen_msg_id(node_id_t receiver, coap_packet_t & message, T *callback)
 	{
 		message.set_msg_id( this->msg_id() );
 		return send_coap_as_is<T, TMethod>( receiver, message, callback );
@@ -653,9 +690,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ReceivedMessage& ) >
-	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::send_coap_gen_msg_id_token(node_id_t receiver, coap_packet_t & message, T *callback)
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
+	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::send_coap_gen_msg_id_token(node_id_t receiver, coap_packet_t & message, T *callback)
 	{
 		OpaqueData token;
 		coap_token_t raw_token = this->token();
@@ -669,8 +709,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::receive(node_id_t from, size_t len, block_data_t * data)
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::receive(node_id_t from, size_t len, block_data_t * data)
 	{
 		// do not receive own messages
 		if (radio_->id() == from) {
@@ -781,8 +824,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::rst( node_id_t receiver, coap_msg_id_t id )
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::rst( node_id_t receiver, coap_msg_id_t id )
 	{
 		coap_packet_t rstp;
 		rstp.set_type( COAP_MSG_TYPE_RST );
@@ -795,8 +841,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::receive_coap(ReceivedMessage& message)
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::receive_coap(ReceivedMessage& message)
 	{
 		//TODO
 	}
@@ -806,9 +855,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ReceivedMessage& ) >
-	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::reg_resource_callback( string_t resource_path, T *callback )
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
+	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::reg_resource_callback( string_t resource_path, T *callback )
 	{
 
 		if ( resources_.empty() )
@@ -832,8 +884,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::unreg_resource_callback( int idx )
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::unreg_resource_callback( int idx )
 	{
 		resources_.at(idx) = CoapResource();
 		return SUCCESS;
@@ -845,9 +900,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ReceivedMessage& ) >
-	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::get(node_id_t receiver,
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
+	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::get(node_id_t receiver,
 			string_t uri_path,
 			string_t uri_query,
 			T *callback,
@@ -863,9 +921,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ReceivedMessage& ) >
-	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::put(node_id_t receiver,
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
+	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::put(node_id_t receiver,
 			string_t uri_path,
 			string_t uri_query,
 			T *callback,
@@ -883,9 +944,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ReceivedMessage& ) >
-	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::post(node_id_t receiver,
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
+	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::post(node_id_t receiver,
 			string_t uri_path,
 			string_t uri_query,
 			T *callback,
@@ -903,9 +967,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ReceivedMessage& ) >
-	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::del(node_id_t receiver,
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
+	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::del(node_id_t receiver,
 			string_t uri_path,
 			string_t uri_query,
 			T *callback,
@@ -921,9 +988,12 @@ template<typename OsModel_P,
 				typename Timer_P,
 				typename Debug_P,
 				typename Rand_P,
-				typename String_T>
-	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ReceivedMessage& ) >
-	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::request(node_id_t receiver,
+				typename String_T,
+				typename OsModel_P::size_t sent_list_size_,
+				typename OsModel_P::size_t received_list_size_,
+				typename OsModel_P::size_t resources_list_size_>
+	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
+	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::request(node_id_t receiver,
 				CoapCode code,
 				string_t uri_path,
 				string_t uri_query,
@@ -966,8 +1036,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::reply(ReceivedMessage &req_msg,
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::reply(ReceivedMessage &req_msg,
 				uint8_t* payload,
 				size_t payload_length,
 				CoapCode code )
@@ -1018,8 +1091,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	coap_msg_id_t CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::msg_id()
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	coap_msg_id_t CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::msg_id()
 	{
 		return(msg_id_++);
 	}
@@ -1029,8 +1105,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	coap_token_t CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::token()
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	coap_token_t CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::token()
 	{
 		return(token_++);
 	}
@@ -1040,9 +1119,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
 	template <typename T, list_size_t N>
-	T * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::queue_message(T message, list_static<OsModel_P, T, N> &queue)
+	T * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::queue_message(T message, list_static<OsModel_P, T, N> &queue)
 	{
 		if( queue.full() )
 		{
@@ -1057,9 +1139,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
 	template <typename T, list_size_t N>
-	T* CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::find_message_by_id
+	T* CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::find_message_by_id
 			(node_id_t correspondent, coap_msg_id_t id, list_static<OsModel_P, T, N> &queue)
 	{
 		typename list_static<OsModel_P, T, N>::iterator it = queue.begin();
@@ -1078,9 +1163,12 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
 	template <typename T, list_size_t N>
-	T* CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::find_message_by_token
+	T* CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::find_message_by_token
 		(node_id_t correspondent, const OpaqueData &token, const list_static<OsModel_P, T, N> &queue)
 	{
 		OpaqueData current_token;
@@ -1106,8 +1194,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::handle_response( ReceivedMessage& message, SentMessage *request )
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::handle_response( ReceivedMessage& message, SentMessage *request )
 	{
 		OpaqueData request_token, response_token;
 		message.message().token( response_token );
@@ -1151,8 +1242,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::handle_request( ReceivedMessage& message )
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::handle_request( ReceivedMessage& message )
 	{
 		// don't send an ACK right away, instead wait a little to give the
 		// resource a chance to send a piggybacked response
@@ -1204,8 +1298,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::ack( ReceivedMessage& message )
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ack( ReceivedMessage& message )
 	{
 		if( message.ack_sent() != NULL )
 		{
@@ -1227,8 +1324,11 @@ template<typename OsModel_P,
 			typename Timer_P,
 			typename Debug_P,
 			typename Rand_P,
-			typename String_T>
-	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::timeout ( void * action )
+			typename String_T,
+			typename OsModel_P::size_t sent_list_size_,
+			typename OsModel_P::size_t received_list_size_,
+			typename OsModel_P::size_t resources_list_size_>
+	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::timeout ( void * action )
 	{
 		TimerAction& act = timers_.at( (int) action );
 
@@ -1278,8 +1378,11 @@ template<typename OsModel_P,
 		typename Timer_P,
 		typename Debug_P,
 		typename Rand_P,
-		typename String_T>
-	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::reg_timer_action( TimerAction *action )
+		typename String_T,
+		typename OsModel_P::size_t sent_list_size_,
+		typename OsModel_P::size_t received_list_size_,
+		typename OsModel_P::size_t resources_list_size_>
+	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::reg_timer_action( TimerAction *action )
 	{
 		if ( timers_.empty() )
 		{
@@ -1303,8 +1406,11 @@ template<typename OsModel_P,
 	typename Timer_P,
 	typename Debug_P,
 	typename Rand_P,
-	typename String_T>
-	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::unreg_timer_action( int idx )
+	typename String_T,
+	typename OsModel_P::size_t sent_list_size_,
+	typename OsModel_P::size_t received_list_size_,
+	typename OsModel_P::size_t resources_list_size_>
+	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::unreg_timer_action( int idx )
 	{
 		if( idx > 0 && idx < ( (int) timers_.size() ) )
 		{
@@ -1317,8 +1423,11 @@ template<typename OsModel_P,
 	typename Timer_P,
 	typename Debug_P,
 	typename Rand_P,
-	typename String_T>
-	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::error_response( int error, ReceivedMessage& message )
+	typename String_T,
+	typename OsModel_P::size_t sent_list_size_,
+	typename OsModel_P::size_t received_list_size_,
+	typename OsModel_P::size_t resources_list_size_>
+	void CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::error_response( int error, ReceivedMessage& message )
 	{
 		coap_packet_t packet = message.message();
 		CoapCode err_coap_code;
@@ -1366,8 +1475,11 @@ template<typename OsModel_P,
 	typename Timer_P,
 	typename Debug_P,
 	typename Rand_P,
-	typename String_T>
-	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T>::path_cmp(const string_t &lhs, const string_t &rhs)
+	typename String_T,
+	typename OsModel_P::size_t sent_list_size_,
+	typename OsModel_P::size_t received_list_size_,
+	typename OsModel_P::size_t resources_list_size_>
+	int CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::path_cmp(const string_t &lhs, const string_t &rhs)
 	{
 		for( size_t i = 0; ; ++i )
 		{
