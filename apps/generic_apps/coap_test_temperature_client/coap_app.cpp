@@ -63,7 +63,7 @@ public:
 	void receive_coap( wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
 	{
 //		debug_->debug( "node %x > received message\n", radio_->id() );
-		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t & packet = message.message();
+		wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::coap_packet_t & packet = message.message();
 		if( packet.is_response() )
 		{
 /*			debug_->debug( "node %x > is response, code %i.%i data len %i\n",

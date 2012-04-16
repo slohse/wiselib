@@ -23,6 +23,7 @@ public:
 
 	typedef Os::Radio::node_id_t node_id_t;
 	typedef Os::Radio::block_data_t block_data_t;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::self_t coapradio_t;
 
 	void read_temperature()
 	{
@@ -83,9 +84,9 @@ public:
 		*/
 	}
 
-	void receive_coap( wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
+	void receive_coap( coapradio_t::ReceivedMessage & message )
 	{
-		wiselib::CoapPacket<Os, Os::Radio, wiselib::StaticString>::coap_packet_t & packet = message.message();
+		coapradio_t::coap_packet_t & packet = message.message();
 
 		if( packet.is_request() && packet.uri_path() == temp_uri_path_ )
 		{
@@ -101,7 +102,7 @@ private:
 
 	int recv_callback_id_;
 
-	wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
+	coapradio_t cradio_;
 
 	wiselib::StaticString temp_uri_path_;
 
