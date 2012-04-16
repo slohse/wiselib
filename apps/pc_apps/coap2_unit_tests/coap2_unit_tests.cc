@@ -31,8 +31,6 @@ typedef coapradio_t::coap_packet_t coap_packet_t;
 typedef UnitTestRadio::block_data_t block_data_t;
 typedef UnitTestRadio::node_id_t node_id_t;
 
-typedef coapradio_t::TimerAction TimerAction;
-
 typedef delegate1<void, void*> timer_delegate_t;
 
 //changing output of chars (block_data_t) to numbers
@@ -741,10 +739,10 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 1 );
 
 	BOOST_CHECK_EQUAL( timer_->lastEvent().time_, COAP_ACK_GRACE_PERIOD );
-
-	TimerAction taction = cradio.timers_.at( (size_t) timer_->lastEvent().userdata_ );
-
-	BOOST_CHECK_EQUAL( taction.type_, TIMER_ACK );
+// das funktioniert leider so nicht, der test resultiert auch für
+// ack_timeout anstelle von retransmit_timeout nicht in einem Fehler :/
+//	timer_delegate_t callback = timer_delegate_t::from_method<coapradio_t, &coapradio_t::retransmit_timeout>(&cradio);
+//	BOOST_CHECK_EQUAL( timer_->lastEvent().callback_, callback );
 
 	// cause a timeout on the ACK
 	BOOST_CHECK_EQUAL( radio_->sentMessages() , 1 );
@@ -790,8 +788,8 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule2, FacetsFixture )
 	// new ACK timeout should be present
 	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 1 );
 	BOOST_CHECK_EQUAL( timer_->lastEvent().time_, COAP_ACK_GRACE_PERIOD );
-	TimerAction taction = cradio.timers_.at( (size_t) timer_->lastEvent().userdata_ );
-	BOOST_CHECK_EQUAL( taction.type_, TIMER_ACK );
+//	timer_delegate_t callback = timer_delegate_t::from_method<coapradio_t, &coapradio_t::ack_timeout>(&cradio);
+//	BOOST_CHECK_EQUAL( timer_->lastEvent().callback_, callback );
 	// no message should be sent, as the resource is present, but has not yet
 	// returned a result
 	BOOST_CHECK_EQUAL( radio_->sentMessages() , 0 );
@@ -852,8 +850,8 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule2, FacetsFixture )
 
 	// retransmit timeout should be scheduled
 	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 2 );
-	taction = cradio.timers_.at( (size_t) timer_->lastEvent().userdata_ );
-	BOOST_CHECK_EQUAL( taction.type_, TIMER_RETRANSMIT );
+//	callback = timer_delegate_t::from_method<coapradio_t, &coapradio_t::retransmit_timeout>(&cradio);
+//	BOOST_CHECK_EQUAL( timer_->lastEvent().callback_, callback );
 	BOOST_CHECK_GE(timer_->lastEvent().time_, COAP_RESPONSE_TIMEOUT );
 	BOOST_CHECK_LE(timer_->lastEvent().time_, COAP_MAX_RESPONSE_TIMEOUT );
 
