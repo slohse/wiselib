@@ -32,10 +32,12 @@ namespace wiselib {
 
 /**
  * \brief This class provides an interface to sending CoAP requests and exposing resources via CoAP.
- * This class provides an interface to sending CoAP requests and sharing resources via CoAP.<br>
- * For requesting remote resources have a look at CoapServiceStatic::get, CoapServiceStatic::put(), post(), del() and request()<br>
+ * For requesting remote resources have a look at get(), put(), post(), del() and request()<br>
  * For sharing resources via CoAP have a look at reg_resource_callback() and reply()<br>
- * This implementation implements many basic features of version 9 of the [CoAP draft](https://datatracker.ietf.org/doc/draft-ietf-core-coap/)
+ * This implementation implements many basic features of version 9 of the <a href="https://datatracker.ietf.org/doc/draft-ietf-core-coap/"> CoAP draft</a>
+ * Known Bugs:
+ * - Does not work on iSense JN5148 nodes
+ * - Does not work on iSense JN5139R1 nodes when compiled with size optimization (-Os). Optimization levels -O1 and -O2 work.
  */
 template<typename OsModel_P,
 	typename Radio_P = typename OsModel_P::Radio,

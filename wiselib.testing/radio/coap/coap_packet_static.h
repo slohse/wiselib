@@ -78,12 +78,12 @@ namespace wiselib
 		void init();
 
 		/**
-		 * Takes a stream of data and tries to parse it into the CoapPacketStaticfrom which this method is called
+		 * Takes a stream of data and tries to parse it into the CoapPacketStatic from which this method is called
 		 * @param datastream the serial data to be parsed
 		 * @param length length of the datastream
-		 * @return ::SUCCESS on successful parsing<br>
-		 *         ::ERR_NOMEM if the message is too large to be stored<br>
-		 *         ::ERR_NOT_COAP if the message does not appear to be a CoAP message<br>
+		 * @return CoapPacketStatic::SUCCESS on successful parsing<br>
+		 *         CoapPacketStatic::ERR_NOMEM if the message is too large to be stored<br>
+		 *         CoapPacketStatic::ERR_NOT_COAP if the message does not appear to be a CoAP message<br>
 		 *         ::ERR_WRONG_COAP_VERSION if an incompatible CoAP Version is used<br>
 		 *         ::ERR_OPTIONS_EXCEED_PACKET_LENGTH if the options run out of the packets length<br>
 		 *         ::ERR_UNKNOWN_CRITICAL_OPTION<br>
@@ -382,7 +382,7 @@ namespace wiselib
 
 		/**
 		 * \brief Retrieves more information about packet parsing errors
-		 * When a parsing error occurs the CoapPacketStaticclass stores the CoapCode that should be returned in reply and the option number of the option where the error occured (if it occured during parsing an option)
+		 * When a parsing error occurs the CoapPacketStatic class stores the CoapCode that should be returned in reply and the option number of the option where the error occured (if it occured during parsing an option)
 		 * @param error_code CoapCode that should be returned in reply
 		 * @param error_option option number of the option where the error occured
 		 */
