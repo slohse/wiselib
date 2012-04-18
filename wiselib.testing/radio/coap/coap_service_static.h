@@ -30,6 +30,13 @@
 
 namespace wiselib {
 
+/**
+ * \brief This class provides an interface to sending CoAP requests and exposing resources via CoAP.
+ * This class provides an interface to sending CoAP requests and sharing resources via CoAP.<br>
+ * For requesting remote resources have a look at CoapServiceStatic::get, CoapServiceStatic::put(), post(), del() and request()<br>
+ * For sharing resources via CoAP have a look at reg_resource_callback() and reply()<br>
+ * This implementation implements many basic features of version 9 of the [CoAP draft](https://datatracker.ietf.org/doc/draft-ietf-core-coap/)
+ */
 template<typename OsModel_P,
 	typename Radio_P = typename OsModel_P::Radio,
 	typename Timer_P = typename OsModel_P::Timer,
@@ -175,7 +182,7 @@ template<typename OsModel_P,
 
 		// TODO: comment!!
 		/**
-		 * Sends the Message passed AS IT IS. That means: no sanity checks, no message ID or token generation.
+		 * Sends the %Message passed AS IT IS. That means: no sanity checks, no message ID or token generation.
 		 * Most likely this is NOT what you want, use TODO instead
 		 * @param receiver node ID of the receiver
 		 * @param message Coap Packet to send

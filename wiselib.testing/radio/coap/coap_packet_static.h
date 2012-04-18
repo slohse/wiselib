@@ -78,18 +78,18 @@ namespace wiselib
 		void init();
 
 		/**
-		 * Takes a stream of data and tries to parse it into the CoapPacket from which this method is called
+		 * Takes a stream of data and tries to parse it into the CoapPacketStaticfrom which this method is called
 		 * @param datastream the serial data to be parsed
 		 * @param length length of the datastream
-		 * @return error_code::SUCCESS on successful parsing
-		 *         error_code::ERR_NOMEM if the message is too large to be stored
-		 *         error_code::ERR_NOT_COAP if the message does not appear to be a CoAP message
-		 *         error_code::ERR_WRONG_COAP_VERSION if an incompatible CoAP Version is used
-		 *         error_code::ERR_OPTIONS_EXCEED_PACKET_LENGTH if the options run out of the packets length
-		 *         error_code::ERR_UNKNOWN_CRITICAL_OPTION
-		 *         error_code::ERR_MULTIPLE_OCCURENCES_OF_CRITICAL_OPTION
-		 *         error_code::ERR_EMPTY_STRING_OPTION
-		 *         an unsuccessful parsing attempt may, depending on the type of error, also store additional information about the nature of the failure. This information can be retrieved with ::get_error_context
+		 * @return ::SUCCESS on successful parsing<br>
+		 *         ::ERR_NOMEM if the message is too large to be stored<br>
+		 *         ::ERR_NOT_COAP if the message does not appear to be a CoAP message<br>
+		 *         ::ERR_WRONG_COAP_VERSION if an incompatible CoAP Version is used<br>
+		 *         ::ERR_OPTIONS_EXCEED_PACKET_LENGTH if the options run out of the packets length<br>
+		 *         ::ERR_UNKNOWN_CRITICAL_OPTION<br>
+		 *         ::ERR_MULTIPLE_OCCURENCES_OF_CRITICAL_OPTION<br>
+		 *         ::ERR_EMPTY_STRING_OPTION<br>
+		 *         an unsuccessful parsing attempt may, depending on the type of error, also store additional information about the nature of the failure. This information can be retrieved with get_error_context()
 		 */
 		int parse_message( block_data_t *datastream, size_t length );
 
@@ -100,7 +100,8 @@ namespace wiselib
 		uint8_t version() const;
 
 		/**
-		 * Sets the CoAP version number of the packet. DO NOT set it to anything other than COAP_VERSION unless you know what you are doing!
+		 * Sets the CoAP version number of the packet.<br>
+		 * DO NOT set it to anything other than COAP_VERSION unless you know what you are doing!<br>
 		 * Note: the corresponding field in the CoAP packet is 2 bit wide. Setting it to anything greater than 3 is pointless.
 		 * @param version version number
 		 */
@@ -119,7 +120,7 @@ namespace wiselib
 		void set_type( CoapType type );
 
 		/**
-		 * Returns the code of the packet. Can be a request (1-31), response (64-191) or empty (0). (all other values are reserved)
+		 * Returns the code of the packet. Can be a request (1-31), response (64-191) or empty (0). (all other values are reserved)<br>
 		 * For details refer to the CoAP Code Registry section of the CoAP draft.
 		 * @return code of the message
 		 */
@@ -138,7 +139,7 @@ namespace wiselib
 		bool is_response() const;
 
 		/**
-		 * Sets the code of the packet. Can be a request (1-31), response (64-191) or empty (0). (all other values are reserved)
+		 * Sets the code of the packet. Can be a request (1-31), response (64-191) or empty (0). (all other values are reserved)<br>
 		 * For details refer to the CoAP Code Registry section of the CoAP draft.
 		 * @param code code of the packet
 		 */
@@ -158,17 +159,15 @@ namespace wiselib
 
 		/**
 		 * \brief Returns a uint32_t where every bit that is set indicates the presence of the corresponding option in the packet.
-		 *
-		 * Returns a uint32_t where every bit that is set indicates the presence of the corresponding option in the packet.
-		 * Counting starts at 0, so that shifting can be used and the number of bits shifted is the option number.
-		 * For example:
+		 * Counting starts at 0, so that shifting can be used and the number of bits shifted is the option number.<br>
+		 * For example:<br>
 		 * 0x0000 8204 means that Uri-Query, Uri-Path and Max-Age are set.
 		 * @return a uint32_t where every bit that is set indicates the presence of the corresponding option in the packet.
 		 */
 		uint32_t what_options_are_set() const;
 
 		/**
-		 * Returns the token by which request/response matching can be done.
+		 * Returns the token by which request/response matching can be done.<br>
 		 * If the token option is not set, an zero length OpaqueData object is returned, representing the empty default token.
 		 * @param token reference to OpaqueData object, will contain message token afterwards
 		 */
@@ -202,7 +201,9 @@ namespace wiselib
 		 * Retrieves a list of Query segments for Uri-Query of Location-Query
 		 * @param optnum COAP_OPT_URI_QUERY or COAP_OPT_LOCATION_QUERY
 		 * @param result list where the segments will be stored
-		 * @return SUCCESS on successful retrieval, ERR_OPT_NOT_SET if the option is not set or ERR_METHOD_NOT_APPLICABLE if optnum is something other than those allowed
+		 * @return ::SUCCESS on successful retrieval<br>
+		 *         ::ERR_OPT_NOT_SET if the option is not set<br>
+		 *         ::ERR_METHOD_NOT_APPLICABLE if optnum is something other than those allowed
 		 */
 		template<typename list_t>
 		int get_query_list( CoapOptionNum optnum, list_t &result );
@@ -236,8 +237,8 @@ namespace wiselib
 		 * Sets the payload
 		 * @param data the payload
 		 * @param length payload length
-		 * @return ERR_NOMEM if there is not enough space for data this size
-		 *         SUCCESS otherwise
+		 * @return ::ERR_NOMEM if there is not enough space for data this size<br>
+		 *         ::SUCCESS otherwise
 		 */
 		int set_data( block_data_t* data , size_t length);
 
@@ -245,30 +246,30 @@ namespace wiselib
 		 * Sets the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return SUCCESS on Success
-		 *         ERR_UNKNOWN_OPT when an unknown option number is passed
-		 *         ERR_WRONG_TYPE when the option with the given option number is not of uint type
-		 *         ERR_NOMEM when there is not enough memory to store the option
+		 * @return ::SUCCESS on Success<br>
+		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of uint type<br>
+		 *         ::ERR_NOMEM when there is not enough memory to store the option
 		 */
 		int set_option( CoapOptionNum option_number, uint32_t value );
 		/**
 		 * Sets the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return SUCCESS on Success
-		 *         ERR_UNKNOWN_OPT when an unknown option number is passed
-		 *         ERR_WRONG_TYPE when the option with the given option number is not of string type
-		 *         ERR_NOMEM when there is not enough memory to store the option
+		 * @return ::SUCCESS on Success<br>
+		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of string type<br>
+		 *         ::ERR_NOMEM when there is not enough memory to store the option
 		 */
 		int set_option( CoapOptionNum option_number, const string_t &value );
 		/**
 		 * Sets the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return SUCCESS on Success
-		 *         ERR_UNKNOWN_OPT when an unknown option number is passed
-		 *         ERR_WRONG_TYPE when the option with the given option number is not of opaque type
-		 *         ERR_NOMEM when there is not enough memory to store the option
+		 * @return ::SUCCESS on Success
+		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of opaque type<br>
+		 *         ::ERR_NOMEM when there is not enough memory to store the option
 		 */
 		int set_option( CoapOptionNum option_number, const OpaqueData &value );
 
@@ -276,64 +277,73 @@ namespace wiselib
 		 * Appends the passed value to the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return SUCCESS on Success
-		 *         ERR_UNKNOWN_OPT when an unknown option number is passed
-		 *         ERR_WRONG_TYPE when the option with the given option number is not of uint type
-		 *         ERR_NOMEM when there is not enough memory to store the option
-		 *         ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
+		 * @return ::SUCCESS on Success
+		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of uint type<br>
+		 *         ::ERR_NOMEM when there is not enough memory to store the option<br>
+		 *         ::ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
 		 */
 		int add_option( CoapOptionNum option_number, uint32_t value );
 		/**
 		 * Appends the passed value to the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return SUCCESS on Success
-		 *         ERR_UNKNOWN_OPT when an unknown option number is passed
-		 *         ERR_WRONG_TYPE when the option with the given option number is not of string type
-		 *         ERR_NOMEM when there is not enough memory to store the option
-		 *         ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
+		 * @return ::SUCCESS on Success<br>
+		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of string type<br>
+		 *         ::ERR_NOMEM when there is not enough memory to store the option<br>
+		 *         ::ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
 		 */
 		int add_option( CoapOptionNum option_number, const string_t &value );
 		/**
 		 * Appends the passed value to the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return SUCCESS on Success
-		 *         ERR_UNKNOWN_OPT when an unknown option number is passed
-		 *         ERR_WRONG_TYPE when the option with the given option number is not of opaque type
-		 *         ERR_NOMEM when there is not enough memory to store the option
-		 *         ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
+		 * @return ::SUCCESS on Success<br>
+		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of opaque type<br>
+		 *         ::ERR_NOMEM when there is not enough memory to store the option<br>
+		 *         ::ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
 		 */
 		int add_option( CoapOptionNum option_number, const OpaqueData &value );
 
 		/**
-		 * Retrieves value of an option
+		 * Retrieves the value of an option
 		 * @param option_number option in question
 		 * @param value value of the option
-		 * @return SUCCESS on Success
-		 *         ERR_OPT_NOT_SET if the option is not set
+		 * @return ::SUCCESS on Success<br>
+		 *         ::ERR_OPT_NOT_SET if the option is not set
 		 */
 		int get_option( CoapOptionNum option_number, uint32_t &value );
 		/**
-		 * Retrieves value of an option
+		 * Retrieves the value of an option
 		 * @param option_number option in question
 		 * @param value value of the option
-		 * @return SUCCESS on Success
-		 *         ERR_OPT_NOT_SET if the option is not set
+		 * @return ::SUCCESS on Success<br>
+		 *         ::ERR_OPT_NOT_SET if the option is not set
 		 */
 		int get_option( CoapOptionNum option_number, string_t &value );
 		/**
-		 * Retrieves value of an option
+		 * Retrieves the value of an option
 		 * @param option_number option in question
 		 * @param value value of the option
-		 * @return SUCCESS on Success
-		 *         ERR_OPT_NOT_SET if the option is not set
+		 * @return ::SUCCESS on Success<br>
+		 *         ::ERR_OPT_NOT_SET if the option is not set
 		 */
 		int get_option( CoapOptionNum option_number, OpaqueData &value );
+		/**
+		 * Retrieves the value of all occurences of an option
+		 * @param option_number option in question
+		 * @param values List to store the value in. Has to be a list type for string_t, uint32_t or OpaqueData, depending on the type of the Option
+		 * @return ::SUCCESS on Success<br>
+		 *         ::ERR_OPT_NOT_SET if the option is not set
+		 */
+		template<typename list_t>
+		int get_options( CoapOptionNum option_number, list_t &values );
 
 		/**
 		 * Removes all segments of the option from the packet
-		 * @return always returns SUCCESS
+		 * @return always returns ::SUCCESS
 		 */
 		int remove_option( CoapOptionNum option_number );
 
@@ -346,13 +356,12 @@ namespace wiselib
 		/**
 		 * Sets or unsets If-None-Match
 		 * @param opt_if_none_match new state of If-None-Match
-		 * @return SUCCESS on success
-		 *         ERR_NOMEM when there is not enough memory to store the option
+		 * @return ::SUCCESS on success<br>
+		 *         ::ERR_NOMEM when there is not enough memory to store the option
 		 */
 		int set_opt_if_none_match( bool opt_if_none_match );
 
 		/**
-		 * \brief Returns the number of option *segments* in the packet
 		 * Returns the number of option *segments* (not options) in the packet.
 		 * @return the number of option segments
 		 */
@@ -373,7 +382,7 @@ namespace wiselib
 
 		/**
 		 * \brief Retrieves more information about packet parsing errors
-		 * When a parsing error occurs the CoapPacket class stores the CoapCode that should be returned in reply and the option number of the option where the error occured (if it occured during parsing an option)
+		 * When a parsing error occurs the CoapPacketStaticclass stores the CoapCode that should be returned in reply and the option number of the option where the error occured (if it occured during parsing an option)
 		 * @param error_code CoapCode that should be returned in reply
 		 * @param error_option option number of the option where the error occured
 		 */
@@ -386,14 +395,14 @@ namespace wiselib
 		block_data_t *end_of_options_;
 		size_t data_length_;
 		size_t option_count_;
-		volatile coap_msg_id_t msg_id_;
-		volatile uint8_t type_;
-		volatile uint8_t code_;
+		coap_msg_id_t msg_id_;
+		uint8_t type_;
+		uint8_t code_;
 		// only relevant when an error occurs
 		uint8_t error_code_;
 		uint8_t error_option_;
 		// Coap Version
-		volatile uint8_t version_;
+		uint8_t version_;
 
 		block_data_t* options_[COAP_OPTION_ARRAY_SIZE];
 		// contains Options and Data
@@ -616,7 +625,7 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	void CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_msg_id( uint16_t msg_id )
+	void CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_msg_id( coap_msg_id_t msg_id )
 	{
 		msg_id_ = msg_id;
 	}
@@ -989,13 +998,13 @@ namespace wiselib
 				value = *(raw + pos);
 				++pos;
 			case 3:
-				value = (value << 8) | (raw + pos);
+				value = (value << 8) | *(raw + pos);
 				++pos;
 			case 2:
-				value = (value << 8) | (raw + pos);
+				value = (value << 8) | *(raw + pos);
 				++pos;
 			case 1:
-				value = (value << 8) | (raw + pos);
+				value = (value << 8) | *(raw + pos);
 				++pos;
 			case 0:
 				// do nothing
@@ -1049,6 +1058,105 @@ namespace wiselib
 		size_t value_start = (len >= 15) ? 2 : 1;
 
 		value.set( options_[option_number] + value_start, len );
+
+		return SUCCESS;
+	}
+
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	template<typename list_t>
+	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::get_options( CoapOptionNum option_number, list_t &values )
+	{
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+			return ERR_UNKNOWN_OPT;
+		if( options_[option_number] == NULL )
+			return ERR_OPT_NOT_SET;
+
+		values.clear();
+
+		block_data_t *pos = options_[option_number];
+
+		if( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_STRING )
+		{
+			string_t curr_segment;
+			block_data_t swap;
+			block_data_t *nextpos;
+			size_t value_start;
+			size_t curr_segment_len;
+			do
+			{
+				curr_segment_len = optlen( pos );
+
+				if( curr_segment_len < 15 )
+					value_start = 1;
+				else
+					value_start = 2;
+
+				nextpos = pos + curr_segment_len + value_start;
+				swap = *(nextpos);
+				*nextpos = (block_data_t) '\0';
+				curr_segment = (char*) ( pos + value_start );
+				values.push_back( curr_segment );
+				*nextpos = swap;
+
+				pos = nextpos;
+			} while ( pos < end_of_options_ && ( swap & 0xf0 ) == 0 );
+		}
+		else if( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_UINT )
+		{
+			uint32_t curr_value;
+			size_t len;
+			size_t offset;
+			do
+			{
+				curr_value = 0;
+				len = pos & 0x0f;
+				offset = 1;
+
+				switch( len )
+				{
+				case 4:
+					curr_value = *(pos + offset);
+					++offset;
+				case 3:
+					curr_value = (curr_value << 8) | *(pos + offset);
+					++offset;
+				case 2:
+					curr_value = (curr_value << 8) | *(pos + offset);
+					++offset;
+				case 1:
+					curr_value = (curr_value << 8) | *(pos + offset);
+					++offset;
+				case 0:
+					// do nothing
+					break;
+				default:
+					// uint option longer than 4. SHOULD NOT HAPPEN!!!
+					return ERR_OPT_TOO_LONG;
+				}
+				values.push_back( curr_value );
+				pos += offset;
+			} while ( pos < end_of_options_ && ( *pos & 0xf0 ) == 0 );
+		}
+		else if( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_OPAQUE )
+		{
+			OpaqueData curr_value;
+			do
+			{
+				size_t len = optlen( pos );
+				size_t value_start = (len >= 15) ? 2 : 1;
+
+				curr_value.set( pos + value_start, len );
+				values.push_back( curr_value );
+				pos += value_start + len;
+			} while ( pos < end_of_options_ && ( *pos & 0xf0 ) == 0 );
+		}
+		else
+		{
+			return ERR_METHOD_NOT_APPLICABLE;
+		}
 
 		return SUCCESS;
 	}
@@ -1207,8 +1315,7 @@ namespace wiselib
 	{
 		// header (4 bytes) + options + payload
 		return (size_t) ( 4 +
-		         ( end_of_options_ - storage_ ) +
-		         ( storage_ + ( storage_size_ ) - payload_ ));
+		         ( end_of_options_ - storage_ ) + data_length_ );
 	}
 
 	template<typename OsModel_P,
@@ -1235,7 +1342,7 @@ namespace wiselib
 		len += (size_t) (end_of_options_ - storage_);
 		memcpy( datastream + len,
 		        payload_, data_length_ );
-		len += (size_t) ((storage_ + storage_size_) - payload_ );
+		len += data_length_;
 
 		return len;
 	}
