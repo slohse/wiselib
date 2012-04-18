@@ -193,7 +193,7 @@ namespace wiselib
 
 		/**
 		 * Sets Uri-Query value
-		 * @param path new Uri-Query
+		 * @param query new Uri-Query
 		 */
 		int set_uri_query( string_t &query );
 
@@ -375,7 +375,7 @@ namespace wiselib
 
 		/**
 		 * Serializes the packet so it can be sent over the radio.
-		 * @param pointer to where the serialized packet will be written.
+		 * @param datastream to where the serialized packet will be written.
 		 * @return length of the packet
 		 */
 		size_t serialize( block_data_t *datastream ) const;
