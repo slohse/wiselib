@@ -84,11 +84,11 @@ namespace wiselib
 		 * @return CoapPacketStatic::SUCCESS on successful parsing<br>
 		 *         CoapPacketStatic::ERR_NOMEM if the message is too large to be stored<br>
 		 *         CoapPacketStatic::ERR_NOT_COAP if the message does not appear to be a CoAP message<br>
-		 *         ::ERR_WRONG_COAP_VERSION if an incompatible CoAP Version is used<br>
-		 *         ::ERR_OPTIONS_EXCEED_PACKET_LENGTH if the options run out of the packets length<br>
-		 *         ::ERR_UNKNOWN_CRITICAL_OPTION<br>
-		 *         ::ERR_MULTIPLE_OCCURENCES_OF_CRITICAL_OPTION<br>
-		 *         ::ERR_EMPTY_STRING_OPTION<br>
+		 *         CoapPacketStatic::ERR_WRONG_COAP_VERSION if an incompatible CoAP Version is used<br>
+		 *         CoapPacketStatic::ERR_OPTIONS_EXCEED_PACKET_LENGTH if the options run out of the packets length<br>
+		 *         CoapPacketStatic::ERR_UNKNOWN_CRITICAL_OPTION<br>
+		 *         CoapPacketStatic::ERR_MULTIPLE_OCCURENCES_OF_CRITICAL_OPTION<br>
+		 *         CoapPacketStatic::ERR_EMPTY_STRING_OPTION<br>
 		 *         an unsuccessful parsing attempt may, depending on the type of error, also store additional information about the nature of the failure. This information can be retrieved with get_error_context()
 		 */
 		int parse_message( block_data_t *datastream, size_t length );
@@ -201,9 +201,9 @@ namespace wiselib
 		 * Retrieves a list of Query segments for Uri-Query of Location-Query
 		 * @param optnum COAP_OPT_URI_QUERY or COAP_OPT_LOCATION_QUERY
 		 * @param result list where the segments will be stored
-		 * @return ::SUCCESS on successful retrieval<br>
-		 *         ::ERR_OPT_NOT_SET if the option is not set<br>
-		 *         ::ERR_METHOD_NOT_APPLICABLE if optnum is something other than those allowed
+		 * @return CoapPacketStatic::SUCCESS on successful retrieval<br>
+		 *         CoapPacketStatic::ERR_OPT_NOT_SET if the option is not set<br>
+		 *         CoapPacketStatic::ERR_METHOD_NOT_APPLICABLE if optnum is something other than those allowed
 		 */
 		template<typename list_t>
 		int get_query_list( CoapOptionNum optnum, list_t &result );
@@ -237,8 +237,8 @@ namespace wiselib
 		 * Sets the payload
 		 * @param data the payload
 		 * @param length payload length
-		 * @return ::ERR_NOMEM if there is not enough space for data this size<br>
-		 *         ::SUCCESS otherwise
+		 * @return CoapPacketStatic::ERR_NOMEM if there is not enough space for data this size<br>
+		 *         CoapPacketStatic::SUCCESS otherwise
 		 */
 		int set_data( block_data_t* data , size_t length);
 
@@ -246,30 +246,30 @@ namespace wiselib
 		 * Sets the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return ::SUCCESS on Success<br>
-		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
-		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of uint type<br>
-		 *         ::ERR_NOMEM when there is not enough memory to store the option
+		 * @return CoapPacketStatic::SUCCESS on Success<br>
+		 *         CoapPacketStatic::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         CoapPacketStatic::ERR_WRONG_TYPE when the option with the given option number is not of uint type<br>
+		 *         CoapPacketStatic::ERR_NOMEM when there is not enough memory to store the option
 		 */
 		int set_option( CoapOptionNum option_number, uint32_t value );
 		/**
 		 * Sets the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return ::SUCCESS on Success<br>
-		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
-		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of string type<br>
-		 *         ::ERR_NOMEM when there is not enough memory to store the option
+		 * @return CoapPacketStatic::SUCCESS on Success<br>
+		 *         CoapPacketStatic::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         CoapPacketStatic::ERR_WRONG_TYPE when the option with the given option number is not of string type<br>
+		 *         CoapPacketStatic::ERR_NOMEM when there is not enough memory to store the option
 		 */
 		int set_option( CoapOptionNum option_number, const string_t &value );
 		/**
 		 * Sets the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return ::SUCCESS on Success
-		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
-		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of opaque type<br>
-		 *         ::ERR_NOMEM when there is not enough memory to store the option
+		 * @return CoapPacketStatic::SUCCESS on Success<br>
+		 *         CoapPacketStatic::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         CoapPacketStatic::ERR_WRONG_TYPE when the option with the given option number is not of opaque type<br>
+		 *         CoapPacketStatic::ERR_NOMEM when there is not enough memory to store the option
 		 */
 		int set_option( CoapOptionNum option_number, const OpaqueData &value );
 
@@ -277,33 +277,33 @@ namespace wiselib
 		 * Appends the passed value to the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return ::SUCCESS on Success
-		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
-		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of uint type<br>
-		 *         ::ERR_NOMEM when there is not enough memory to store the option<br>
-		 *         ::ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
+		 * @return CoapPacketStatic::SUCCESS on Success<br>
+		 *         CoapPacketStatic::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         CoapPacketStatic::ERR_WRONG_TYPE when the option with the given option number is not of uint type<br>
+		 *         CoapPacketStatic::ERR_NOMEM when there is not enough memory to store the option<br>
+		 *         CoapPacketStatic::ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
 		 */
 		int add_option( CoapOptionNum option_number, uint32_t value );
 		/**
 		 * Appends the passed value to the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return ::SUCCESS on Success<br>
-		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
-		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of string type<br>
-		 *         ::ERR_NOMEM when there is not enough memory to store the option<br>
-		 *         ::ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
+		 * @return CoapPacketStatic::SUCCESS on Success<br>
+		 *         CoapPacketStatic::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         CoapPacketStatic::ERR_WRONG_TYPE when the option with the given option number is not of string type<br>
+		 *         CoapPacketStatic::ERR_NOMEM when there is not enough memory to store the option<br>
+		 *         CoapPacketStatic::ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
 		 */
 		int add_option( CoapOptionNum option_number, const string_t &value );
 		/**
 		 * Appends the passed value to the option with the given option number
 		 * @param option_number Option to set
 		 * @param value new value of the option
-		 * @return ::SUCCESS on Success<br>
-		 *         ::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
-		 *         ::ERR_WRONG_TYPE when the option with the given option number is not of opaque type<br>
-		 *         ::ERR_NOMEM when there is not enough memory to store the option<br>
-		 *         ::ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
+		 * @return CoapPacketStatic::SUCCESS on Success<br>
+		 *         CoapPacketStatic::ERR_UNKNOWN_OPT when an unknown option number is passed<br>
+		 *         CoapPacketStatic::ERR_WRONG_TYPE when the option with the given option number is not of opaque type<br>
+		 *         CoapPacketStatic::ERR_NOMEM when there is not enough memory to store the option<br>
+		 *         CoapPacketStatic::ERR_MULTIPLE_OCCURENCES_OF_OPTION if the option is already set and not allowed to occur multiple times
 		 */
 		int add_option( CoapOptionNum option_number, const OpaqueData &value );
 
@@ -311,39 +311,39 @@ namespace wiselib
 		 * Retrieves the value of an option
 		 * @param option_number option in question
 		 * @param value value of the option
-		 * @return ::SUCCESS on Success<br>
-		 *         ::ERR_OPT_NOT_SET if the option is not set
+		 * @return CoapPacketStatic::SUCCESS on Success<br>
+		 *         CoapPacketStatic::ERR_OPT_NOT_SET if the option is not set
 		 */
 		int get_option( CoapOptionNum option_number, uint32_t &value );
 		/**
 		 * Retrieves the value of an option
 		 * @param option_number option in question
 		 * @param value value of the option
-		 * @return ::SUCCESS on Success<br>
-		 *         ::ERR_OPT_NOT_SET if the option is not set
+		 * @return CoapPacketStatic::SUCCESS on Success<br>
+		 *         CoapPacketStatic::ERR_OPT_NOT_SET if the option is not set
 		 */
 		int get_option( CoapOptionNum option_number, string_t &value );
 		/**
 		 * Retrieves the value of an option
 		 * @param option_number option in question
 		 * @param value value of the option
-		 * @return ::SUCCESS on Success<br>
-		 *         ::ERR_OPT_NOT_SET if the option is not set
+		 * @return CoapPacketStatic::SUCCESS on Success<br>
+		 *         CoapPacketStatic::ERR_OPT_NOT_SET if the option is not set
 		 */
 		int get_option( CoapOptionNum option_number, OpaqueData &value );
 		/**
 		 * Retrieves the value of all occurences of an option
 		 * @param option_number option in question
 		 * @param values List to store the value in. Has to be a list type for string_t, uint32_t or OpaqueData, depending on the type of the Option
-		 * @return ::SUCCESS on Success<br>
-		 *         ::ERR_OPT_NOT_SET if the option is not set
+		 * @return CoapPacketStatic::SUCCESS on Success<br>
+		 *         CoapPacketStatic::ERR_OPT_NOT_SET if the option is not set
 		 */
 		template<typename list_t>
 		int get_options( CoapOptionNum option_number, list_t &values );
 
 		/**
 		 * Removes all segments of the option from the packet
-		 * @return always returns ::SUCCESS
+		 * @return always returns CoapPacketStatic::SUCCESS
 		 */
 		int remove_option( CoapOptionNum option_number );
 
@@ -356,8 +356,8 @@ namespace wiselib
 		/**
 		 * Sets or unsets If-None-Match
 		 * @param opt_if_none_match new state of If-None-Match
-		 * @return ::SUCCESS on success<br>
-		 *         ::ERR_NOMEM when there is not enough memory to store the option
+		 * @return CoapPacketStatic::SUCCESS on success<br>
+		 *         CoapPacketStatic::ERR_NOMEM when there is not enough memory to store the option
 		 */
 		int set_opt_if_none_match( bool opt_if_none_match );
 
