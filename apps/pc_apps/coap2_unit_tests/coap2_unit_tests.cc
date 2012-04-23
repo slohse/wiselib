@@ -376,7 +376,18 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 	size_t packet_serialize_length_expected;
 	size_t packet_serialize_length_actual;
 
-	packet.set_option( COAP_OPT_MAX_AGE, 0x12345678 );
+	uint32_t four_bytes1 = 0x12345678;
+	uint32_t four_bytes2 = 0x12000000;
+	uint32_t three_bytes = 0x800000;
+	uint32_t two_bytes = 0x0300;
+	uint32_t one_byte = 0x05;
+	uint32_t zero = 0;
+
+	uint32_t actual_value;
+
+	packet.set_option( COAP_OPT_MAX_AGE, four_bytes1 );
+	packet.get_option( COAP_OPT_MAX_AGE, actual_value );
+	BOOST_CHECK_EQUAL( four_bytes1, actual_value );
 
 	block_data_t packet_expected[ ] = { 0x51, COAP_CODE_EMPTY, 0x00, 0x00,
 	                    0x24, 0x12, 0x34, 0x56, 0x78 };
@@ -388,7 +399,10 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 			packet_expected, packet_expected + packet_serialize_length_expected );
 
-	packet.set_option( COAP_OPT_MAX_AGE, 0x12000000 );
+	packet.set_option( COAP_OPT_MAX_AGE, four_bytes2 );
+	packet.get_option( COAP_OPT_MAX_AGE, actual_value );
+	BOOST_CHECK_EQUAL( four_bytes2, actual_value );
+
 	packet_expected[6] = 0;
 	packet_expected[7] = 0;
 	packet_expected[8] = 0;
@@ -399,7 +413,10 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 			packet_expected, packet_expected + packet_serialize_length_expected );
 
-	packet.set_option( COAP_OPT_MAX_AGE, 0x800000 );
+	packet.set_option( COAP_OPT_MAX_AGE, three_bytes );
+	packet.get_option( COAP_OPT_MAX_AGE, actual_value );
+	BOOST_CHECK_EQUAL( three_bytes, actual_value );
+
 	packet_expected[4] = 0x23;
 	packet_expected[5] = 0x80;
 	packet_expected[6] = 0;
@@ -412,7 +429,10 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 			packet_expected, packet_expected + packet_serialize_length_expected );
 
-	packet.set_option( COAP_OPT_MAX_AGE, 0x0300 );
+	packet.set_option( COAP_OPT_MAX_AGE, two_bytes );
+	packet.get_option( COAP_OPT_MAX_AGE, actual_value );
+	BOOST_CHECK_EQUAL( two_bytes, actual_value );
+
 	packet_expected[4] = 0x22;
 	packet_expected[5] = 0x03;
 	packet_expected[6] = 0;
@@ -424,7 +444,10 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 			packet_expected, packet_expected + packet_serialize_length_expected );
 
-	packet.set_option( COAP_OPT_MAX_AGE, 0x05 );
+	packet.set_option( COAP_OPT_MAX_AGE, one_byte );
+	packet.get_option( COAP_OPT_MAX_AGE, actual_value );
+	BOOST_CHECK_EQUAL( one_byte, actual_value );
+
 	packet_expected[4] = 0x21;
 	packet_expected[5] = 0x05;
 	packet_serialize_length_expected = 6;
@@ -435,7 +458,10 @@ BOOST_FIXTURE_TEST_CASE( uint_options, FacetsFixture )
 	BOOST_CHECK_EQUAL_COLLECTIONS( packet_actual, packet_actual + packet_serialize_length_expected,
 			packet_expected, packet_expected + packet_serialize_length_expected );
 
-	packet.set_option( COAP_OPT_MAX_AGE, 0 );
+	packet.set_option( COAP_OPT_MAX_AGE, zero );
+	packet.get_option( COAP_OPT_MAX_AGE, actual_value );
+	BOOST_CHECK_EQUAL( zero, actual_value );
+
 	packet_expected[4] = 0x20;
 	packet_serialize_length_expected = 5;
 
