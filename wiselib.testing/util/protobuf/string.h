@@ -63,10 +63,11 @@ class String {
       
       template<typename string_t>
       static void write(buffer_t& buffer, string_t v) {
-         write(buffer, v, v.size());
+         write(buffer, v.data(), v.size());
       }
-         
-      static void write(buffer_t& buffer, const char* v, int_t l) {
+      
+      template<typename char_t>
+      static void write(buffer_t& buffer, const char_t* v, int_t l) {
          intrw_t::write(buffer, l);
          for(int_t i=0; i<l; i++) {
             byterw_t::write(buffer, v[i]);
@@ -77,7 +78,6 @@ class String {
       static void read(buffer_t& buffer, string_t& out) {
          int_t l;
          intrw_t::read(buffer, l);
-         int_t p = out.size();
          out.resize(out.size() + l);
          for(int_t i=0; i<l; i++) {
             byterw_t::read(buffer, out[i]);
