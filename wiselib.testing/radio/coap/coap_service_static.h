@@ -396,6 +396,10 @@ template<typename OsModel_P,
 
 		/**
 		 * Sends a reply to a received message.
+		 * @param req_msg received message that triggered this reply
+		 * @param payload body of the reply
+		 * @param payload_length length of the body
+		 * @param code Code of the reply, COAP_CODE_CONTENT by default
 		 */
 		coap_packet_t* reply( ReceivedMessage& req_msg,
 				uint8_t* payload,
