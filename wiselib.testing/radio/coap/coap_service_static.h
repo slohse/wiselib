@@ -868,9 +868,7 @@ template<typename OsModel_P,
 
 				coap_packet_t packet;
 
-				int err_code = packet.parse_message( data + msg_id_t_size, len - msg_id_t_size, debug_ );
-				debug_->debug( "Node %x -- CoapService::receive> version %x, type %x, code %x, msg_id %x\n",
-								id(), (int) packet.version(), (uint32_t) packet.type(), packet.code(), packet.msg_id() );
+				int err_code = packet.parse_message( data + msg_id_t_size, len - msg_id_t_size );
 
 				if( err_code == SUCCESS )
 				{
