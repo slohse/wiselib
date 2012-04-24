@@ -6,8 +6,8 @@
 #include "external_interface/pc/pc_timer.h"
 
 #include "util/pstl/static_string.h"
-#include "radio/coap/coap_packet.h"
-#include "radio/coap/coapradio.h"
+#include "radio/coap/coap_packet_static.h"
+#include "radio/coap/coap_service_static.h"
 
 #include "udp4radio.h"
 #include "ipv4_socket.h"
@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
 
 	UDP4Radio<Os> *udpradio = new UDP4Radio<Os>();
 
-	typedef CoapRadio<Os, UDP4Radio<Os>, Os::Timer, Os::Debug, Os::Rand, string_t> coap_radio_t;
+	typedef CoapServiceStatic<Os, UDP4Radio<Os>, Os::Timer, Os::Debug, Os::Rand> coap_radio_t;
 
 	coap_radio_t cradio_;
 
@@ -122,12 +122,15 @@ int main(int argc, char** argv) {
 
 		if (n < 0)
 		{
-			cerr << "ERROR reading from socket, " << "\n";
-			exit(EXIT_FAILURE);
+			cerr << "ERROR reading from socket, " << n << ", " << strerror(errno) << "\n";
+			if( errno != EINTR )
+				exit(EXIT_FAILURE);
 		}
 		printf("received %i Bytes:\n",n);
 
-		IPv4Socket sender( cli_addr.sin_addr.s_addr, cli_addr.sin_port );
+		IPv4Socket sender_ipv4( cli_addr.sin_addr.s_addr, cli_addr.sin_port );
+		size_t sender = udpradio->add_correspondent(sender_ipv4);
+		cout << "Correspondent Index " << sender << "\n";
 		udpradio->notify_receivers( sender, n, (UDP4Radio<Os>::block_data_t *) buffer );
 	}
 	

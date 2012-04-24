@@ -77,8 +77,10 @@ public:
 		timer_ = &wiselib::FacetProvider<Os, Os::Timer>::get_facet( value );
 		debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 		clock_ = &wiselib::FacetProvider<Os, Os::Clock>::get_facet( value );
-		//
+		cservice_.init( *radio_, *timer_, *debug_, *rand_ );
+		cservice_.enable_radio();
 		measurement_counter_ = 0;
+		//
 
 	}
 
