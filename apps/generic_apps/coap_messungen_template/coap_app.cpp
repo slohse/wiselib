@@ -43,13 +43,13 @@ public:
 		switch( measurement_counter_ % 5 )
 		{
 		case 4:
-			debug("%i", measurements_[i] );
+			debug_->debug("%i", measurements_[i] );
 		case 3:
-			debug("%i", measurements_[i - 1] );
+			debug_->debug("%i", measurements_[i - 1] );
 		case 2:
-			debug("%i", measurements_[i - 2] );
+			debug_->debug("%i", measurements_[i - 2] );
 		case 1:
-			debug("%i", measurements_[i - 3] );
+			debug_->debug("%i", measurements_[i - 3] );
 		}
 	}
 
@@ -61,8 +61,8 @@ public:
 	void tock()
 	{
 		time_t now = clock_->time();
-		uint16_t duration = ( ( clock->seconds( now ) - clock->seconds( tick_ ) ) * 1000 )
-				+ ( clock->milliseconds( now ) - clock->milliseconds( tick_ ) );
+		uint16_t duration = ( ( clock_->seconds( now ) - clock_->seconds( tick_ ) ) * 1000 )
+				+ ( clock_->milliseconds( now ) - clock_->milliseconds( tick_ ) );
 		measurements_[measurement_counter_] = duration;
 		++measurement_counter_;
 		if( measurement_counter_ >= NUM_MEASUREMENTS )
@@ -94,7 +94,7 @@ public:
 
 	void broadcast_loop( void* counter )
 	{
-		if( measurement_counter_ == (uint16_t) counter )
+		if( measurement_counter_ == (uint32_t) counter )
 		{
 			measurements_[measurement_counter_] = -1;
 			++measurement_counter_;
