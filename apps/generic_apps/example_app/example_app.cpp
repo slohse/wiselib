@@ -19,8 +19,8 @@ class ExampleApplication
 
          radio_->reg_recv_callback<ExampleApplication,
                                    &ExampleApplication::receive_radio_message>( this );
-         timer_->set_timer<ExampleApplication,
-                           &ExampleApplication::broadcast_loop>( 5000, this, 0 );
+//         timer_->set_timer<ExampleApplication,
+//                           &ExampleApplication::broadcast_loop>( 5000, this, 0 );
       }
       // --------------------------------------------------------------------
       void broadcast_loop( void* )

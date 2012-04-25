@@ -57,6 +57,7 @@ public:
 
 		if( packet.is_request() && packet.uri_path() == temp_uri_path_ )
 		{
+//			debug_->debug( "node %x > received request for temperature\n", radio_->id() );
 			cservice_.reply( message, (uint8_t*) temperature_str_, temperature_str_len_ );
 		}
 	}
