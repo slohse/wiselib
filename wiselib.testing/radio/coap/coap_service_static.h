@@ -293,11 +293,11 @@ template<typename OsModel_P,
 		 */
 		template<class T, void (T::*TMethod)(ReceivedMessage&)>
 		coap_packet_t* get(node_id_t receiver,
-					string_t uri_path,
-					string_t uri_query,
+					const string_t &uri_path,
+					const string_t &uri_query,
 					T *callback,
 					bool confirmable = false,
-					string_t uri_host = string_t(),
+					const string_t &uri_host = string_t(),
 					uint16_t uri_port = COAP_STD_PORT);
 
 		/**
@@ -315,13 +315,13 @@ template<typename OsModel_P,
 		 */
 		template<class T, void (T::*TMethod)(ReceivedMessage&)>
 		coap_packet_t* put(node_id_t receiver,
-					string_t uri_path,
-					string_t uri_query,
+					const string_t &uri_path,
+					const string_t &uri_query,
 					T *callback,
 					uint8_t* payload = NULL,
 					size_t payload_length = 0,
 					bool confirmable = false,
-					string_t uri_host = string_t(),
+					const string_t &uri_host = string_t(),
 					uint16_t uri_port = COAP_STD_PORT);
 
 		/**
@@ -339,13 +339,13 @@ template<typename OsModel_P,
 		 */
 		template<class T, void (T::*TMethod)(ReceivedMessage&)>
 		coap_packet_t* post(node_id_t receiver,
-					string_t uri_path,
-					string_t uri_query,
+					const string_t &uri_path,
+					const string_t &uri_query,
 					T *callback,
 					uint8_t* payload = NULL,
 					size_t payload_length = 0,
 					bool confirmable = false,
-					string_t uri_host = string_t(),
+					const string_t &uri_host = string_t(),
 					uint16_t uri_port = COAP_STD_PORT);
 
 		/**
@@ -361,11 +361,11 @@ template<typename OsModel_P,
 		 */
 		template<class T, void (T::*TMethod)(ReceivedMessage&)>
 		coap_packet_t* del(node_id_t receiver,
-					string_t uri_path,
-					string_t uri_query,
+					const string_t &uri_path,
+					const string_t &uri_query,
 					T *callback,
 					bool confirmable = false,
-					string_t uri_host = string_t(),
+					const string_t &uri_host = string_t(),
 					uint16_t uri_port = COAP_STD_PORT);
 
 		/**
@@ -385,13 +385,13 @@ template<typename OsModel_P,
 		template<class T, void (T::*TMethod)(ReceivedMessage&)>
 		coap_packet_t* request(node_id_t receiver,
 					CoapCode code,
-					string_t uri_path,
-					string_t uri_query,
+					const string_t &uri_path,
+					const string_t &uri_query,
 					T *callback,
 					uint8_t* payload = NULL,
 					size_t payload_length = 0,
 					bool confirmable = false,
-					string_t uri_host = string_t(),
+					const string_t &uri_host = string_t(),
 					uint16_t uri_port = COAP_STD_PORT);
 
 		/**
@@ -1029,11 +1029,11 @@ template<typename OsModel_P,
 			typename OsModel_P::size_t resources_list_size_>
 	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
 	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::get(node_id_t receiver,
-			string_t uri_path,
-			string_t uri_query,
+			const string_t &uri_path,
+			const string_t &uri_query,
 			T *callback,
 			bool confirmable,
-			string_t uri_host,
+			const string_t &uri_host,
 			uint16_t uri_port)
 	{
 		return request<T, TMethod>( receiver, COAP_CODE_GET ,uri_path, uri_query, callback, NULL, 0, confirmable, uri_host, uri_port );
@@ -1050,13 +1050,13 @@ template<typename OsModel_P,
 			typename OsModel_P::size_t resources_list_size_>
 	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
 	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::put(node_id_t receiver,
-			string_t uri_path,
-			string_t uri_query,
+			const string_t &uri_path,
+			const string_t &uri_query,
 			T *callback,
 			uint8_t* payload,
 			size_t payload_length,
 			bool confirmable,
-			string_t uri_host,
+			const string_t &uri_host,
 			uint16_t uri_port)
 	{
 		return request<T, TMethod>( receiver, COAP_CODE_PUT ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
@@ -1073,13 +1073,13 @@ template<typename OsModel_P,
 			typename OsModel_P::size_t resources_list_size_>
 	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
 	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::post(node_id_t receiver,
-			string_t uri_path,
-			string_t uri_query,
+			const string_t &uri_path,
+			const string_t &uri_query,
 			T *callback,
 			uint8_t* payload,
 			size_t payload_length,
 			bool confirmable,
-			string_t uri_host,
+			const string_t &uri_host,
 			uint16_t uri_port)
 	{
 		return request<T, TMethod>( receiver, COAP_CODE_POST ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
@@ -1096,11 +1096,11 @@ template<typename OsModel_P,
 			typename OsModel_P::size_t resources_list_size_>
 	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
 	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::del(node_id_t receiver,
-			string_t uri_path,
-			string_t uri_query,
+			const string_t &uri_path,
+			const string_t &uri_query,
 			T *callback,
 			bool confirmable,
-			string_t uri_host,
+			const string_t &uri_host,
 			uint16_t uri_port)
 	{
 		return request<T, TMethod>( receiver, COAP_CODE_DELETE ,uri_path, uri_query, callback, NULL, 0, confirmable, uri_host, uri_port );
@@ -1118,13 +1118,13 @@ template<typename OsModel_P,
 	template <class T, void (T::*TMethod)( typename CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::ReceivedMessage& ) >
 	typename CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t * CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, sent_list_size_, received_list_size_, resources_list_size_>::request(node_id_t receiver,
 				CoapCode code,
-				string_t uri_path,
-				string_t uri_query,
+				const string_t &uri_path,
+				const string_t &uri_query,
 				T *callback,
 				uint8_t* payload,
 				size_t payload_length,
 				bool confirmable,
-				string_t uri_host,
+				const string_t &uri_host,
 				uint16_t uri_port)
 	{
 		coap_packet_t pack;
@@ -1144,7 +1144,7 @@ template<typename OsModel_P,
 
 		confirmable ? pack.set_type( COAP_MSG_TYPE_CON ) : pack.set_type( COAP_MSG_TYPE_NON );
 
-		if( uri_host != string_t() )
+		if( string_t() != uri_host  )
 		{
 			pack.set_option( COAP_OPT_URI_HOST, uri_host );
 		}

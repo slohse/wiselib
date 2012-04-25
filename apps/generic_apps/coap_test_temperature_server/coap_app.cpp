@@ -1,7 +1,6 @@
 /*
  * Simple Wiselib Example
  */
-#define DEBUG_COAPRADIO_TEST_XX
 #include "external_interface/external_interface.h"
 
 #include "radio/coap/coap_packet_static.h"
@@ -10,10 +9,6 @@
 #include "util/pstl/static_string.h"
 
 #include "stdlib.h"
-#include "string.h"
-
-#define COAP_APP_DEBUG
-
 
 typedef wiselib::OSMODEL Os;
 
@@ -42,7 +37,7 @@ public:
 
 		temperature_ = -5;
 		temperature_str_len_ = sprintf( temperature_str_, "%i", temperature_ );
-		//
+
 		debug_->debug( "node %x > Temperature CoAP Service booting\n", radio_->id() );
 
 		temp_uri_path_ = wiselib::StaticString("temperature");
