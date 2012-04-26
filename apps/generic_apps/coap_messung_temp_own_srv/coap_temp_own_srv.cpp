@@ -3,6 +3,8 @@
  */
 #include "external_interface/external_interface.h"
 
+#define COAP_PREFACE_MSG_ID 1
+
 #include "radio/coap/coap_packet_static.h"
 #include "radio/coap/coap_service_static.h"
 
@@ -16,7 +18,7 @@ class ExampleApplication
 {
 public:
 
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> coap_service_t;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>::coap_packet_t, COAPRADIO_SENT_LIST_SIZE, COAPRADIO_RECEIVED_LIST_SIZE, COAPRADIO_RESOURCES_SIZE> coap_service_t;
 	typedef coap_service_t::ReceivedMessage received_message_t;
 	typedef coap_service_t::coap_packet_t coap_packet_t;
 
