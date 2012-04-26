@@ -50,13 +50,15 @@ namespace wiselib {
  * \brief This class provides an interface to sending CoAP requests and exposing resources via CoAP.
  * For requesting remote resources have a look at get(), put(), post(), del() and request()<br>
  * For sharing resources via CoAP have a look at reg_resource_callback() and reply()<br>
- * Don't forget to call enable_radio() before you do anything else!<br>
+ * Don't forget to call init() and enable_radio() before you do anything else!<br>
  * This implementation implements many basic features of version 9 of the <a href="https://datatracker.ietf.org/doc/draft-ietf-core-coap/"> CoAP draft</a><br>
  * Known Bugs:
  * - Does not work on iSense JN5148 nodes
  * - Does not work on iSense JN5139R1 nodes when compiled with size optimization (-Os). Optimization levels -O1 and -O2 work.
+ * <br>
+ *
  * \tparam String_T String Type, wiselib::StaticString works, wiselib::string_dynamic might work, but hasn't been tested
- * \tparam preface_msg_id_ Determines whether a CoAP Packet starts with the Message ID <br>
+ * \tparam preface_msg_id_ Determines whether a CoAP Packet starts with the message ID <br>
  * 		CoapMsgId - as defined in <a href="https://github.com/ibr-alg/wiselib/wiki/Reserved-message-ids">the Wiselib's Reserved Message IDs</a>
  * \tparam human_readable_errors_ if set to true errors will return a human readable error message in the body. Otherwise the body will contain two int16_t that detail the nature of the error and the option number of the option that caused the error.
  * \tparam coap_packet_t_ type of the coap_packet. Write your own implementation if you like ;) Mainly this parameter is meant to be used for controlling the storage_size_ parameter of CoapPacketStatic
@@ -238,7 +240,6 @@ template<typename OsModel_P,
 		CoapServiceStatic();
 		~CoapServiceStatic();
 
-		int init();
 		int destruct();
 		int init( Radio& radio, Timer& timer, Debug& debug , Rand& rand );
 		int enable_radio();
@@ -283,7 +284,7 @@ template<typename OsModel_P,
 		/**
 		 * Sends an RST in response to the MessageID passed
 		 * @param receiver node ID of the receiver
-		 * @param id Message ID to reset
+		 * @param id message ID to reset
 		 * @return RST message sent
 		 */
 		coap_packet_t* rst( node_id_t receiver, coap_msg_id_t id );
@@ -657,13 +658,6 @@ template<typename OsModel_P,
 	COAP_SERVICE_TEMPLATE_PREFIX
 	int COAP_SERVICE_T::destruct()
 	{
-		return SUCCESS;
-	}
-
-	COAP_SERVICE_TEMPLATE_PREFIX
-	int COAP_SERVICE_T::init()
-	{
-		// TODO: WTF!!!
 		return SUCCESS;
 	}
 
