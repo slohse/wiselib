@@ -3,8 +3,9 @@
  */
 #include "external_interface/external_interface.h"
 
-#include "radio/coap/coap_packet_static.h"
-#include "radio/coap/coap_service_static.h"
+#include "algorithms/coap/coap.h"
+#include "algorithms/coap/packet.h"
+#include "algorithms/coap/resource.h"
 
 #include "util/pstl/static_string.h"
 
@@ -17,10 +18,6 @@ typedef wiselib::OSMODEL Os;
 class ExampleApplication
 {
 public:
-
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> coap_service_t;
-	typedef coap_service_t::ReceivedMessage received_message_t;
-	typedef coap_service_t::coap_packet_t coap_packet_t;
 
 	typedef Os::Radio::node_id_t node_id_t;
 	typedef Os::Radio::block_data_t block_data_t;
@@ -40,6 +37,27 @@ public:
 		debug_->debug("duration %i ms", duration);
 	}
 
+	void send_request()
+	{
+		coap_packet_t packet;
+		char path[] = "temperature";
+		block_data_t buf[100];
+		uint8_t buf_len;
+
+		packet.init();
+		packet.set_type( CON );
+		packet.set_code( PUT );
+		packet.set_mid( mid_++ );
+
+		packet.set_uri_path_len( sizeof( path ) - 1 );
+		packet.set_uri_path( path );
+
+		packet.set_option( URI_PATH );
+		buf_len = packet.packet_to_buffer( buf );
+
+		radio_->send( Os::Radio::BROADCAST_ADDRESS, buf_len, buf );
+	}
+
 	void init( Os::AppMainParameter& value )
 	{
 		radio_ = &wiselib::FacetProvider<Os, Os::Radio>::get_facet( value );
@@ -47,12 +65,17 @@ public:
 		debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
 		clock_ = &wiselib::FacetProvider<Os, Os::Clock>::get_facet( value );
-		cservice_.init( *radio_, *timer_, *debug_, *rand_ );
-		cservice_.enable_radio();
 		measurement_counter_ = 0;
 		//
 
 		server_id_ = 0x2015;
+
+		mid_ = (*rand_)();
+
+		radio_->reg_recv_callback<ExampleApplication, &ExampleApplication::receive_radio_message>( this );
+
+		timer_->set_timer<ExampleApplication,
+							&ExampleApplication::broadcast_loop>( 1000, this, NULL );
 
 	}
 
@@ -63,7 +86,7 @@ public:
 		{
 			debug_->debug("Tick");
 			tick();
-			cservice_.get< ExampleApplication, &ExampleApplication::receive_coap>( server_id_, temp_uri_path_, wiselib::StaticString(), this );
+			send_request();
 			timer_->set_timer<ExampleApplication,
 					&ExampleApplication::broadcast_loop>( 5000, this, NULL );
 		}
@@ -75,14 +98,10 @@ public:
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
-		//         debug_->debug( "received msg at %x from %x\n", radio_->id(), from );
-		//         debug_->debug( "message is %s\n", buf );
+		if( from == server_id_ )
+			tock();
 	}
 
-	void receive_coap( received_message_t & message )
-	{
-		tock();
-	}
 private:
 	Os::Radio::self_pointer_t radio_;
 	Os::Timer::self_pointer_t timer_;
@@ -91,9 +110,10 @@ private:
 	Os::Clock::self_pointer_t clock_;
 
 	node_id_t server_id_;
-	coap_service_t cservice_;
 	time_t tick_;
 	uint16_t measurement_counter_;
+
+	uint16_t mid_;
 
 };
 // --------------------------------------------------------------------------

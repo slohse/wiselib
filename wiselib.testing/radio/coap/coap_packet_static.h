@@ -91,7 +91,7 @@ namespace wiselib
 		 *         CoapPacketStatic::ERR_EMPTY_STRING_OPTION<br>
 		 *         an unsuccessful parsing attempt may, depending on the type of error, also store additional information about the nature of the failure. This information can be retrieved with get_error_context()
 		 */
-		int parse_message( block_data_t *datastream, size_t length, typename OsModel::Debug *debug_ );
+		int parse_message( block_data_t *datastream, size_t length );
 
 		/**
 		 * Returns the CoAP version number of the packet
@@ -189,13 +189,13 @@ namespace wiselib
 		 * Sets Uri-Path value
 		 * @param path new Uri-Path
 		 */
-		int set_uri_path( string_t &path );
+		int set_uri_path( const string_t &path );
 
 		/**
 		 * Sets Uri-Query value
 		 * @param query new Uri-Query
 		 */
-		int set_uri_query( string_t &query );
+		int set_uri_query( const string_t &query );
 
 		/**
 		 * Retrieves a list of Query segments for Uri-Query of Location-Query
@@ -502,13 +502,16 @@ namespace wiselib
 		end_of_options_ = storage_;
 		data_length_ = 0;
 		option_count_ = 0;
+
+		error_code_ = 0;
+		error_option_ = 0;
 	}
 
 	template<typename OsModel_P,
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::parse_message( block_data_t *datastream, size_t length, typename OsModel::Debug *debug_ )
+	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::parse_message( block_data_t *datastream, size_t length )
 	{
 		// clear everything
 		init();
@@ -530,7 +533,6 @@ namespace wiselib
 			size_t option_count = coap_first_byte & 0x0f;
 			code_ = read<OsModel , block_data_t , uint8_t >( datastream +1 );
 			msg_id_ = read<OsModel , block_data_t , coap_msg_id_t >( datastream + 2 );
-			debug_->debug("CoapPacket::parse_message> version %x, type %x, code %x, msg_id %x", version_, type_, code_, msg_id_ );
 
 			memcpy( storage_, datastream + COAP_START_OF_OPTIONS, length - COAP_START_OF_OPTIONS );
 
@@ -729,7 +731,7 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_path( string_t &path )
+	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_path( const string_t &path )
 	{
 		return set_option( COAP_OPT_URI_PATH, path );
 	}
@@ -738,7 +740,7 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_query( string_t &query )
+	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_query( const string_t &query )
 	{
 		return set_option( COAP_OPT_URI_QUERY, query );
 	}

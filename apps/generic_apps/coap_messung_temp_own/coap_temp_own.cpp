@@ -10,7 +10,7 @@
 
 #include "stdlib.h"
 
-#define NUM_MEASUREMENTS 100
+#define NUM_MEASUREMENTS 50
 
 typedef wiselib::OSMODEL Os;
 
@@ -53,11 +53,19 @@ public:
 		//
 
 		server_id_ = 0x2015;
+		temp_uri_path_ = wiselib::StaticString("temperature");
 
+		debug_->debug( "node %x > Starting measurement 'temperature'. Making %i measurements\n", radio_->id(), NUM_MEASUREMENTS );
+
+		timer_->set_timer<ExampleApplication,
+				&ExampleApplication::broadcast_loop>( 1000, this, 0 );
+
+//		radio_->reg_recv_callback<ExampleApplication,
+//				&ExampleApplication::receive_radio_message > ( this );
 	}
 
 	// --------------------------------------------------------------------
-	void broadcast_loop( void* counter )
+	void broadcast_loop( void* )
 	{
 		if( measurement_counter_ < NUM_MEASUREMENTS)
 		{
@@ -75,8 +83,7 @@ public:
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
-		//         debug_->debug( "received msg at %x from %x\n", radio_->id(), from );
-		//         debug_->debug( "message is %s\n", buf );
+		debug_->debug( "received msg at %x from %x, len %i\n", radio_->id(), from, len );
 	}
 
 	void receive_coap( received_message_t & message )
@@ -90,10 +97,13 @@ private:
 	Os::Rand::self_pointer_t rand_;
 	Os::Clock::self_pointer_t clock_;
 
-	node_id_t server_id_;
 	coap_service_t cservice_;
 	time_t tick_;
-	uint16_t measurement_counter_;
+
+	wiselib::StaticString temp_uri_path_;
+	node_id_t server_id_;
+
+	size_t measurement_counter_;
 
 };
 // --------------------------------------------------------------------------

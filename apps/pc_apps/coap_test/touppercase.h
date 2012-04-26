@@ -21,7 +21,6 @@ class ToUpperCase
 public:
 	typedef CoapRadio_P Radio;
 	typedef typename Radio::coap_packet_t coap_packet_t;
-	typedef typename Radio::coap_packet_r coap_packet_r;
 	typedef typename Radio::ReceivedMessage coap_message_t;
 
 	ToUpperCase& operator=( const ToUpperCase &rhs )
@@ -54,9 +53,9 @@ public:
 		radio_ = &radio;
 	}
 
-	void receive_coap( typename Radio::node_id_t from, coap_message_t &message )
+	void receive_coap( coap_message_t &message )
 	{
-		coap_packet_r packet = message.message();
+		coap_packet_t & packet = message.message();
 		cout << "ToUpperCase::receive_coap> Received Code"
 				<< (int) packet.code() << " with "
 				<< packet.data_length() << " Bytes payload\n";
@@ -72,7 +71,7 @@ public:
 			memcpy(reply, payload.data(), payload.length());
 			reply_length = payload.length();
 		}
-		cout << "sending " << reply_length << " bytes in reply: ";
+		cout << "sending " << reply_length << " bytes payload in reply: ";
 		for(size_t m = 0; m < reply_length; ++m )
 		{
 			cout << (int) reply[m] << " ";

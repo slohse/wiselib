@@ -5,11 +5,15 @@
 #include <sys/socket.h>
 #include "ipv4_socket.h"
 
+#include "util/pstl/vector_static.h"
+
 namespace wiselib
 {
+	static const size_t NUM_CORRESPONDENTS = 50;
+
 	template<typename OsModel_P>
 	class UDP4Radio : public RadioBase<OsModel_P,
-		IPv4Socket,
+		size_t,
 		typename OsModel_P::size_t,
 		typename OsModel_P::block_data_t>
 	{
@@ -19,7 +23,7 @@ namespace wiselib
 		typedef UDP4Radio<OsModel> self_type;
 		typedef self_type* self_pointer_t;
 
-		typedef IPv4Socket node_id_t;
+		typedef size_t node_id_t;
 		typedef uint8_t block_data_t;
 		typedef uint16_t message_id_t;
 
@@ -36,6 +40,8 @@ namespace wiselib
 			sock = 0;
 
 			serv_addr = IPv4Socket();
+			corr_index = 0;
+			correspondents.clear();
 		}
 
 		void set_socket( int socket )
@@ -46,7 +52,7 @@ namespace wiselib
 		int enable_radio ()
 		{
 #ifdef DEBUG_COAPRADIO_PC
-		cout << "UDP4Radio::enable_radio";
+		cout << "UDP4Radio::enable_radio\n";
 #endif
 
 			enabled = true;
@@ -62,9 +68,10 @@ namespace wiselib
 			return OsModel::SUCCESS;
 		}
 		
-		int send (node_id_t receiver, size_t len, block_data_t *data)
+		int send (node_id_t receiver_index, size_t len, block_data_t *data)
 		{
 			cout << "UDP4Radio::send>\n";
+			IPv4Socket receiver = correspondents.at( receiver_index );
 			sockaddr_in recv_sock;
 			recv_sock.sin_family = AF_INET;
 			recv_sock.sin_port = receiver.port();
@@ -92,10 +99,23 @@ namespace wiselib
 			return serv_addr;
 		}
 
+		node_id_t add_correspondent( IPv4Socket corr )
+		{
+			node_id_t index = corr_index;
+			correspondents.at(index) = corr;
+			++corr_index;
+			if(corr_index == NUM_CORRESPONDENTS)
+				corr_index = 0;
+			return index;
+		}
+
 	private:
 		bool enabled;
 		int sock;
 		node_id_t serv_addr;
+
+		size_t corr_index;
+		vector_static<OsModel, IPv4Socket, NUM_CORRESPONDENTS> correspondents;
 
 	};
 }
