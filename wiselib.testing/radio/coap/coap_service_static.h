@@ -55,6 +55,14 @@ namespace wiselib {
  * Known Bugs:
  * - Does not work on iSense JN5148 nodes
  * - Does not work on iSense JN5139R1 nodes when compiled with size optimization (-Os). Optimization levels -O1 and -O2 work.
+ * \tparam String_T String Type, wiselib::StaticString works, wiselib::string_dynamic might work, but hasn't been tested
+ * \tparam preface_msg_id_ Determines whether a CoAP Packet starts with the Message ID <br>
+ * 		CoapMsgId - as defined in <a href="https://github.com/ibr-alg/wiselib/wiki/Reserved-message-ids">the Wiselib's Reserved Message IDs</a>
+ * \tparam human_readable_errors_ if set to true errors will return a human readable error message in the body. Otherwise the body will contain two int16_t that detail the nature of the error and the option number of the option that caused the error.
+ * \tparam coap_packet_t_ type of the coap_packet. Write your own implementation if you like ;) Mainly this parameter is meant to be used for controlling the storage_size_ parameter of CoapPacketStatic
+ * \tparam sent_list_size_ size of the message buffer that holds messages sent by CoapServiceStatic
+ * \tparam received_list_size_ size of the message buffer that holds messages received by CoapServiceStatic
+ * \tparam resources_list_size_ determines how many resources can be registered at CoapServiceStatic
  */
 template<typename OsModel_P,
 	typename Radio_P = typename OsModel_P::Radio,
@@ -1295,9 +1303,11 @@ template<typename OsModel_P,
 		}
 		else
 		{
-			block_data_t error_description_uint[ sizeof( error ) + sizeof( CoapOptionNum ) ];
-			len = write<OsModel , block_data_t , typeof(error) >( error_description_uint, error );
-			len += write<OsModel , block_data_t , CoapOptionNum >( error_description_uint + len, err_optnum );
+			block_data_t error_description_uint[ 2 * sizeof( int16_t ) ];
+			int16_t transmit_error = (int16_t) error;
+			int16_t transmit_optnum = (int16_t) err_optnum;
+			len = write<OsModel , block_data_t , int16_t >( error_description_uint, transmit_error );
+			len += write<OsModel , block_data_t , int16_t >( error_description_uint + len, transmit_optnum );
 			error_description = error_description_uint;
 		}
 		reply( message, error_description, len, err_coap_code );

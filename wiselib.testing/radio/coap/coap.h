@@ -26,18 +26,8 @@ using namespace std;
 
 // Config Tweaks
 
-// set this to 1 to get human readable error descriptions
-#ifndef COAP_HUMAN_READABLE_ERRORS
-	#define COAP_HUMAN_READABLE_ERRORS	0
-#endif
-
 // maximum length of human readable errors
 static const size_t COAP_ERROR_STRING_LEN = 200;
-
-// set this to 1 to preface messages with CoapMsgId
-#ifndef COAP_PREFACE_MSG_ID
-	#define COAP_PREFACE_MSG_ID		0
-#endif
 
 // size of the storage blob of a coap packet. contains options and payload
 static const size_t COAP_DEFAULT_STORAGE_SIZE = 127;
