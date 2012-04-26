@@ -10,7 +10,7 @@
 
 #include "stdlib.h"
 
-#define NUM_MEASUREMENTS	1000
+#define NUM_MEASUREMENTS	500
 #define MAX_DURATION	25
 #define DISTRIBUTION_SIZE	MAX_DURATION + 2
 
@@ -37,7 +37,6 @@ public:
 	void tock()
 	{
 		time_t now = clock_->time();
-		debug_->debug("Tock");
 		++received_counter_;
 		int duration = ( ( clock_->seconds( now ) - clock_->seconds( tick_ ) ) * 1000 )
 				+ ( clock_->milliseconds( now ) - clock_->milliseconds( tick_ ) );
@@ -80,7 +79,11 @@ public:
 		measurement_counter_ = 0;
 		received_counter_ = 0;
 		max_ = 0;
-		memset(duration_distribution_, 0, DISTRIBUTION_SIZE );
+		for( size_t i = 0; i < DISTRIBUTION_SIZE; ++i)
+		{
+			duration_distribution_[i] = 0;
+		}
+		print_results();
 		//
 
 		server_id_ = 0x2015;
@@ -91,14 +94,14 @@ public:
 		timer_->set_timer<ExampleApplication,
 				&ExampleApplication::broadcast_loop>( 5000, this, 0 );
 
-		radio_->reg_recv_callback<ExampleApplication,
-				&ExampleApplication::receive_radio_message > ( this );
+//		radio_->reg_recv_callback<ExampleApplication,
+//				&ExampleApplication::receive_radio_message > ( this );
 	}
 
 	// --------------------------------------------------------------------
 	void broadcast_loop( void* )
 	{
-		if( received_counter_ < NUM_MEASUREMENTS || measurement_counter_ < ( NUM_MEASUREMENTS * 2))
+		if( received_counter_ < NUM_MEASUREMENTS && measurement_counter_ < ( NUM_MEASUREMENTS * 2))
 		{
 			if( (received_counter_ % 50) == 0)
 			{
@@ -108,7 +111,7 @@ public:
 			tick();
 			cservice_.get< ExampleApplication, &ExampleApplication::receive_coap>( server_id_, temp_uri_path_, wiselib::StaticString(), this );
 			timer_->set_timer<ExampleApplication,
-					&ExampleApplication::broadcast_loop>( 2000, this, NULL );
+					&ExampleApplication::broadcast_loop>( 50, this, NULL );
 		}
 		else
 		{

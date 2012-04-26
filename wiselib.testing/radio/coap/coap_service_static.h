@@ -779,9 +779,12 @@ template<typename OsModel_P,
 		{
 			size_t msg_id_t_size = 0;
 
+			// only relevant if preface_msg_id_ is true
 			message_id_t msg_id = read<OsModel, block_data_t, message_id_t>( data );
-			msg_id_t_size = sizeof( message_id_t );
-
+			if( preface_msg_id_ )
+			{
+				msg_id_t_size = sizeof( message_id_t );
+			}
 			if( ( preface_msg_id_ && msg_id == CoapMsgId ) || !preface_msg_id_ )
 			{
 				coap_packet_t packet;
