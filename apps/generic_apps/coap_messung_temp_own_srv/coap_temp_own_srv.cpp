@@ -18,7 +18,8 @@ class ExampleApplication
 {
 public:
 
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>::coap_packet_t, COAPRADIO_SENT_LIST_SIZE, COAPRADIO_RECEIVED_LIST_SIZE, COAPRADIO_RESOURCES_SIZE> coap_service_t;
+//	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>::coap_packet_t, COAPRADIO_SENT_LIST_SIZE, COAPRADIO_RECEIVED_LIST_SIZE, COAPRADIO_RESOURCES_SIZE> coap_service_t;
+	typedef wiselib::CoapServiceStatic<Os> coap_service_t;
 	typedef coap_service_t::ReceivedMessage received_message_t;
 	typedef coap_service_t::coap_packet_t coap_packet_t;
 
@@ -32,6 +33,7 @@ public:
 		timer_ = &wiselib::FacetProvider<Os, Os::Timer>::get_facet( value );
 		debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
+		value.radio().hardware_radio().set_channel(11);
 		cservice_.init( *radio_, *timer_, *debug_, *rand_ );
 		cservice_.enable_radio();
 
