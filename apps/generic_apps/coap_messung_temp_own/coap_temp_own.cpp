@@ -10,7 +10,7 @@
 
 #include "stdlib.h"
 
-#define NUM_MEASUREMENTS	500
+#define NUM_MEASUREMENTS	50
 #define MAX_DURATION	25
 #define DISTRIBUTION_SIZE	MAX_DURATION + 2
 
@@ -20,7 +20,7 @@ class ExampleApplication
 {
 public:
 
-	typedef wiselib::CoapServiceStatic<Os> coap_service_t;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>, 5, 5, 0 > coap_service_t;
 	typedef coap_service_t::ReceivedMessage received_message_t;
 	typedef coap_service_t::coap_packet_t coap_packet_t;
 
@@ -111,7 +111,7 @@ public:
 			tick();
 			cservice_.get< ExampleApplication, &ExampleApplication::receive_coap>( server_id_, temp_uri_path_, wiselib::StaticString(), this );
 			timer_->set_timer<ExampleApplication,
-					&ExampleApplication::broadcast_loop>( 50, this, NULL );
+					&ExampleApplication::broadcast_loop>( 1000, this, NULL );
 		}
 		else
 		{
@@ -123,10 +123,13 @@ public:
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
 		debug_->debug( "received msg at %x from %x, len %i\n", radio_->id(), from, len );
+		debug_->debug( "%x %x %x %x %x %x %x\n",
+				buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
 	}
 
 	void receive_coap( received_message_t & message )
 	{
+//		debug_->debug("Tock");
 		tock();
 	}
 private:
