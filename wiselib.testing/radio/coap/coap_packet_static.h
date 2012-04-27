@@ -22,7 +22,7 @@
 
 #include "coap.h"
 
-#define SINGLE_OPTION_NO_HEADER		0
+static const size_t SINGLE_OPTION_NO_HEADER = 0;
 
 namespace wiselib
 {

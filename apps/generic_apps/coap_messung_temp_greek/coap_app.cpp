@@ -45,7 +45,7 @@ public:
 		uint8_t buf_len;
 
 		packet.init();
-		packet.set_type( CON );
+		packet.set_type( NON );
 		packet.set_code( PUT );
 		packet.set_mid( mid_++ );
 
