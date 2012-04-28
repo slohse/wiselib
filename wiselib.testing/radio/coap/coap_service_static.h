@@ -424,7 +424,7 @@ template<typename OsModel_P,
 
 		/**
 		 * Sends a reply to a received message.
-		 * @param req_msg received message that triggered this reply
+		 * @param req_msg received message that triggered this reply. Note that it has to be the reference that was passed to the application in the callback. Do not pass a copy here, because it would break mechanisms like piggybacked ACKs and retransmissions.
 		 * @param payload body of the reply
 		 * @param payload_length length of the body
 		 * @param code Code of the reply, COAP_CODE_CONTENT by default
