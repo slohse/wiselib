@@ -40,7 +40,7 @@ public:
 		temperature_ = 23;
 		temperature_str_len_ = sprintf( temperature_str_, "%i", temperature_ );
 
-		debug_->debug( "node %x > Temperature CoAP Service booting\n", radio_->id() );
+//		debug_->debug( "node %x > Temperature CoAP Service booting\n", radio_->id() );
 
 		temp_uri_path_ = wiselib::StaticString("temperature");
 

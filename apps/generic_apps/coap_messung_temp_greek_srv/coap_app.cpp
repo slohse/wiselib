@@ -53,7 +53,7 @@ public:
 		coap_.init( *radio_, *timer_, *debug_, mid_, resources );
 		server_id_ = 0x2015;
 
-		debug_->debug( "node %x > Starting 'temperature' server\n", radio_->id() );
+//		debug_->debug( "node %x > Starting 'temperature' server\n", radio_->id() );
 
 		radio_->reg_recv_callback<ExampleApplication, &ExampleApplication::receive_radio_message>( this );
 

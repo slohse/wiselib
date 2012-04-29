@@ -92,7 +92,7 @@ public:
 		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
 		clock_ = &wiselib::FacetProvider<Os, Os::Clock>::get_facet( value );
 		value.radio().hardware_radio().set_channel(11);
-		measurement_counter_ = 0;
+/*		measurement_counter_ = 0;
 		received_counter_ = 0;
 		max_ = 0;
 		for( size_t i = 0; i < DISTRIBUTION_SIZE; ++i)
@@ -101,14 +101,14 @@ public:
 		}
 		print_results();
 		//
-
+*/
 		server_id_ = 0x2015;
 
 		mid_ = (*rand_)();
 
 		radio_->reg_recv_callback<ExampleApplication, &ExampleApplication::receive_radio_message>( this );
 
-		debug_->debug( "node %x > Starting measurement 'temperature'. Making %i measurements, starting in 5 seconds\n", radio_->id(), NUM_MEASUREMENTS );
+//		debug_->debug( "node %x > Starting measurement 'temperature'. Making %i measurements, starting in 5 seconds\n", radio_->id(), NUM_MEASUREMENTS );
 		timer_->set_timer<ExampleApplication,
 					&ExampleApplication::broadcast_loop>( 5000, this, NULL );
 
@@ -119,22 +119,22 @@ public:
 	{
 		if( received_counter_ < NUM_MEASUREMENTS && measurement_counter_ < ( NUM_MEASUREMENTS * 2))
 		{
-			if( (received_counter_ % 50) == 0)
+/*			if( (received_counter_ % 50) == 0)
 			{
 				debug_->debug( "%i messages received ", received_counter_ );
 			}
 //			debug_->debug("Tick");
 			tick();
-			send_request();
+*/			send_request();
 			timer_->set_timer<ExampleApplication,
 					&ExampleApplication::broadcast_loop>( 50, this, NULL );
 		}
-		else
+/*		else
 		{
 			print_results();
 			debug_->debug("Program ends");
 		}
-	}
+*/	}
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
@@ -143,9 +143,9 @@ public:
 			coap_packet_t packet;
 			int status = packet.buffer_to_packet( len, buf );
 //			debug_->debug("Packet len %i, status %i, Payload len: %i ", len, status, packet.payload_len_w() );
-			if(status == 0)
+/*			if(status == 0)
 				tock();
-		}
+*/		}
 
 	}
 
