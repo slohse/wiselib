@@ -14,7 +14,7 @@
 #define MAX_DURATION	25
 #define DISTRIBUTION_SIZE	MAX_DURATION + 2
 
-#define PREFACE_MSG_ID
+//#define PREFACE_MSG_ID
 
 typedef wiselib::OSMODEL Os;
 
@@ -71,7 +71,7 @@ public:
 #ifdef PREFACE_MSG_ID
 		buf_len += packet.serialize( buf + 1 );
 #else
-		buf_len += packet.serialize( buf);
+		buf_len += packet.serialize( buf );
 #endif
 
 		radio_->send( server_id_, buf_len, buf );
@@ -157,7 +157,7 @@ public:
 #else
 			int status = packet.parse_message( buf, len );
 #endif
-//			debug_->debug("mid %i", packet.msg_id());
+//			debug_->debug("mid %i, status %i", packet.msg_id(), status );
 			if( status == 0 )
 				tock();
 #ifdef PREFACE_MSG_ID

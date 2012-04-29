@@ -19,9 +19,9 @@ public:
 	typedef wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString, 10> coap_packet_t_10;
 	typedef wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString, 100> coap_packet_t_100;
 	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t > coap_service_t;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t_0 > coap_service_t_0;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t_10 > coap_service_t_10;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t_100 > coap_service_t_100;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t_0 > coap_service_t_0;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t_10 > coap_service_t_10;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t_100 > coap_service_t_100;
 
 	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 1, 0, 0 > coap_service_t_1_0_0;
 	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 2, 0, 0 > coap_service_t_2_0_0;
@@ -35,6 +35,9 @@ public:
 	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 10, 1 > coap_service_t_10_10_1;
 	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 10, 2 > coap_service_t_10_10_2;
 	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 10, 10 > coap_service_t_10_10_10;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 0, 0 > coap_service_t_0_0_0;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 1, 1, 1 > coap_service_t_1_1_1;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 2, 2, 2 > coap_service_t_2_2_2;
 
 
 
@@ -50,7 +53,7 @@ public:
 		debug_->debug( "sizeof coap_packet_t_0: %i", sizeof(coap_packet_t_0) );
 		debug_->debug( "sizeof coap_packet_t_10: %i", sizeof(coap_packet_t_10) );
 		debug_->debug( "sizeof coap_packet_t_100: %i", sizeof(coap_packet_t_100) );
-
+/*
 		debug_->debug( "sizeof ReceivedMessage: %i", sizeof(coap_service_t::ReceivedMessage) );
 		debug_->debug( "sizeof ReceivedMessage 0: %i", sizeof(coap_service_t_0::ReceivedMessage) );
 		debug_->debug( "sizeof ReceivedMessage 10: %i", sizeof(coap_service_t_10::ReceivedMessage) );
@@ -62,7 +65,7 @@ public:
 		debug_->debug( "sizeof SentMessage 100: %i", sizeof(coap_service_t_100::SentMessage) );
 
 		debug_->debug( "sizeof CoapResource: %i", sizeof(coap_service_t::CoapResource) );
-
+*/
 		debug_->debug( "sizeof coap_service_t: %i", sizeof(coap_service_t) );
 		debug_->debug( "sizeof coap_service_t_0: %i", sizeof(coap_service_t_0) );
 		debug_->debug( "sizeof coap_service_t_10: %i", sizeof(coap_service_t_10) );
@@ -80,6 +83,9 @@ public:
 		debug_->debug( "sizeof coap_service_t_10_10_1: %i", sizeof(coap_service_t_10_10_1) );
 		debug_->debug( "sizeof coap_service_t_10_10_2: %i", sizeof(coap_service_t_10_10_2) );
 		debug_->debug( "sizeof coap_service_t_10_10_10: %i", sizeof(coap_service_t_10_10_10) );
+		debug_->debug( "sizeof coap_service_t_0_0_0: %i", sizeof(coap_service_t_0_0_0) );
+		debug_->debug( "sizeof coap_service_t_1_1_1: %i", sizeof(coap_service_t_1_1_1) );
+		debug_->debug( "sizeof coap_service_t_2_2_2: %i", sizeof(coap_service_t_2_2_2) );
 
 	}
 	// --------------------------------------------------------------------

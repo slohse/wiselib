@@ -20,8 +20,8 @@ class ExampleApplication
 {
 public:
 
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>, 5, 5, 0 > coap_service_t;
-//	typedef wiselib::CoapServiceStatic<Os> coap_service_t;
+//	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>, 5, 5, 0 > coap_service_t;
+	typedef wiselib::CoapServiceStatic<Os> coap_service_t;
 	typedef coap_service_t::ReceivedMessage received_message_t;
 	typedef coap_service_t::coap_packet_t coap_packet_t;
 

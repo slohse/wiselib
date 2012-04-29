@@ -5,7 +5,7 @@
 
 #include "stdlib.h"
 
-#define NUM_MEASUREMENTS	500
+#define NUM_MEASUREMENTS	10000
 #define MAX_DURATION	25
 #define DISTRIBUTION_SIZE	MAX_DURATION + 2
 
@@ -65,7 +65,7 @@ public:
 		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
 		clock_ = &wiselib::FacetProvider<Os, Os::Clock>::get_facet( value );
 		value.radio().hardware_radio().set_channel(11);
-		measurement_counter_ = 0;
+/*		measurement_counter_ = 0;
 		received_counter_ = 0;
 		max_ = 0;
 		for( size_t i = 0; i < DISTRIBUTION_SIZE; ++i)
@@ -73,13 +73,13 @@ public:
 			duration_distribution_[i] = 0;
 		}
 		print_results();
-		//
+*/		//
 
 		server_id_ = 0x2015;
-		ping_ = 23;
-		pong_ = 42;
+		ping_ = 42;
+		pong_ = 23;
 
-		debug_->debug( "node %x > Starting measurement 'bare radio'. Making %i measurements, starting in 5 seconds\n", radio_->id(), NUM_MEASUREMENTS );
+//		debug_->debug( "node %x > Starting measurement 'bare radio'. Making %i measurements, starting in 5 seconds\n", radio_->id(), NUM_MEASUREMENTS );
 
 		radio_->reg_recv_callback<ExampleApplication,
 				&ExampleApplication::receive_radio_message > ( this );
@@ -92,23 +92,23 @@ public:
 	// --------------------------------------------------------------------
 	void broadcast_loop( void* counter )
 	{
-		if( received_counter_ < NUM_MEASUREMENTS && measurement_counter_ < ( NUM_MEASUREMENTS * 2))
+/*		if( received_counter_ < NUM_MEASUREMENTS && measurement_counter_ < ( NUM_MEASUREMENTS * 2))
 		{
 			if( (received_counter_ % 50) == 0)
 			{
 				debug_->debug( "%i messages received ", received_counter_ );
 			}
 			tick();
-			radio_->send( server_id_, sizeof(ping_), (block_data_t*) &ping_ );
+*/			radio_->send( server_id_, sizeof(ping_), (block_data_t*) &ping_ );
 			timer_->set_timer<ExampleApplication,
 					&ExampleApplication::broadcast_loop>( 50, this, NULL );
-		}
+/*		}
 		else
 		{
 			print_results();
 			debug_->debug("Program ends");
 		}
-	}
+*/	}
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
@@ -116,8 +116,8 @@ public:
 		{
 			if( *buf == ping_ )
 				radio_->send( from, sizeof(pong_), (block_data_t*) &pong_ );
-			else if ( *buf == pong_ )
-				tock();
+//			else if ( *buf == pong_ )
+//				tock();
 		}
 
 	}
