@@ -43,12 +43,12 @@ enum CoapMsgIds
 };
 
 // Constants defined in draft-ietf-core-coap-07
-#define COAP_VERSION	1
-#define COAP_STD_PORT	5683
+static const uint8_t COAP_VERSION = 1;
+static const uint16_t COAP_STD_PORT = 5683;
 
 static const float COAP_RANDOM_FACTOR = 1.5;
 static const uint16_t COAP_RESPONSE_TIMEOUT = 2000;
-static const uint16_t COAP_MAX_RESPONSE_TIMEOUT = (uint16_t) COAP_RESPONSE_TIMEOUT * COAP_RANDOM_FACTOR;
+static const uint16_t COAP_MAX_RESPONSE_TIMEOUT = (uint16_t) ( COAP_RESPONSE_TIMEOUT * COAP_RANDOM_FACTOR );
 static const uint8_t COAP_MAX_RETRANSMIT = 4;
 // Time before an ACK is sent. This is to give the application a chance to send a piggybacked response
 static const uint16_t COAP_ACK_GRACE_PERIOD = COAP_RESPONSE_TIMEOUT / 4;
@@ -63,6 +63,8 @@ enum CoapType
 
 static const uint8_t COAP_LONG_OPTION = 15;
 static const uint8_t COAP_UNLIMITED_OPTIONS = 15;
+static const uint8_t COAP_MAX_DELTA_UNLIMITED = 14;
+static const uint8_t COAP_MAX_DELTA_DEFAULT = 15;
 static const uint8_t COAP_END_OF_OPTIONS_MARKER = 0xf0;
 
 enum CoapOptionNum
@@ -85,39 +87,30 @@ enum CoapOptionNum
 	COAP_OPT_IF_NONE_MATCH = 21
 };
 
-#define COAP_OPT_MAXLEN_FENCEPOST		0
-#define COAP_OPT_MAXLEN_CONTENT_TYPE	2
-#define COAP_OPT_MAXLEN_MAX_AGE			4
-#define COAP_OPT_MAXLEN_ETAG			8
-#define COAP_OPT_MAXLEN_URI_PORT		2
-#define COAP_OPT_MAXLEN_TOKEN			8
-#define COAP_OPT_MAXLEN_ACCEPT			2
-#define COAP_OPT_MAXLEN_IF_MATCH		8
-#define COAP_OPT_MAXLEN_IF_NONE_MATCH	0
-#define COAP_STRING_OPTS_MAXLEN			270
-#define COAP_STRING_OPTS_MINLEN			1
+static const uint8_t COAP_OPT_MAXLEN_FENCEPOST = 0;
+static const uint8_t COAP_OPT_MAXLEN_CONTENT_TYPE = 2;
+static const uint8_t COAP_OPT_MAXLEN_MAX_AGE = 4;
+static const uint8_t COAP_OPT_MAXLEN_ETAG = 8;
+static const uint8_t COAP_OPT_MAXLEN_URI_PORT = 2;
+static const uint8_t COAP_OPT_MAXLEN_TOKEN = 8;
+static const uint8_t COAP_OPT_MAXLEN_ACCEPT = 2;
+static const uint8_t COAP_OPT_MAXLEN_IF_MATCH = 8;
+static const uint8_t COAP_OPT_MAXLEN_IF_NONE_MATCH = 0;
+static const uint16_t COAP_STRING_OPTS_MAXLEN = 270;
+static const uint16_t COAP_STRING_OPTS_MINLEN = 1;
 
-#define COAP_DEFAULT_MAX_AGE		60
-
+static const uint8_t COAP_DEFAULT_MAX_AGE = 60;
 
 // Finding the longest opaque option, out of the three opage options Etag, Token and IfMatch
-#if COAP_OPT_MAXLEN_ETAG > COAP_OPT_MAXLEN_TOKEN
-	#if COAP_OPT_MAXLEN_ETAG > COAP_OPT_MAXLEN_IF_MATCH
-		#define COAP_OPT_MAXLEN_OPAQUE	COAP_OPT_MAXLEN_ETAG
-	#else
-		#define COAP_OPT_MAXLEN_OPAQUE	COAP_OPT_MAXLEN_IF_MATCH
-	#endif
-#else
-	#define COAP_OPT_MAXLEN_OPAQUE	COAP_OPT_MAXLEN_TOKEN
-#endif
+static const uint8_t COAP_OPT_MAXLEN_OPAQUE = COAP_OPT_MAXLEN_TOKEN;
 
 // message codes
 //requests
-#define COAP_REQUEST_CODE_RANGE_MIN			1
-#define COAP_REQUEST_CODE_RANGE_MAX			31
+static const uint8_t COAP_REQUEST_CODE_RANGE_MIN = 1;
+static const uint8_t COAP_REQUEST_CODE_RANGE_MAX = 31;
 
-#define COAP_RESPONSE_CODE_RANGE_MIN		64
-#define COAP_RESPONSE_CODE_RANGE_MAX		191
+static const uint8_t COAP_RESPONSE_CODE_RANGE_MIN = 64;
+static const uint8_t COAP_RESPONSE_CODE_RANGE_MAX = 191;
 
 enum CoapCode
 {
@@ -157,15 +150,15 @@ enum TimerType
 	TIMER_ACK
 };
 
-#define COAP_START_OF_OPTIONS	4
+static const uint8_t COAP_START_OF_OPTIONS = 4;
 
-#define COAP_FORMAT_NONE		0
-#define COAP_FORMAT_UNKNOWN		255
-#define COAP_FORMAT_UINT		1
-#define COAP_FORMAT_STRING		2
-#define COAP_FORMAT_OPAQUE		3
-#define COAP_LARGEST_OPTION_NUMBER	21
-#define COAP_OPTION_ARRAY_SIZE	COAP_LARGEST_OPTION_NUMBER + 1
+static const uint8_t COAP_FORMAT_NONE = 0;
+static const uint8_t COAP_FORMAT_UNKNOWN = 255;
+static const uint8_t COAP_FORMAT_UINT = 1;
+static const uint8_t COAP_FORMAT_STRING = 2;
+static const uint8_t COAP_FORMAT_OPAQUE = 3;
+static const uint8_t COAP_LARGEST_OPTION_NUMBER = 21;
+static const uint8_t COAP_OPTION_ARRAY_SIZE = COAP_LARGEST_OPTION_NUMBER + 1;
 
 static const uint8_t COAP_OPTION_FORMAT[COAP_OPTION_ARRAY_SIZE] =
 {
