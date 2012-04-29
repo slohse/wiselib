@@ -117,9 +117,9 @@ public:
 	// --------------------------------------------------------------------
 	void broadcast_loop( void* counter )
 	{
-		if( received_counter_ < NUM_MEASUREMENTS && measurement_counter_ < ( NUM_MEASUREMENTS * 2))
+/*		if( received_counter_ < NUM_MEASUREMENTS && measurement_counter_ < ( NUM_MEASUREMENTS * 2))
 		{
-/*			if( (received_counter_ % 50) == 0)
+			if( (received_counter_ % 50) == 0)
 			{
 				debug_->debug( "%i messages received ", received_counter_ );
 			}
@@ -128,8 +128,8 @@ public:
 */			send_request();
 			timer_->set_timer<ExampleApplication,
 					&ExampleApplication::broadcast_loop>( 50, this, NULL );
-		}
-/*		else
+/*		}
+		else
 		{
 			print_results();
 			debug_->debug("Program ends");

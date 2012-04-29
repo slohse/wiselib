@@ -76,7 +76,7 @@ public:
 		value.radio().hardware_radio().set_channel(11);
 		cservice_.init( *radio_, *timer_, *debug_, *rand_ );
 		cservice_.enable_radio();
-/*		measurement_counter_ = 0;
+		measurement_counter_ = 0;
 		received_counter_ = 0;
 		max_ = 0;
 		for( size_t i = 0; i < DISTRIBUTION_SIZE; ++i)
@@ -84,7 +84,7 @@ public:
 			duration_distribution_[i] = 0;
 		}
 		print_results();
-*/		//
+		//
 
 		server_id_ = 0x2015;
 		temp_uri_path_ = wiselib::StaticString("temperature");
@@ -101,7 +101,7 @@ public:
 	// --------------------------------------------------------------------
 	void broadcast_loop( void* )
 	{
-/*		if( received_counter_ < NUM_MEASUREMENTS && measurement_counter_ < ( NUM_MEASUREMENTS * 2))
+		if( received_counter_ < NUM_MEASUREMENTS && measurement_counter_ < ( NUM_MEASUREMENTS * 2))
 		{
 			if( (received_counter_ % 50) == 0)
 			{
@@ -109,16 +109,16 @@ public:
 			}
 //			debug_->debug("Tick");
 			tick();
-*/			cservice_.get< ExampleApplication, &ExampleApplication::receive_coap>( server_id_, temp_uri_path_, wiselib::StaticString(), this );
+			cservice_.get< ExampleApplication, &ExampleApplication::receive_coap>( server_id_, temp_uri_path_, wiselib::StaticString(), this );
 			timer_->set_timer<ExampleApplication,
 					&ExampleApplication::broadcast_loop>( 1000, this, NULL );
-/*		}
+		}
 		else
 		{
 			print_results();
 			debug_->debug("Program ends");
 		}
-*/	}
+	}
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
@@ -130,7 +130,7 @@ public:
 	void receive_coap( received_message_t & message )
 	{
 //		debug_->debug("Tock");
-//		tock();
+		tock();
 	}
 private:
 	Os::Radio::self_pointer_t radio_;
