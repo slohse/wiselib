@@ -787,11 +787,11 @@ template<typename OsModel_P,
 
 				if( err_code == SUCCESS )
 				{
-/*					ReceivedMessage *deduplication;
+					ReceivedMessage *deduplication;
 					// Only act if this message hasn't been received yet
 					if( (deduplication = find_message_by_id(from, packet.msg_id(), received_)) == NULL )
 					{
-*/						ReceivedMessage& received_message = *( queue_message( ReceivedMessage( packet, from ), received_ ) );
+						ReceivedMessage& received_message = *( queue_message( ReceivedMessage( packet, from ), received_ ) );
 
 						SentMessage *request;
 
@@ -837,7 +837,7 @@ template<typename OsModel_P,
 								reply( received_message, (block_data_t*) error_description, len, COAP_CODE_NOT_IMPLEMENTED );
 							}
 						}
-/*					}
+					}
 					else
 					{
 						// if it's confirmable we might want to hurry sending an ACK
@@ -853,7 +853,7 @@ template<typename OsModel_P,
 							send(deduplication->correspondent(), deduplication->response_sent()->serialize_length(), buf);
 						}
 					}
-*/				}
+				}
 				else if( err_code == coap_packet_t::ERR_NOT_COAP
 				         || err_code == coap_packet_t::ERR_WRONG_COAP_VERSION )
 				{
