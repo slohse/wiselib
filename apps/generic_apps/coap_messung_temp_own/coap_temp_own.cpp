@@ -20,7 +20,8 @@ class ExampleApplication
 {
 public:
 
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>, 5, 5, 0 > coap_service_t;
+//	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>, 5, 5, 0 > coap_service_t;
+	typedef wiselib::CoapServiceStatic<Os> coap_service_t;
 	typedef coap_service_t::ReceivedMessage received_message_t;
 	typedef coap_service_t::coap_packet_t coap_packet_t;
 
@@ -89,7 +90,7 @@ public:
 		server_id_ = 0x2015;
 		temp_uri_path_ = wiselib::StaticString("temperature");
 
-//		debug_->debug( "node %x > Starting measurement 'temperature'. Making %i measurements, starting in 5 seconds\n", radio_->id(), NUM_MEASUREMENTS );
+		debug_->debug( "node %x > Starting measurement 'temperature'. Making %i measurements, starting in 5 seconds\n", radio_->id(), NUM_MEASUREMENTS );
 
 		timer_->set_timer<ExampleApplication,
 				&ExampleApplication::broadcast_loop>( 5000, this, 0 );
@@ -111,7 +112,7 @@ public:
 			tick();
 			cservice_.get< ExampleApplication, &ExampleApplication::receive_coap>( server_id_, temp_uri_path_, wiselib::StaticString(), this );
 			timer_->set_timer<ExampleApplication,
-					&ExampleApplication::broadcast_loop>( 1000, this, NULL );
+					&ExampleApplication::broadcast_loop>( 100, this, NULL );
 		}
 		else
 		{

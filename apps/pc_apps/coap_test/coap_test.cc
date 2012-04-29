@@ -13,6 +13,7 @@
 #include "ipv4_socket.h"
 //#include "coapresource.h"
 #include "touppercase.h"
+#include "calculator.h"
 
 using namespace wiselib;
 
@@ -106,9 +107,14 @@ int main(int argc, char** argv) {
 	ToUpperCase<coap_radio_t> uppercaser = ToUpperCase<coap_radio_t>();
 	uppercaser.init(cradio_);
 
+	Calculator<Os, coap_radio_t, wiselib::StaticString> calculator = Calculator<Os, coap_radio_t, wiselib::StaticString>();
+	calculator.init(cradio_);
+
 	wiselib::StaticString to_upper_path = wiselib::StaticString("touppercase");
+	wiselib::StaticString calculator_path = wiselib::StaticString("calculator");
 
 	int to_upper_id = cradio_.reg_resource_callback< ToUpperCase<coap_radio_t>, &ToUpperCase<coap_radio_t>::receive_coap >( to_upper_path, &uppercaser );
+	int calc_id = cradio_.reg_resource_callback< Calculator<Os, coap_radio_t, wiselib::StaticString>, &Calculator<Os, coap_radio_t, wiselib::StaticString>::receive_coap >( calculator_path, &calculator );
 
 	udpradio->set_socket( coapsocket );
 
@@ -122,9 +128,11 @@ int main(int argc, char** argv) {
 
 		if (n < 0)
 		{
-			cerr << "ERROR reading from socket, " << n << ", " << strerror(errno) << "\n";
 			if( errno != EINTR )
+			{
+				cerr << "ERROR reading from socket, " << n << ", " << strerror(errno) << "\n";
 				exit(EXIT_FAILURE);
+			}
 		}
 		printf("received %i Bytes:\n",n);
 

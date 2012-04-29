@@ -18,8 +18,8 @@ class ExampleApplication
 {
 public:
 
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>::coap_packet_t, COAPRADIO_SENT_LIST_SIZE, COAPRADIO_RECEIVED_LIST_SIZE, COAPRADIO_RESOURCES_SIZE> coap_service_t;
-//	typedef wiselib::CoapServiceStatic<Os> coap_service_t;
+//	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>::coap_packet_t, COAPRADIO_SENT_LIST_SIZE, COAPRADIO_RECEIVED_LIST_SIZE, COAPRADIO_RESOURCES_SIZE> coap_service_t;
+	typedef wiselib::CoapServiceStatic<Os> coap_service_t;
 	typedef coap_service_t::ReceivedMessage received_message_t;
 	typedef coap_service_t::coap_packet_t coap_packet_t;
 
@@ -57,6 +57,7 @@ public:
 
 	void receive_coap( received_message_t & message )
 	{
+//		debug_->debug( "node %x > received coap", radio_->id() );
 		coap_packet_t & packet = message.message();
 
 		if( packet.is_request() && packet.uri_path() == temp_uri_path_ )

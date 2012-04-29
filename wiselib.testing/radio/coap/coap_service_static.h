@@ -605,7 +605,7 @@ template<typename OsModel_P,
 		int recv_callback_id_; // callback for receive function
 		sent_list_t sent_;
 		received_list_t received_;
-		vector_static<OsModel, CoapResource, COAPRADIO_RESOURCES_SIZE> resources_;
+		vector_static<OsModel, CoapResource, resources_list_size_> resources_;
 
 		coap_msg_id_t msg_id_;
 		coap_token_t token_;

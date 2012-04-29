@@ -3,9 +3,8 @@
  */
 #include "external_interface/external_interface.h"
 
-#include "algorithms/coap/coap.h"
-#include "algorithms/coap/packet.h"
-#include "algorithms/coap/resource.h"
+#include "radio/coap/coap_packet_static.h"
+#include "radio/coap/coap_service_static.h"
 
 #include "util/pstl/static_string.h"
 
@@ -20,6 +19,8 @@ typedef wiselib::OSMODEL Os;
 class ExampleApplication
 {
 public:
+
+	typedef wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString> coap_packet_t;
 
 	typedef Os::Radio::node_id_t node_id_t;
 	typedef Os::Radio::block_data_t block_data_t;
@@ -49,6 +50,24 @@ public:
 		}
 	}
 
+	void send_request()
+	{
+		coap_packet_t packet;
+		block_data_t buf[100];
+		uint8_t buf_len;
+
+		packet.init();
+		packet.set_type( COAP_MSG_TYPE_NON );
+		packet.set_code( COAP_CODE_GET );
+		packet.set_msg_id( mid_++ );
+
+		packet.set_uri_path( temp_uri_path_ );
+
+		buf_len = packet.serialize( buf );
+
+		radio_->send( server_id_, buf_len, buf );
+	}
+
 	void print_results()
 	{
 		debug_->debug( "packets sent: %i. packets received: %i. Max time: %i.", measurement_counter_, received_counter_, max_ );
@@ -61,27 +80,6 @@ public:
 		debug_->debug( "20-25,longer: %i - %i - %i - %i - %i - %i - %i",
 				duration_distribution_[20], duration_distribution_[21], duration_distribution_[22], duration_distribution_[23], duration_distribution_[24],
 				duration_distribution_[25], duration_distribution_[26]);
-	}
-
-	void send_request()
-	{
-		coap_packet_t packet;
-		char path[] = "temperature";
-		block_data_t buf[100];
-		uint8_t buf_len;
-
-		packet.init();
-		packet.set_type( NON );
-		packet.set_code( GET );
-		packet.set_mid( mid_++ );
-
-		packet.set_uri_path_len( sizeof( path ) - 1 );
-		packet.set_uri_path( path );
-
-		packet.set_option( URI_PATH );
-		buf_len = packet.packet_to_buffer( buf );
-
-		radio_->send( server_id_, buf_len, buf );
 	}
 
 	void init( Os::AppMainParameter& value )
@@ -102,20 +100,22 @@ public:
 		print_results();
 		//
 
-		server_id_ = 0x2015;
-
 		mid_ = (*rand_)();
 
-		radio_->reg_recv_callback<ExampleApplication, &ExampleApplication::receive_radio_message>( this );
+		server_id_ = 0x2015;
+		temp_uri_path_ = wiselib::StaticString("temperature");
 
 		debug_->debug( "node %x > Starting measurement 'temperature'. Making %i measurements, starting in 5 seconds\n", radio_->id(), NUM_MEASUREMENTS );
-		timer_->set_timer<ExampleApplication,
-					&ExampleApplication::broadcast_loop>( 5000, this, NULL );
 
+		timer_->set_timer<ExampleApplication,
+				&ExampleApplication::broadcast_loop>( 5000, this, 0 );
+
+		radio_->reg_recv_callback<ExampleApplication,
+				&ExampleApplication::receive_radio_message > ( this );
 	}
 
 	// --------------------------------------------------------------------
-	void broadcast_loop( void* counter )
+	void broadcast_loop( void* )
 	{
 		if( received_counter_ < NUM_MEASUREMENTS && measurement_counter_ < ( NUM_MEASUREMENTS * 2))
 		{
@@ -127,7 +127,7 @@ public:
 			tick();
 			send_request();
 			timer_->set_timer<ExampleApplication,
-					&ExampleApplication::broadcast_loop>( 50, this, NULL );
+					&ExampleApplication::broadcast_loop>( 100, this, NULL );
 		}
 		else
 		{
@@ -138,15 +138,11 @@ public:
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
-		if( from == server_id_ && buf[0] == WISELIB_MID_COAP )
-		{
-			coap_packet_t packet;
-			int status = packet.buffer_to_packet( len, buf );
-//			debug_->debug("Packet len %i, status %i, Payload len: %i ", len, status, packet.payload_len_w() );
-			if(status == 0)
-				tock();
-		}
-
+		coap_packet_t packet;
+		int status = packet.parse_message( buf, len );
+//		debug_->debug("receive, status %i", status );
+		if( status == 0 )
+			tock();
 	}
 
 private:
@@ -156,8 +152,10 @@ private:
 	Os::Rand::self_pointer_t rand_;
 	Os::Clock::self_pointer_t clock_;
 
-	node_id_t server_id_;
 	time_t tick_;
+
+	wiselib::StaticString temp_uri_path_;
+	node_id_t server_id_;
 
 	uint16_t mid_;
 
