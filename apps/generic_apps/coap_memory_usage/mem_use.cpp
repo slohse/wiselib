@@ -18,23 +18,23 @@ public:
 	typedef wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString, 0> coap_packet_t_0;
 	typedef wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString, 10> coap_packet_t_10;
 	typedef wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString, 100> coap_packet_t_100;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t > coap_service_t;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t > coap_service_t;
 	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t_0 > coap_service_t_0;
 	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t_10 > coap_service_t_10;
 	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t_100 > coap_service_t_100;
 
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 1, 0, 0 > coap_service_t_1_0_0;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 2, 0, 0 > coap_service_t_2_0_0;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 0, 0 > coap_service_t_10_0_0;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 1, 0 > coap_service_t_0_1_0;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 2, 0 > coap_service_t_0_2_0;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 10, 0 > coap_service_t_0_10_0;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 0, 1 > coap_service_t_0_0_1;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 0, 2 > coap_service_t_0_0_2;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 0, 10 > coap_service_t_0_0_10;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 10, 1 > coap_service_t_10_10_1;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 10, 2 > coap_service_t_10_10_2;
-	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 10, 10 > coap_service_t_10_10_10;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 1, 0, 0 > coap_service_t_1_0_0;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 2, 0, 0 > coap_service_t_2_0_0;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 0, 0 > coap_service_t_10_0_0;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 1, 0 > coap_service_t_0_1_0;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 2, 0 > coap_service_t_0_2_0;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 10, 0 > coap_service_t_0_10_0;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 0, 1 > coap_service_t_0_0_1;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 0, 2 > coap_service_t_0_0_2;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 0, 0, 10 > coap_service_t_0_0_10;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 10, 1 > coap_service_t_10_10_1;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 10, 2 > coap_service_t_10_10_2;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, false, false, coap_packet_t, 10, 10, 10 > coap_service_t_10_10_10;
 
 
 

@@ -14,6 +14,8 @@
 #define MAX_DURATION	25
 #define DISTRIBUTION_SIZE	MAX_DURATION + 2
 
+#define PREFACE_MSG_ID
+
 typedef wiselib::OSMODEL Os;
 
 class ExampleApplication
@@ -54,8 +56,11 @@ public:
 	{
 		coap_packet_t packet;
 		block_data_t buf[100];
-		uint8_t buf_len;
-
+		uint8_t buf_len = 0;
+#ifdef PREFACE_MSG_ID
+		buf[0] = CoapMsgId;
+		buf_len = 1;
+#endif
 		packet.init();
 		packet.set_type( COAP_MSG_TYPE_NON );
 		packet.set_code( COAP_CODE_GET );
@@ -63,7 +68,11 @@ public:
 
 		packet.set_uri_path( temp_uri_path_ );
 
-		buf_len = packet.serialize( buf );
+#ifdef PREFACE_MSG_ID
+		buf_len += packet.serialize( buf + 1 );
+#else
+		buf_len += packet.serialize( buf);
+#endif
 
 		radio_->send( server_id_, buf_len, buf );
 	}
@@ -127,7 +136,7 @@ public:
 			tick();
 			send_request();
 			timer_->set_timer<ExampleApplication,
-					&ExampleApplication::broadcast_loop>( 100, this, NULL );
+					&ExampleApplication::broadcast_loop>( 50, this, NULL );
 		}
 		else
 		{
@@ -138,11 +147,23 @@ public:
 	// --------------------------------------------------------------------
 	void receive_radio_message( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
 	{
-		coap_packet_t packet;
-		int status = packet.parse_message( buf, len );
-//		debug_->debug("receive, status %i", status );
-		if( status == 0 )
-			tock();
+#ifdef PREFACE_MSG_ID
+		if( buf[0] == CoapMsgId )
+		{
+#endif
+			coap_packet_t packet;
+#ifdef PREFACE_MSG_ID
+			int status = packet.parse_message( buf + 1, len - 1 );
+#else
+			int status = packet.parse_message( buf, len );
+#endif
+//			debug_->debug("mid %i", packet.msg_id());
+			if( status == 0 )
+				tock();
+#ifdef PREFACE_MSG_ID
+		}
+#endif
+
 	}
 
 private:

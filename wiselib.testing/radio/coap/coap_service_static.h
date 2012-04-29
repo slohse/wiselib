@@ -31,7 +31,6 @@
 #define COAP_SERVICE_TEMPLATE_PREFIX	template<typename OsModel_P, \
 		typename Radio_P, \
 		typename Timer_P, \
-		typename Debug_P, \
 		typename Rand_P, \
 		typename String_T, \
 		bool preface_msg_id_, \
@@ -41,7 +40,7 @@
 		typename OsModel_P::size_t received_list_size_, \
 		typename OsModel_P::size_t resources_list_size_>
 
-#define COAP_SERVICE_T	CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Debug_P, Rand_P, String_T, preface_msg_id_, human_readable_errors_, coap_packet_t_, sent_list_size_, received_list_size_, resources_list_size_>
+#define COAP_SERVICE_T	CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Rand_P, String_T, preface_msg_id_, human_readable_errors_, coap_packet_t_, sent_list_size_, received_list_size_, resources_list_size_>
 
 namespace wiselib {
 
@@ -69,7 +68,6 @@ namespace wiselib {
 template<typename OsModel_P,
 	typename Radio_P = typename OsModel_P::Radio,
 	typename Timer_P = typename OsModel_P::Timer,
-	typename Debug_P = typename OsModel_P::Debug,
 	typename Rand_P = typename OsModel_P::Rand,
 	typename String_T = wiselib::StaticString,
 	bool preface_msg_id_ = false,
@@ -87,7 +85,6 @@ template<typename OsModel_P,
 
 		typedef Radio_P Radio;
 
-		typedef Debug_P Debug;
 		typedef Timer_P Timer;
 		typedef Rand_P Rand;
 		typedef String_T string_t;
@@ -241,7 +238,7 @@ template<typename OsModel_P,
 		~CoapServiceStatic();
 
 		int destruct();
-		int init( Radio& radio, Timer& timer, Debug& debug , Rand& rand );
+		int init( Radio& radio, Timer& timer, Rand& rand );
 		int enable_radio();
 		int disable_radio();
 		node_id_t id ();
@@ -600,7 +597,6 @@ template<typename OsModel_P,
 
 		Radio *radio_;
 		Timer *timer_;
-		Debug *debug_;
 		Rand *rand_;
 		int recv_callback_id_; // callback for receive function
 		sent_list_t sent_;
@@ -664,12 +660,10 @@ template<typename OsModel_P,
 	COAP_SERVICE_TEMPLATE_PREFIX
 	int COAP_SERVICE_T::init(Radio& radio,
 				Timer& timer,
-				Debug& debug,
 				Rand& rand )
 	{
 		radio_ = &radio;
 		timer_ = &timer;
-		debug_ = &debug;
 		rand_ = &rand;
 
 		rand_->srand( radio_->id() );
@@ -793,11 +787,11 @@ template<typename OsModel_P,
 
 				if( err_code == SUCCESS )
 				{
-					ReceivedMessage *deduplication;
+/*					ReceivedMessage *deduplication;
 					// Only act if this message hasn't been received yet
 					if( (deduplication = find_message_by_id(from, packet.msg_id(), received_)) == NULL )
 					{
-						ReceivedMessage& received_message = *( queue_message( ReceivedMessage( packet, from ), received_ ) );
+*/						ReceivedMessage& received_message = *( queue_message( ReceivedMessage( packet, from ), received_ ) );
 
 						SentMessage *request;
 
@@ -843,7 +837,7 @@ template<typename OsModel_P,
 								reply( received_message, (block_data_t*) error_description, len, COAP_CODE_NOT_IMPLEMENTED );
 							}
 						}
-					}
+/*					}
 					else
 					{
 						// if it's confirmable we might want to hurry sending an ACK
@@ -859,7 +853,7 @@ template<typename OsModel_P,
 							send(deduplication->correspondent(), deduplication->response_sent()->serialize_length(), buf);
 						}
 					}
-				}
+*/				}
 				else if( err_code == coap_packet_t::ERR_NOT_COAP
 				         || err_code == coap_packet_t::ERR_WRONG_COAP_VERSION )
 				{

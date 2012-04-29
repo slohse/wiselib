@@ -30,7 +30,7 @@ public:
 		debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
 		//
-		cradio_.init( *radio_, *timer_, *debug_, *rand_ );
+		cradio_.init( *radio_, *timer_, *rand_ );
 		cradio_.enable_radio();
 
 		debug_->debug( "node %x > Temperature CoAP Client booting\n", radio_->id() );
@@ -60,10 +60,10 @@ public:
 		//         debug_->debug( "message is %s\n", buf );
 	}
 
-	void receive_coap( wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
+	void receive_coap( wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString>::ReceivedMessage & message )
 	{
 //		debug_->debug( "node %x > received message\n", radio_->id() );
-		wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString>::coap_packet_t & packet = message.message();
+		wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString>::coap_packet_t & packet = message.message();
 		if( packet.is_response() )
 		{
 /*			debug_->debug( "node %x > is response, code %i.%i data len %i\n",
@@ -85,7 +85,7 @@ private:
 	Os::Debug::self_pointer_t debug_;
 	Os::Rand::self_pointer_t rand_;
 
-	wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString> cradio_;
+	wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString> cradio_;
 
 	wiselib::StaticString temp_uri_path_;
 	node_id_t server_id_;

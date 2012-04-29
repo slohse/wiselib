@@ -10,7 +10,7 @@
 
 #include "stdlib.h"
 
-#define NUM_MEASUREMENTS	50
+#define NUM_MEASUREMENTS	10000
 #define MAX_DURATION	25
 #define DISTRIBUTION_SIZE	MAX_DURATION + 2
 
@@ -20,8 +20,8 @@ class ExampleApplication
 {
 public:
 
-//	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Debug, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>, 5, 5, 0 > coap_service_t;
-	typedef wiselib::CoapServiceStatic<Os> coap_service_t;
+	typedef wiselib::CoapServiceStatic<Os, Os::Radio, Os::Timer, Os::Rand, wiselib::StaticString, true, false, wiselib::CoapPacketStatic<Os, Os::Radio, wiselib::StaticString>, 5, 5, 0 > coap_service_t;
+//	typedef wiselib::CoapServiceStatic<Os> coap_service_t;
 	typedef coap_service_t::ReceivedMessage received_message_t;
 	typedef coap_service_t::coap_packet_t coap_packet_t;
 
@@ -75,7 +75,7 @@ public:
 		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
 		clock_ = &wiselib::FacetProvider<Os, Os::Clock>::get_facet( value );
 		value.radio().hardware_radio().set_channel(11);
-		cservice_.init( *radio_, *timer_, *debug_, *rand_ );
+		cservice_.init( *radio_, *timer_, *rand_ );
 		cservice_.enable_radio();
 		measurement_counter_ = 0;
 		received_counter_ = 0;
@@ -112,7 +112,7 @@ public:
 			tick();
 			cservice_.get< ExampleApplication, &ExampleApplication::receive_coap>( server_id_, temp_uri_path_, wiselib::StaticString(), this );
 			timer_->set_timer<ExampleApplication,
-					&ExampleApplication::broadcast_loop>( 100, this, NULL );
+					&ExampleApplication::broadcast_loop>( 50, this, NULL );
 		}
 		else
 		{
