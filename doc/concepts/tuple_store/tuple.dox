@@ -14,7 +14,7 @@ class Tuple_concept {
 		 * Provide read-only or read/write access to the idx'th element
 		 * of the tuple.
 		 */
-		data_t operator[](size_type idx);
+		data_t& operator[](size_type idx);
 		
 		/**
 		 * Return number of elements of the tuple.
@@ -22,8 +22,6 @@ class Tuple_concept {
 		size_type size();
 		
 		bool is_wildcard(size_type idx);
-	
-	// Message-serialization interface??
 };
 
 } // namespace
