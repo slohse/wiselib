@@ -158,6 +158,20 @@ class MallocFreeAllocator {
 		}
 		
 		template<typename T>
+		int free(T* p) {
+			#if KEEP_STATS
+				deletes_++;
+			#endif
+			p->~T();
+			#ifdef ISENSE
+				isense::free((void*)p);
+			#else
+				::free((void*)p);
+			#endif
+			return SUCCESS;
+		}
+		
+		template<typename T>
 		int free_array(array_pointer_t<T> p) {
 			#if KEEP_STATS
 				deletes_++;
@@ -170,6 +184,23 @@ class MallocFreeAllocator {
 				isense::free((void*)p.p_);
 			#else
 				::free((void*)p.p_);
+			#endif
+			return SUCCESS;
+		}
+		
+		template<typename T>
+		int free_array(T* p) {
+			#if KEEP_STATS
+				deletes_++;
+			#endif
+			#pragma warning("array freeing does not call destructors yet!!");
+			/*for(typename OsModel::size_t i = 0; i < n; i++) {
+				pointer_t<T>((T*)r.raw() + sizeof(T) * i)->~T();
+			}*/
+			#ifdef ISENSE
+				isense::free((void*)p);
+			#else
+				::free((void*)p);
 			#endif
 			return SUCCESS;
 		}
