@@ -34,7 +34,7 @@
 #include <err.h>
 #include <errno.h>
 #include <sys/ioctl.h>
-#define PC_COM_UART_DEBUG 50
+
 /*
  * PC_COM_UART_DEBUG
  * 
@@ -44,7 +44,7 @@
  * >= 100         -> Hardcore debug output
  */
 
-#ifdef PC_COM_UART_DEBUG
+#if PC_COM_UART_DEBUG
 	#include <iostream>
 	#include <iomanip>
 #endif
@@ -52,7 +52,7 @@
 namespace wiselib {
 	
 	namespace {
-		enum { BUFFER_SIZE = 25600 }; // should be enough for 19200 Baud (technically 20 should suffice)
+		enum { BUFFER_SIZE = 256 }; // should be enough for 19200 Baud (technically 20 should suffice)
 	}
 	
 	/** \brief Uart model for PC
@@ -127,13 +127,13 @@ namespace wiselib {
 	
 	template<typename OsModel_P, const bool isense_reset_, typename Timer_P>
 	PCComUartModel<OsModel_P, isense_reset_, Timer_P>::
-	PCComUartModel() : baudrate_(B115200), address_("/dev/tty.usbserial-000014FA") {
+	PCComUartModel() : baudrate_(B9600), address_("/tmp/blah") {
 	}
 
 	template<typename OsModel_P, const bool isense_reset_, typename Timer_P>
 	int PCComUartModel<OsModel_P, isense_reset_, Timer_P>::enable_serial_comm() {
 		// source: http://en.wikibooks.org/wiki/Serial_Programming/Serial_Linux
-		
+	/*	
 		struct termios attr;
 		//memset(&attr, 0, sizeof(attr));
 		bzero(&attr, sizeof(attr));
@@ -144,8 +144,8 @@ namespace wiselib {
 		attr.c_lflag = 0;
 		attr.c_cc[VMIN] = 1; // try to read at least 1 char
 		attr.c_cc[VTIME] = 0; // time out after 800ms
-		
-		#ifdef PC_COM_UART_DEBUG
+	*/	
+		#if PC_COM_UART_DEBUG
 		std::cout << "[pc_com_uart] Opening: " << address_ << "\n";
 		#endif
 		
@@ -153,7 +153,7 @@ namespace wiselib {
 		if(port_fd_ < 0) {
 			err(1, "Error opening UART %s", address_);
 		}
-		
+	/*	
 		if( ( cfsetospeed(&attr, baudrate_) == -1 ) ||
 			( cfsetispeed(&attr, baudrate_) == -1 ) )
 		{
@@ -165,17 +165,17 @@ namespace wiselib {
 		if(tcsetattr(port_fd_, TCSANOW, &attr) == -1) {
 			err(1, "Error during tcsetattr() on %s", address_);
 		}
-		
+	*/	
 		if(isense_reset_) {
-			#ifdef PC_COM_UART_DEBUG
+			#if PC_COM_UART_DEBUG
 			std::cout << "[pc_com_uart] Executing isense reset" << std::endl;
 			#endif
 			
 			int status = TIOCM_RTS | TIOCM_DTR;
-			ioctl(port_fd_, TIOCMSET, &status);
+	//		ioctl(port_fd_, TIOCMSET, &status);
 			timer_.sleep(100);
 			status = 0;
-			ioctl(port_fd_, TIOCMSET, &status);
+	//		ioctl(port_fd_, TIOCMSET, &status);
 			timer_.sleep(100);
 		}
 		
@@ -206,11 +206,9 @@ namespace wiselib {
 		static const int max_retries = 100;
 		int retries = max_retries, r;
 		size_t written = 0;
-
+		
 		do {
-//                    std::cout << (uint16_t)buf[0] << std::endl;
 			r = ::write(port_fd_, reinterpret_cast<void*>(buf+written), len-written);
-//                        std::cout << "r = " << r <<" len = " << len << std::endl;
 			if(r < 0) {
 				if( ( errno != EAGAIN ) && ( errno != EWOULDBLOCK ) && ( errno != EINTR ) ) {
 					warn("Error writing to UART %s (%d more retries)", address_, retries);
@@ -220,9 +218,7 @@ namespace wiselib {
 					else {
 						retries--;
 					}
-				}else{
-                                    warn("r<0 Uart seems \"full\" running till infinity");
-                                }
+				}
 			} else {
 				written += r;
 				retries = max_retries;

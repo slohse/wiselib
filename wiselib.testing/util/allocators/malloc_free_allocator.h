@@ -23,9 +23,12 @@
 
 #define KEEP_STATS 0
 
-template<typename pointer_t>
+/*template<typename pointer_t>
 void* operator new(size_t size, pointer_t ptr) {
 	return ptr.raw();
+}*/
+void* operator new(size_t size, void* ptr, bool fu_isense) {
+	return ptr;
 }
 
 namespace wiselib {
@@ -75,7 +78,7 @@ class MallocFreeAllocator {
 				T* p_;
 				
 			friend class MallocFreeAllocator<OsModel_P>;
-		} __attribute__((__packed__));
+		}; // __attribute__((__packed__));
 		
 		template<typename T>
 		struct array_pointer_t : public pointer_t<T> {
@@ -97,7 +100,7 @@ class MallocFreeAllocator {
 				
 			private:
 				size_t elements_;
-		} __attribute__((__packed__));
+		}; // __attribute__((__packed__));
 		
 		MallocFreeAllocator()
 			#if KEEP_STATS
@@ -116,8 +119,9 @@ class MallocFreeAllocator {
 			#else
 				void *p = malloc(sizeof(T));
 			#endif
-			pointer_t<T> r((T*)p);
-			new(r) T;
+			//new(r) T;
+			new(p, true) T;
+			pointer_t<T> r(reinterpret_cast<T*>(p));
 			return r;
 		}
 		
@@ -127,12 +131,14 @@ class MallocFreeAllocator {
 				news_++;
 			#endif
 			#ifdef ISENSE
-				array_pointer_t<T> r((T*)isense::malloc(sizeof(T) * n), n);
+				void *p = isense::malloc(sizeof(T) * n);
 			#else
-				array_pointer_t<T> r((T*)malloc(sizeof(T) * n), n);
+				void *p = malloc(sizeof(T) * n);
 			#endif
+			array_pointer_t<T> r(reinterpret_cast<T*>(p), n);
 			for(typename OsModel::size_t i = 0; i < n; i++) {
-				new(pointer_t<T>((T*)r.raw() + sizeof(T) * i)) T;
+				//new(pointer_t<T>(&(r.raw()[i]))) T;
+				new(&(reinterpret_cast<T*>(p)[i]), true) T;
 			}
 			return r;
 		}
@@ -187,7 +193,7 @@ class MallocFreeAllocator {
 		#if KEEP_STATS
 		unsigned long news_, deletes_;
 		#endif
-} __attribute__((__packed__));
+}; // __attribute__((__packed__));
 
 
 } // namespace wiselib
