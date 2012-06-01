@@ -35,7 +35,7 @@ public:
 		cservice_.enable_radio();
 		//
 
-		server_id_ = 0x2015;
+		server_id_ = // INSERT_SERVER_NODE_ID_HERE;
 		temp_uri_path_ = wiselib::StaticString("temperature");
 
 		debug_->debug( "node %x > Starting 'temperature' client\n", radio_->id() );

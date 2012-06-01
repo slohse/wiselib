@@ -29,19 +29,25 @@ public:
 		radio_ = &wiselib::FacetProvider<Os, Os::Radio>::get_facet( value );
 		timer_ = &wiselib::FacetProvider<Os, Os::Timer>::get_facet( value );
 		debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
+		// setting up the service
 		cservice_.init( *radio_, *timer_, *rand_ );
 		cservice_.enable_radio();
 
 		server_id_ = 0;
+		// this will be the URI Path of the Service
 		math = wiselib::StaticString("calculator");
 		//
 		if( radio_->id() == server_id_ )
 		{
 			debug_->debug( "node %x > Calculator CoAP Service booting.\n", radio_->id() );
+			// registering a callback under the URI Path "calculator"
+			// this will cause the receive_coap_server method to be
+			// called whenever a request for the URI Path "calculator" arrives
 			cservice_.reg_resource_callback< ExampleApplication, &ExampleApplication::receive_coap_server>( math, this );
 		}
 		else
 		{
+			// Just randon numbers for our example
 			num1 = (*rand_)(1000);
 			num2 = (*rand_)(1000);
 			op = '+';
@@ -57,6 +63,8 @@ public:
 		wiselib::StaticString query("");
 		char uri_query[64];
 		sprintf( uri_query, "num1=%i&num2=%i&op=%c", num1, num2, op );
+
+		// setting up the numbers and operators for the next round
 		num1 = (*rand_)(1000);
 		num2 = (*rand_)(1000);
 		switch(op)
@@ -79,13 +87,22 @@ public:
 
 		debug_->debug( "node %x -- broadcast_loop> Sending request for %i %c %i\n", radio_->id(), num1, op, num2 );
 
+		// sending a GET request for URI Path "calculator" to the server
+		// the query is the string we just built with our numbers and operators
+		// when the reply to the request arrives the receive_coap_client method
+		// is called
 		cservice_.get< ExampleApplication, &ExampleApplication::receive_coap_client>( server_id_, math, uri_query, this );
+
 		timer_->set_timer<ExampleApplication,
 		&ExampleApplication::broadcast_loop>( 1000, this, NULL );
 	}
 	// --------------------------------------------------------------------
 	void receive_coap_client( received_message_t & message )
 	{
+		// a received_message_t contains some additional information, like the
+		// node_id_t of the sender. But we don't care about that right now,
+		// we just want the result of our equation. This can be found in the
+		// data section of the packet.
 		coap_packet_t packet = message.message();
 		if( packet.is_response() )
 		{
@@ -97,13 +114,16 @@ public:
 	void receive_coap_server( received_message_t & message )
 	{
 		coap_packet_t packet = message.message();
-		if( packet.is_request() && packet.uri_path() == math )
+		if( packet.is_request() )
 		{
-			wiselib::list_static<Os, wiselib::StaticString, 4> query;
-			packet.get_query_list( COAP_OPT_URI_QUERY, query );
+			// sane initial values if something goes wrong
 			received_num1 = 0;
 			received_num2 = 0;
 			received_op = '+';
+
+			// get the list of Uri Query segments from the packet
+			wiselib::list_static<Os, wiselib::StaticString, 4> query;
+			packet.get_query_list( COAP_OPT_URI_QUERY, query );
 
 			wiselib::list_static<Os, wiselib::StaticString, 10>::iterator qit = query.begin();
 			for( ; qit != query.end(); ++qit )
@@ -147,9 +167,12 @@ public:
 			}
 //			debug_->debug( "%i %c %i = %i",
 //					received_num1, received_op, received_num2, result );
+
+			// build a string that contains the reply
 			char reply[50];
 			int len = sprintf( reply, "%i %c %i = %i",
 					received_num1, received_op, received_num2, result );
+			// reply to the received message.
 			cservice_.reply( message, (block_data_t*) reply, len + 1 );
 		}
 	}
