@@ -117,7 +117,10 @@ namespace wiselib {
 			
 		template<typename T>
 		static typename T::self_pointer_t to_t_ptr(value_type a) {
-			return *reinterpret_cast<typename T::self_pointer_t*>(&a);
+			//return *reinterpret_cast<typename T::self_pointer_t*>(&a);
+			typename T::self_pointer_t r;
+			memcpy((void*)&r, (void*)&a, sizeof(typename T::self_pointer_t));
+			return r;
 		}
 		
 		template<typename T>
@@ -227,6 +230,10 @@ namespace wiselib {
 				return iterator(*this, n);
 			}
 			
+			iterator insert(const_reference v) {
+				return insert(end(), v);
+			}
+			
 			node_pointer_t insert_n(const_reference v, node_ptr_t after = 0) {
 				if(!after) { after = last_node_; }
 				
@@ -256,6 +263,7 @@ namespace wiselib {
 			iterator find(value_type v, void* d = 0) {
 				for(iterator i = begin(); i != end(); ++i) {
 					if(compare_(*i, v, d) == 0) { return i; }
+					//if(*i == v) { return i; }
 				}
 				return end();
 			}
