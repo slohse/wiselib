@@ -16,37 +16,53 @@
  ** License along with the Wiselib.                                       **
  ** If not, see <http://www.gnu.org/licenses/>.                           **
  ***************************************************************************/
-#ifndef __ALGORITHMS_6LOWPAN_FORWARDING_TYPES_H__
-#define __ALGORITHMS_6LOWPAN_FORWARDING_TYPES_H__
+#ifndef __ALGORITHMS_6LOWPAN_SOCKET_TYPE_H__
+#define __ALGORITHMS_6LOWPAN_SOCKET_TYPE_H__
+
+#include "algorithms/6lowpan/ipv6_address.h"
 
 namespace wiselib
 {
 	template<typename Radio_P>
-	class IPForwardingTableValue
+	class LoWPANSocket
 	{
 	public:
 		typedef Radio_P Radio;
 		typedef typename Radio::node_id_t node_id_t;
-
+		
 		// -----------------------------------------------------------------
-		IPForwardingTableValue()
-			: /*next_hop( Radio::NULL_NODE_ID ),*/
-			hops( 0 ),
-			seq_nr( 0 )
+		LoWPANSocket()
+			: local_port( 0 ),
+			remote_port( 0 ),
+			remote_host( Radio::NULL_NODE_ID ),
+			callback_id( -1 )
 			{}
 
 		// -----------------------------------------------------------------
 
-		IPForwardingTableValue( node_id_t next, uint8_t h, uint16_t s )
-			: next_hop( next ),
-			hops( h ),
-			seq_nr( s )
+		LoWPANSocket(uint16_t local_port, uint16_t remote_port, node_id_t remote_host, int callback_id)
+			: local_port( local_port ),
+			remote_port( remote_port ),
+			remote_host( remote_host ),
+			callback_id( callback_id )
 			{}
-		// -----------------------------------------------------------------
-		//Next hop is an IP address
-		node_id_t next_hop;
-		uint8_t hops;
-		uint16_t seq_nr; ///< Sequence Number of last Req
+			
+		/**
+		* Local Port
+		*/
+		uint16_t local_port;
+		/**
+		* Remote Port
+		*/
+		uint16_t remote_port;
+		/**
+		* IPv6 Address of the rmoote host
+		*/
+		node_id_t remote_host;
+		/**
+		* Callback ID of the user application
+		*/
+		int callback_id;	  
 	};
 
 }

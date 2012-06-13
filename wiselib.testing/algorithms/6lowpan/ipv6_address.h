@@ -23,16 +23,57 @@
 
 namespace wiselib
 {
-	template<typename Debug_P>
+	template<typename Radio_Link_Layer_P, typename Debug_P>
 	class IPv6Address
 	{
 	public:
 	
 	typedef Debug_P Debug;
+	typedef Radio_Link_Layer_P Radio_Link_Layer;
+	typedef typename Radio_Link_Layer::node_id_t link_layer_node_id_t;
 	
 	IPv6Address()
 	{
+		memset(addr,0, 16);
 	}
+	
+	//----------------------------------------------------------------------------
+	IPv6Address(const IPv6Address& address)
+	{
+		memcpy(addr, address.addr, 16);
+		prefix_length = address.prefix_length;
+	}
+	
+	//----------------------------------------------------------------------------
+	IPv6Address(const uint8_t* addr)
+	{
+		memcpy(addr, addr, 16);
+		prefix_length = 64;
+	}
+	
+	//----------------------------------------------------------------------------
+	//Constructor for static pre defined addresses
+	IPv6Address(int type)
+	{
+		//"Broadcast" (Multicast) - FF02:0:0:0:0:0:0:1
+		if ( type == 1 )
+		{
+			addr[0]=0xFF;
+			addr[1]=0x02;
+			memset(addr+2,0,13);
+			addr[15]=0x01;
+			prefix_length = 64;
+		}
+		//Unspecified address - NULL NODE ID - 0:0:0:0:0:0:0:0
+		else
+		{
+		 memset(addr,0, 16);
+		 prefix_length = 0;
+		}
+	}
+	
+	
+	//----------------------------------------------------------------------------
 	
 	void set_debug( Debug& debug )
 	{
@@ -41,39 +82,60 @@ namespace wiselib
 	
 	// --------------------------------------------------------------------
 	
-	void set_address( uint8_t* address )
+	//NOTE This should be a configured address (u bit)
+	void set_address( uint8_t* address, uint8_t prefix_l = 64 )
 	{
-		memcpy(&(addr_[0]), address, 16);
+		memcpy(&(addr[0]), address, 16);
+		prefix_length = prefix_l;
 	}
 	
 	// --------------------------------------------------------------------
 	
-	void set_prefix( uint8_t* prefix )
-	{
-		memcpy(&(addr_[0]), prefix, 8);
+	//If the prefix_l is shorter than 64, the prefix has to contain zeros at the lower bits!
+	void set_prefix( uint8_t* prefix, uint8_t prefix_l = 64 )
+	{	
+		memcpy(&(addr[0]), prefix, 8);
+		prefix_length = prefix_l;
 	}
 	
 	// --------------------------------------------------------------------
 	
-	void set_iid( uint8_t* iid )
+	void set_long_iid( link_layer_node_id_t* iid, bool global )
 	{
-		memcpy(&(addr_[8]), iid, 8);
+		//The different operation systems provide different length link_layer_node_id_t-s
+		for ( unsigned int i = 0; i < ( sizeof(link_layer_node_id_t) || 8 ); i++ )
+			addr[15-i] = *((uint8_t*)iid + i);
+		
+		//If the provided link_layer address is short (uint16_t), the FFFE is included
+		//Other bits are 0
+		if( sizeof(link_layer_node_id_t) < 3 )
+		{
+			addr[11] = 0xFF;
+			addr[12] = 0xFE;
+		}
+		
+		//Global address: u bit is 1
+		if( global )
+			addr[8] |= 0x02;
+		//Local address: u bit is 0
+		else
+			addr[8] &= 0xFD;
 	}
 	
-	// --------------------------------------------------------------------
-	
-	//MAC: 48-bit-long --> 6 bytes
-	//To construct EUI-64: 1. 2. 3. FF FE 4. 5. 6.
-	//U bit: in the first byte: _ _ _ _ _ _ 1 _
-	
-	//TODO: uint8_t doesn't seem so good for node_id_t
-	void set_iid_from_MAC( uint8_t* ll_addr )
+	//NOTE this is not used at the moment
+	void set_short_iid( uint16_t iid, uint16_t pan_id = 0 )
 	{
-		memcpy(&(addr_[8]), ll_addr, 3);
-		addr_[11]=0xFF;
-		addr_[12]=0xFE;
-		memcpy(&(addr_[13]), ll_addr+3, 3);
-		addr_[8] |= 0x02;
+		addr[8] = (pan_id >> 8);
+		
+		//The u bit has to be 0
+		addr[8] &= 0xFD;
+		
+		addr[9] = (pan_id & 0x00FF);
+		addr[10] = 0x00;
+
+		addr[13] = 0x00;
+		addr[14] = (iid >> 8);
+		addr[15] = (iid & 0x00FF);
 	}
 	
 	// --------------------------------------------------------------------
@@ -85,6 +147,26 @@ namespace wiselib
 		link_local_prefix[1]=0x80;
 		memset(&(link_local_prefix[2]),0, 6);
 		set_prefix(link_local_prefix);
+		prefix_length = 64;
+	}
+	
+	// --------------------------------------------------------------------
+	
+	void make_it_solicited_multicast( link_layer_node_id_t iid )
+	{
+		addr[0] = 0xFF;
+		addr[1] = 0x02;
+		memset(&(addr[2]), 0, 9);
+		addr[11] = 0x01;
+		addr[12] = 0xFF;
+		
+		if( sizeof( link_layer_node_id_t ) > 3 )
+			addr[13] = iid >> 16;
+		else
+			addr[13] =  0x00;
+		addr[14] = iid >> 8;
+		addr[15] = iid;
+		prefix_length = 104;
 	}
 	
 	// --------------------------------------------------------------------
@@ -94,26 +176,55 @@ namespace wiselib
 		#ifdef IPv6_LAYER_DEBUG
 		for(uint8_t i = 0; i < 16; i++)
 		{
-			debug().debug( "%x", addr_[i] >> 4 );
-			debug().debug( "%x", addr_[i] & 0x0F );
+			debug().debug( "%x", addr[i] >> 4 );
+			debug().debug( "%x", addr[i] & 0x0F );
 			if(i%2==1 && i<15)
 				debug().debug( ":" );
 		}
+		debug().debug( "/ %i", prefix_length);
 		#endif
 	}
 	
+	// --------------------------------------------------------------------
 	
-	bool operator ==(const IPv6Address<Debug>& b)
+	bool operator ==(const IPv6Address<Radio_Link_Layer, Debug>& b)
 	{
-		for( int i = 0; i < 16; i++ )
+		//If every byte is equal, return true
+		if( common_prefix_length( b ) == 16 )
 		{
-			if( addr_[i] != b.addr_[i] )
-				return false;
+			return true;
 		}
-		return true;
+		return false;
 	}
 	
-	uint8_t addr_[16];
+	bool operator !=(const IPv6Address<Radio_Link_Layer, Debug>& b)
+	{
+	 //If every byte is equal, return true
+	 if( common_prefix_length( b ) != 16 )
+	 {
+	  return true;
+	 }
+	 return false;
+	}
+	
+	// --------------------------------------------------------------------
+	
+	//Return the size of the same bytes at from the beginning of the address
+	uint8_t common_prefix_length(const IPv6Address<Radio_Link_Layer, Debug>& b )
+	{
+		uint8_t same = 0;
+		for( uint8_t i = 0; i < 16; i++ )
+		{
+			if( addr[i] == b.addr[i] )
+				same++;
+			else
+				break;
+		}
+		return same;
+	}
+	
+	uint8_t addr[16];
+	uint8_t prefix_length;
 	private:
 	
 	Debug& debug()
