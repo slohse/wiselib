@@ -35,7 +35,7 @@ public:
 		cservice_.enable_radio();
 		//
 
-		server_id_ = // INSERT_SERVER_NODE_ID_HERE;
+		server_id_ = 0x2014;
 		temp_uri_path_ = wiselib::StaticString("temperature");
 
 		debug_->debug( "node %x > Starting 'temperature' client\n", radio_->id() );
@@ -47,9 +47,10 @@ public:
 	// --------------------------------------------------------------------
 	void broadcast_loop( void* )
 	{
+		debug_->debug( "node %x > sending GET to %i\n", radio_->id(), server_id_ );
 		cservice_.get< ExampleApplication, &ExampleApplication::receive_coap>( server_id_, temp_uri_path_, wiselib::StaticString(), this );
 		timer_->set_timer<ExampleApplication,
-				&ExampleApplication::broadcast_loop>( 1000, this, NULL );
+				&ExampleApplication::broadcast_loop>( 3000, this, NULL );
 	}
 	// --------------------------------------------------------------------
 	void receive_coap( received_message_t & message )
