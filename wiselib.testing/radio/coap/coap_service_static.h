@@ -38,9 +38,10 @@
 		typename coap_packet_t_, \
 		typename OsModel_P::size_t sent_list_size_, \
 		typename OsModel_P::size_t received_list_size_, \
-		typename OsModel_P::size_t resources_list_size_>
+		typename OsModel_P::size_t resources_list_size_, \
+		typename Debug_P>
 
-#define COAP_SERVICE_T	CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Rand_P, String_T, preface_msg_id_, human_readable_errors_, coap_packet_t_, sent_list_size_, received_list_size_, resources_list_size_>
+#define COAP_SERVICE_T	CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Rand_P, String_T, preface_msg_id_, human_readable_errors_, coap_packet_t_, sent_list_size_, received_list_size_, resources_list_size_, Debug_P>
 
 namespace wiselib {
 
@@ -75,7 +76,8 @@ template<typename OsModel_P,
 	typename coap_packet_t_ = typename wiselib::CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t,
 	typename OsModel_P::size_t sent_list_size_ = COAPRADIO_SENT_LIST_SIZE,
 	typename OsModel_P::size_t received_list_size_ = COAPRADIO_RECEIVED_LIST_SIZE,
-	typename OsModel_P::size_t resources_list_size_ = COAPRADIO_RESOURCES_SIZE>
+	typename OsModel_P::size_t resources_list_size_ = COAPRADIO_RESOURCES_SIZE,
+	typename Debug_P = typename OsModel_P::Debug>
 	class CoapServiceStatic
 	{
 
@@ -88,6 +90,8 @@ template<typename OsModel_P,
 		typedef Timer_P Timer;
 		typedef Rand_P Rand;
 		typedef String_T string_t;
+
+		typedef Debug_P Debug;
 
 		typedef typename OsModel::size_t os_size_t;
 
@@ -238,7 +242,7 @@ template<typename OsModel_P,
 		~CoapServiceStatic();
 
 		int destruct();
-		int init( Radio& radio, Timer& timer, Rand& rand );
+		int init( Radio& radio, Timer& timer, Rand& rand, Debug& debug );
 		int enable_radio();
 		int disable_radio();
 		node_id_t id ();
@@ -598,6 +602,7 @@ template<typename OsModel_P,
 		Radio *radio_;
 		Timer *timer_;
 		Rand *rand_;
+		Debug *debug_;
 		int recv_callback_id_; // callback for receive function
 		sent_list_t sent_;
 		received_list_t received_;
@@ -660,11 +665,13 @@ template<typename OsModel_P,
 	COAP_SERVICE_TEMPLATE_PREFIX
 	int COAP_SERVICE_T::init(Radio& radio,
 				Timer& timer,
-				Rand& rand )
+				Rand& rand ,
+				Debug& debug )
 	{
 		radio_ = &radio;
 		timer_ = &timer;
 		rand_ = &rand;
+		debug_ = &debug;
 
 		rand_->srand( radio_->id() );
 

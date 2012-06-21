@@ -33,6 +33,7 @@ public:
 		timer_ = &wiselib::FacetProvider<Os, Os::Timer>::get_facet( value );
 		debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
+		value.radio().hardware_radio().set_channel(11);
 		cservice_.init( *radio_, *timer_, *rand_ );
 		cservice_.enable_radio();
 
@@ -46,12 +47,15 @@ public:
 		cservice_.reg_resource_callback< ExampleApplication,
 			&ExampleApplication::receive_coap>( temp_uri_path_, this );
 
+		radio_->reg_recv_callback<ExampleApplication,
+			&ExampleApplication::receive>( this );
+
 	}
 	// --------------------------------------------------------------------
 
 	void receive_coap( received_message_t & message )
 	{
-//		debug_->debug( "node %x > received coap", radio_->id() );
+		debug_->debug( "node %x > received coap from %x", radio_->id(), message.correspondent() );
 		coap_packet_t & packet = message.message();
 
 		if( packet.is_request() && packet.uri_path() == temp_uri_path_ )
@@ -59,6 +63,14 @@ public:
 //			debug_->debug( "node %x > received request for temperature\n", radio_->id() );
 			cservice_.reply( message, (uint8_t*) temperature_str_, temperature_str_len_ );
 		}
+	}
+
+	void receive( Os::Radio::node_id_t from, Os::Radio::size_t len, Os::Radio::block_data_t *buf )
+	{
+		debug_->debug( "node %x > received raw from %x, len %i", radio_->id(), from, len );
+		debug_->debug( "node %x > raw: %x, %x, %x, %x, %x, %x\n",
+				radio_->id(), buf[0],buf[1], buf[2],
+				buf[3], buf[4], buf[5] );
 	}
 private:
 	Os::Radio::self_pointer_t radio_;
