@@ -34,7 +34,7 @@ public:
 		debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
 		value.radio().hardware_radio().set_channel(11);
-		cservice_.init( *radio_, *timer_, *rand_ );
+		cservice_.init( *radio_, *timer_, *rand_, *debug_ );
 		cservice_.enable_radio();
 
 		temperature_ = 23;

@@ -665,7 +665,7 @@ template<typename OsModel_P,
 	COAP_SERVICE_TEMPLATE_PREFIX
 	int COAP_SERVICE_T::init(Radio& radio,
 				Timer& timer,
-				Rand& rand ,
+				Rand& rand,
 				Debug& debug )
 	{
 		radio_ = &radio;
@@ -794,7 +794,9 @@ template<typename OsModel_P,
 
 				if( err_code == SUCCESS )
 				{
+					debug_->debug("node %x -- coap_service::receive> packet parsed sucessfully\n", radio_->id());
 					ReceivedMessage *deduplication;
+					debug_->debug("node %x -- coap_service::receive> looking for msg_id %i\n", radio_->id(), packet.msg_id());
 					// Only act if this message hasn't been received yet
 					if( (deduplication = find_message_by_id(from, packet.msg_id(), received_)) == NULL )
 					{
@@ -825,6 +827,7 @@ template<typename OsModel_P,
 						{
 							if( packet.is_request() )
 							{
+								debug_->debug("node %x -- coap_service::receive> is request\n", radio_->id());
 								handle_request( received_message );
 							}
 							else if ( packet.is_response() )
@@ -847,6 +850,7 @@ template<typename OsModel_P,
 					}
 					else
 					{
+						debug_->debug("node %x -- coap_service::receive> duplicate packet\n", radio_->id());
 						// if it's confirmable we might want to hurry sending an ACK
 						if( packet.type() == COAP_MSG_TYPE_CON )
 							ack( *deduplication );
@@ -1171,6 +1175,7 @@ template<typename OsModel_P,
 			timer_->template set_timer<self_type, &self_type::ack_timeout>( COAP_ACK_GRACE_PERIOD, this, &message );
 		}
 
+		debug_->debug("node %x -- coap_service::handle_request> looking for resource\n", radio_->id());
 		string_t available_res;
 		// TODO: we're looking at the first path segment only, subresources should be handled by their parents
 		string_t request_res = message.message().uri_path();
@@ -1192,7 +1197,7 @@ template<typename OsModel_P,
 		}
 		if( !resource_found )
 		{
-
+			debug_->debug("node %x -- coap_service::handle_request> resource not found\n", radio_->id());
 			char * error_description = NULL;
 			int len = 0;
 			if( human_readable_errors_ )
