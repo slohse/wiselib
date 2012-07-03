@@ -28,6 +28,7 @@
 #include "util/pstl/string_dynamic.h"
 #include "util/pstl/list_static.h"
 
+#ifdef COAP_5148_DEBUG
 #define COAP_SERVICE_TEMPLATE_PREFIX	template<typename OsModel_P, \
 		typename Radio_P, \
 		typename Timer_P, \
@@ -40,8 +41,25 @@
 		typename OsModel_P::size_t received_list_size_, \
 		typename OsModel_P::size_t resources_list_size_, \
 		typename Debug_P>
+#else
+#define COAP_SERVICE_TEMPLATE_PREFIX	template<typename OsModel_P, \
+		typename Radio_P, \
+		typename Timer_P, \
+		typename Rand_P, \
+		typename String_T, \
+		bool preface_msg_id_, \
+		bool human_readable_errors_, \
+		typename coap_packet_t_, \
+		typename OsModel_P::size_t sent_list_size_, \
+		typename OsModel_P::size_t received_list_size_, \
+		typename OsModel_P::size_t resources_list_size_>
+#endif
 
+#ifdef COAP_5148_DEBUG
 #define COAP_SERVICE_T	CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Rand_P, String_T, preface_msg_id_, human_readable_errors_, coap_packet_t_, sent_list_size_, received_list_size_, resources_list_size_, Debug_P>
+#else
+#define COAP_SERVICE_T	CoapServiceStatic<OsModel_P, Radio_P, Timer_P, Rand_P, String_T, preface_msg_id_, human_readable_errors_, coap_packet_t_, sent_list_size_, received_list_size_, resources_list_size_>
+#endif
 
 namespace wiselib {
 
@@ -76,8 +94,12 @@ template<typename OsModel_P,
 	typename coap_packet_t_ = typename wiselib::CoapPacketStatic<OsModel_P, Radio_P, String_T>::coap_packet_t,
 	typename OsModel_P::size_t sent_list_size_ = COAPRADIO_SENT_LIST_SIZE,
 	typename OsModel_P::size_t received_list_size_ = COAPRADIO_RECEIVED_LIST_SIZE,
+#ifdef COAP_5148_DEBUG
 	typename OsModel_P::size_t resources_list_size_ = COAPRADIO_RESOURCES_SIZE,
 	typename Debug_P = typename OsModel_P::Debug>
+#else
+	typename OsModel_P::size_t resources_list_size_ = COAPRADIO_RESOURCES_SIZE>
+#endif
 	class CoapServiceStatic
 	{
 
@@ -91,7 +113,9 @@ template<typename OsModel_P,
 		typedef Rand_P Rand;
 		typedef String_T string_t;
 
+#ifdef COAP_5148_DEBUG
 		typedef Debug_P Debug;
+#endif
 
 		typedef typename OsModel::size_t os_size_t;
 
@@ -242,7 +266,11 @@ template<typename OsModel_P,
 		~CoapServiceStatic();
 
 		int destruct();
+#ifdef COAP_5148_DEBUG
 		int init( Radio& radio, Timer& timer, Rand& rand, Debug& debug );
+#else
+		int init( Radio& radio, Timer& timer, Rand& rand);
+#endif
 		int enable_radio();
 		int disable_radio();
 		node_id_t id ();
@@ -602,7 +630,9 @@ template<typename OsModel_P,
 		Radio *radio_;
 		Timer *timer_;
 		Rand *rand_;
+#ifdef COAP_5148_DEBUG
 		Debug *debug_;
+#endif
 		int recv_callback_id_; // callback for receive function
 		sent_list_t sent_;
 		received_list_t received_;
@@ -665,13 +695,19 @@ template<typename OsModel_P,
 	COAP_SERVICE_TEMPLATE_PREFIX
 	int COAP_SERVICE_T::init(Radio& radio,
 				Timer& timer,
+#ifdef COAP_5148_DEBUG
 				Rand& rand,
 				Debug& debug )
+#else
+				Rand& rand)
+#endif
 	{
 		radio_ = &radio;
 		timer_ = &timer;
 		rand_ = &rand;
+#ifdef COAP_5148_DEBUG
 		debug_ = &debug;
+#endif
 
 		rand_->srand( radio_->id() );
 
@@ -709,7 +745,9 @@ template<typename OsModel_P,
 	COAP_SERVICE_TEMPLATE_PREFIX
 	int COAP_SERVICE_T::send (node_id_t receiver, size_t len, block_data_t *data )
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::send > \n", radio_->id() );
+#endif
 		if( preface_msg_id_ )
 		{
 			block_data_t buf[len+1];
@@ -728,7 +766,9 @@ template<typename OsModel_P,
 	template <class T, void (T::*TMethod)( typename COAP_SERVICE_T::ReceivedMessage& ) >
 	coap_packet_t_ * COAP_SERVICE_T::send_coap_as_is(node_id_t receiver, const coap_packet_t & message, T *callback)
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::send_as_is > \n", radio_->id() );
+#endif
 		block_data_t buf[message.serialize_length()];
 
 		size_t len = message.serialize(buf);
@@ -756,7 +796,9 @@ template<typename OsModel_P,
 	template <class T, void (T::*TMethod)( typename COAP_SERVICE_T::ReceivedMessage& ) >
 	coap_packet_t_ * COAP_SERVICE_T::send_coap_gen_msg_id(node_id_t receiver, coap_packet_t & message, T *callback)
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::send_gen_mid > \n", radio_->id() );
+#endif
 		message.set_msg_id( this->msg_id() );
 		return send_coap_as_is<T, TMethod>( receiver, message, callback );
 	}
@@ -765,7 +807,9 @@ template<typename OsModel_P,
 	template <class T, void (T::*TMethod)( typename COAP_SERVICE_T::ReceivedMessage& ) >
 	coap_packet_t_ * COAP_SERVICE_T::send_coap_gen_msg_id_token(node_id_t receiver, coap_packet_t & message, T *callback)
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::send_gen_mid_tkn > \n", radio_->id() );
+#endif
 		OpaqueData token;
 		coap_token_t raw_token = this->token();
 		token.set( ( uint8_t* ) &raw_token, sizeof( coap_token_t ) );
@@ -776,7 +820,9 @@ template<typename OsModel_P,
 	COAP_SERVICE_TEMPLATE_PREFIX
 	void COAP_SERVICE_T::receive(node_id_t from, size_t len, block_data_t * data)
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::receive > \n", radio_->id() );
+#endif
 		// do not receive own messages
 		if (radio_->id() == from) {
 			return;
@@ -799,9 +845,13 @@ template<typename OsModel_P,
 
 				if( err_code == SUCCESS )
 				{
+#ifdef COAP_5148_DEBUG
 					debug_->debug("node %x -- coap_service::receive> packet parsed sucessfully\n", radio_->id());
+#endif
 					ReceivedMessage *deduplication;
+#ifdef COAP_5148_DEBUG
 					debug_->debug("node %x -- coap_service::receive> looking for msg_id %i\n", radio_->id(), packet.msg_id());
+#endif
 					// Only act if this message hasn't been received yet
 					if( (deduplication = find_message_by_id(from, packet.msg_id(), received_)) == NULL )
 					{
@@ -832,7 +882,9 @@ template<typename OsModel_P,
 						{
 							if( packet.is_request() )
 							{
+#ifdef COAP_5148_DEBUG
 								debug_->debug("node %x -- coap_service::receive> is request\n", radio_->id());
+#endif
 								handle_request( received_message );
 							}
 							else if ( packet.is_response() )
@@ -855,7 +907,9 @@ template<typename OsModel_P,
 					}
 					else
 					{
+#ifdef COAP_5148_DEBUG
 						debug_->debug("node %x -- coap_service::receive> duplicate packet\n", radio_->id());
+#endif
 						// if it's confirmable we might want to hurry sending an ACK
 						if( packet.type() == COAP_MSG_TYPE_CON )
 							ack( *deduplication );
@@ -899,7 +953,9 @@ template<typename OsModel_P,
 	template <class T, void (T::*TMethod)( typename COAP_SERVICE_T::ReceivedMessage& ) >
 	int COAP_SERVICE_T::reg_resource_callback( string_t resource_path, T *callback )
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::reg_resource_callback > '%s' \n", radio_->id(), resource_path.c_str() );
+#endif
 		if ( resources_.empty() )
 			resources_.assign( COAPRADIO_RESOURCES_SIZE, CoapResource() );
 
@@ -934,7 +990,9 @@ template<typename OsModel_P,
 			const string_t &uri_host,
 			uint16_t uri_port)
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::get > \n", radio_->id() );
+#endif
 		return request<T, TMethod>( receiver, COAP_CODE_GET ,uri_path, uri_query, callback, NULL, 0, confirmable, uri_host, uri_port );
 	}
 
@@ -950,7 +1008,9 @@ template<typename OsModel_P,
 			const string_t &uri_host,
 			uint16_t uri_port)
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::put > \n", radio_->id() );
+#endif
 		return request<T, TMethod>( receiver, COAP_CODE_PUT ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
 	}
 
@@ -966,7 +1026,9 @@ template<typename OsModel_P,
 			const string_t &uri_host,
 			uint16_t uri_port)
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::post > \n", radio_->id() );
+#endif
 		return request<T, TMethod>( receiver, COAP_CODE_POST ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
 	}
 
@@ -996,22 +1058,30 @@ template<typename OsModel_P,
 				const string_t &uri_host,
 				uint16_t uri_port)
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::request > \n", radio_->id() );
+#endif
 		coap_packet_t pack;
 
 		pack.set_code( code );
 		if( !pack.is_request() )
 		{
+#ifdef COAP_5148_DEBUG
 			debug_->debug( "node %x -- CoapService::request > packet is not request\n", radio_->id() );
+#endif
 			// TODO ordentlichen Fehler schmeißen?
 			return NULL;
 		}
 
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::request > setting path and query\n", radio_->id() );
+#endif
 		pack.set_uri_path( uri_path );
 		pack.set_uri_query( uri_query );
 
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::request > setting data\n", radio_->id() );
+#endif
 
 		pack.set_data( payload, payload_length );
 
@@ -1019,13 +1089,17 @@ template<typename OsModel_P,
 
 		if( string_t() != uri_host  )
 		{
+#ifdef COAP_5148_DEBUG
 			debug_->debug( "node %x -- CoapService::request > setting host\n", radio_->id() );
+#endif
 			pack.set_option( COAP_OPT_URI_HOST, uri_host );
 		}
 
 		pack.set_uri_port( uri_port );
 
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::request > calling gen_msg_id_tkn\n", radio_->id() );
+#endif
 		return send_coap_gen_msg_id_token<T, TMethod>(receiver, pack, callback );
 	}
 
@@ -1035,7 +1109,9 @@ template<typename OsModel_P,
 				size_t payload_length,
 				CoapCode code )
 	{
+#ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::reply > \n", radio_->id() );
+#endif
 		coap_packet_t *sendstatus = NULL;
 		coap_packet_t & request = req_msg.message();
 		coap_packet_t reply;
@@ -1190,7 +1266,9 @@ template<typename OsModel_P,
 			timer_->template set_timer<self_type, &self_type::ack_timeout>( COAP_ACK_GRACE_PERIOD, this, &message );
 		}
 
+#ifdef COAP_5148_DEBUG
 		debug_->debug("node %x -- coap_service::handle_request> looking for resource\n", radio_->id());
+#endif
 		string_t available_res;
 		// TODO: we're looking at the first path segment only, subresources should be handled by their parents
 		string_t request_res = message.message().uri_path();
@@ -1212,7 +1290,9 @@ template<typename OsModel_P,
 		}
 		if( !resource_found )
 		{
+#ifdef COAP_5148_DEBUG
 			debug_->debug("node %x -- coap_service::handle_request> resource not found\n", radio_->id());
+#endif
 			char * error_description = NULL;
 			int len = 0;
 			if( human_readable_errors_ )

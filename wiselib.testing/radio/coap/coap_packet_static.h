@@ -68,7 +68,11 @@ namespace wiselib
 
 		///@name Construction / Destruction
 		///@{
+#ifdef COAP_5148_DEBUG
+		CoapPacketStatic( Debug debug );
+#else
 		CoapPacketStatic( );
+#endif
 		CoapPacketStatic( const coap_packet_t &rhs );
 		~CoapPacketStatic();
 		///@}
@@ -404,6 +408,10 @@ namespace wiselib
 		// Coap Version
 		uint8_t version_;
 
+#ifdef COAP_5148_DEBUG
+		Debug* debug_;
+#endif
+
 		block_data_t* options_[COAP_OPTION_ARRAY_SIZE];
 		// contains Options and Data
 		block_data_t storage_[storage_size_];
@@ -451,10 +459,24 @@ namespace wiselib
 			error_code_ = rhs.error_code_;
 			error_option_ = rhs.error_option_;
 			version_ = rhs.version_;
+#ifdef COAP_5148_DEBUG
+			debug_ = rhs.debug_
+#endif
 		}
 		return *this;
 	}
 
+#ifdef COAP_5148_DEBUG
+	template<typename OsModel_P,
+	typename Radio_P,
+	typename String_T,
+	size_t storage_size_>
+	CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::CoapPacketStatic(Debug debug)
+	{
+		debug_ = debug;
+		init();
+	}
+#else
 	template<typename OsModel_P,
 	typename Radio_P,
 	typename String_T,
@@ -463,6 +485,7 @@ namespace wiselib
 	{
 		init();
 	}
+#endif
 
 	template<typename OsModel_P,
 	typename Radio_P,

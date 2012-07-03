@@ -32,11 +32,15 @@ public:
 		debug_ = &wiselib::FacetProvider<Os, Os::Debug>::get_facet( value );
 		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
 		value.radio().hardware_radio().set_channel(11);
+#ifdef COAP_5148_DEBUG
 		cservice_.init( *radio_, *timer_, *rand_, *debug_);
+#else
+		cservice_.init( *radio_, *timer_, *rand_);
+#endif
 		cservice_.enable_radio();
 		//
 
-		server_id_ = 0x2018;
+		server_id_ = 0x2114;
 		temp_uri_path_ = wiselib::StaticString("temperature");
 
 		debug_->debug( "node %x > Starting 'temperature' client\n", radio_->id() );
