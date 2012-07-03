@@ -69,7 +69,7 @@ namespace wiselib
 		///@name Construction / Destruction
 		///@{
 #ifdef COAP_5148_DEBUG
-		CoapPacketStatic( Debug debug );
+		CoapPacketStatic( Debug *debug );
 #else
 		CoapPacketStatic( );
 #endif
@@ -460,7 +460,7 @@ namespace wiselib
 			error_option_ = rhs.error_option_;
 			version_ = rhs.version_;
 #ifdef COAP_5148_DEBUG
-			debug_ = rhs.debug_
+			debug_ = rhs.debug_;
 #endif
 		}
 		return *this;
@@ -471,7 +471,7 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::CoapPacketStatic(Debug debug)
+	CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::CoapPacketStatic(Debug *debug)
 	{
 		debug_ = debug;
 		init();
@@ -1392,6 +1392,9 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts)
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::add_option> \n" );
+#endif
 		if( options_[num] != NULL && !COAP_OPT_CAN_OCCUR_MULTIPLE[num] )
 			return ERR_MULTIPLE_OCCURENCES_OF_OPTION;
 		CoapOptionNum prev = (CoapOptionNum) 0;
@@ -1562,6 +1565,9 @@ namespace wiselib
 				return status;
 		}
 
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::add_option> end\n" );
+#endif
 		return SUCCESS;
 	}
 

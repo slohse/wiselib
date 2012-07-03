@@ -164,12 +164,22 @@ template<typename OsModel_P,
 				return *this;
 			}
 
+#ifdef COAP_5148_DEBUG
+
+			ReceivedMessage( Debug *debug)
+			{
+				message_ = coap_packet_t( debug );
+				ack_ = NULL;
+				response_ = NULL;
+			}
+#else
 			ReceivedMessage()
 			{
 				message_ = coap_packet_t();
 				ack_ = NULL;
 				response_ = NULL;
 			}
+#endif
 
 			ReceivedMessage( const ReceivedMessage &rhs )
 			{
@@ -185,7 +195,7 @@ template<typename OsModel_P,
 			}
 
 			/**
-			 * Gets the CoapPacketStatic Object the was received
+			 * Gets the CoapPacketStatic Object that was received
 			 * @return received message
 			 */
 			coap_packet_t & message() const
@@ -473,13 +483,25 @@ template<typename OsModel_P,
 		class SentMessage
 		{
 		public:
-			SentMessage()
+#ifdef COAP_5148_DEBUG
+			SentMessage( Debug *debug )
 			{
+				message_ = coap_packet_t(debug);
 				retransmit_count_ = 0;
 				ack_received_ = false;
 				sender_callback_ = coapreceiver_delegate_t();
 				response_ = NULL;
 			}
+#else
+			SentMessage()
+			{
+				message_ = coap_packet_t();
+				retransmit_count_ = 0;
+				ack_received_ = false;
+				sender_callback_ = coapreceiver_delegate_t();
+				response_ = NULL;
+			}
+#endif
 
 			coap_packet_t & message() const
 			{
@@ -777,7 +799,11 @@ template<typename OsModel_P,
 		if(status != SUCCESS )
 			return NULL;
 
+#ifdef COAP_5148_DEBUG
+		SentMessage & sent = *( queue_message(SentMessage( debug_ ), sent_) );
+#else
 		SentMessage & sent = *( queue_message(SentMessage(), sent_) );
+#endif
 		sent.set_correspondent( receiver );
 		sent.set_message( message );
 		sent.set_sender_callback( coapreceiver_delegate_t::template from_method<T, TMethod>( callback ) );
@@ -839,7 +865,11 @@ template<typename OsModel_P,
 			}
 			if( ( preface_msg_id_ && msg_id == CoapMsgId ) || !preface_msg_id_ )
 			{
+#ifdef COAP_5148_DEBUG
+				coap_packet_t packet(debug_);
+#else
 				coap_packet_t packet;
+#endif
 
 				int err_code = packet.parse_message( data + msg_id_t_size, len - msg_id_t_size );
 
@@ -943,7 +973,11 @@ template<typename OsModel_P,
 	COAP_SERVICE_TEMPLATE_PREFIX
 	coap_packet_t_ * COAP_SERVICE_T::rst( node_id_t receiver, coap_msg_id_t id )
 	{
+#ifdef COAP_5148_DEBUG
+		coap_packet_t rstp(debug_);
+#else
 		coap_packet_t rstp;
+#endif
 		rstp.set_type( COAP_MSG_TYPE_RST );
 		rstp.set_msg_id( id );
 		return send_coap_as_is<self_type, &self_type::receive_coap>( receiver, rstp, this );
@@ -1061,7 +1095,11 @@ template<typename OsModel_P,
 #ifdef COAP_5148_DEBUG
 		debug_->debug( "node %x -- CoapService::request > \n", radio_->id() );
 #endif
+#ifdef COAP_5148_DEBUG
+		coap_packet_t pack(debug_);
+#else
 		coap_packet_t pack;
+#endif
 
 		pack.set_code( code );
 		if( !pack.is_request() )
@@ -1114,7 +1152,11 @@ template<typename OsModel_P,
 #endif
 		coap_packet_t *sendstatus = NULL;
 		coap_packet_t & request = req_msg.message();
+#ifdef COAP_5148_DEBUG
+		coap_packet_t reply(debug_);
+#else
 		coap_packet_t reply;
+#endif
 		OpaqueData token;
 		request.token( token );
 
@@ -1316,7 +1358,11 @@ template<typename OsModel_P,
 			send(message.correspondent(), message.ack_sent()->serialize_length(), buf);
 			return;
 		}
+#ifdef COAP_5148_DEBUG
+		coap_packet_t ackp(debug_);
+#else
 		coap_packet_t ackp;
+#endif
 		ackp.set_type( COAP_MSG_TYPE_ACK );
 		ackp.set_msg_id( message.message().msg_id() );
 		coap_packet_t * sent = send_coap_as_is<self_type, &self_type::receive_coap>(message.correspondent(), ackp, this );

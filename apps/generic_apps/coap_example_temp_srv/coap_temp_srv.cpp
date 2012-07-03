@@ -3,7 +3,7 @@
  */
 #include "external_interface/external_interface.h"
 
-#define COAP_PREFACE_MSG_ID 1
+#define COAP_5148_DEBUG
 
 #include "radio/coap/coap_packet_static.h"
 #include "radio/coap/coap_service_static.h"
