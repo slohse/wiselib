@@ -709,6 +709,7 @@ template<typename OsModel_P,
 	COAP_SERVICE_TEMPLATE_PREFIX
 	int COAP_SERVICE_T::send (node_id_t receiver, size_t len, block_data_t *data )
 	{
+		debug_->debug( "node %x -- CoapService::send > \n", radio_->id() );
 		if( preface_msg_id_ )
 		{
 			block_data_t buf[len+1];
@@ -727,6 +728,7 @@ template<typename OsModel_P,
 	template <class T, void (T::*TMethod)( typename COAP_SERVICE_T::ReceivedMessage& ) >
 	coap_packet_t_ * COAP_SERVICE_T::send_coap_as_is(node_id_t receiver, const coap_packet_t & message, T *callback)
 	{
+		debug_->debug( "node %x -- CoapService::send_as_is > \n", radio_->id() );
 		block_data_t buf[message.serialize_length()];
 
 		size_t len = message.serialize(buf);
@@ -754,6 +756,7 @@ template<typename OsModel_P,
 	template <class T, void (T::*TMethod)( typename COAP_SERVICE_T::ReceivedMessage& ) >
 	coap_packet_t_ * COAP_SERVICE_T::send_coap_gen_msg_id(node_id_t receiver, coap_packet_t & message, T *callback)
 	{
+		debug_->debug( "node %x -- CoapService::send_gen_mid > \n", radio_->id() );
 		message.set_msg_id( this->msg_id() );
 		return send_coap_as_is<T, TMethod>( receiver, message, callback );
 	}
@@ -762,6 +765,7 @@ template<typename OsModel_P,
 	template <class T, void (T::*TMethod)( typename COAP_SERVICE_T::ReceivedMessage& ) >
 	coap_packet_t_ * COAP_SERVICE_T::send_coap_gen_msg_id_token(node_id_t receiver, coap_packet_t & message, T *callback)
 	{
+		debug_->debug( "node %x -- CoapService::send_gen_mid_tkn > \n", radio_->id() );
 		OpaqueData token;
 		coap_token_t raw_token = this->token();
 		token.set( ( uint8_t* ) &raw_token, sizeof( coap_token_t ) );
@@ -772,6 +776,7 @@ template<typename OsModel_P,
 	COAP_SERVICE_TEMPLATE_PREFIX
 	void COAP_SERVICE_T::receive(node_id_t from, size_t len, block_data_t * data)
 	{
+		debug_->debug( "node %x -- CoapService::receive > \n", radio_->id() );
 		// do not receive own messages
 		if (radio_->id() == from) {
 			return;
@@ -894,7 +899,7 @@ template<typename OsModel_P,
 	template <class T, void (T::*TMethod)( typename COAP_SERVICE_T::ReceivedMessage& ) >
 	int COAP_SERVICE_T::reg_resource_callback( string_t resource_path, T *callback )
 	{
-
+		debug_->debug( "node %x -- CoapService::reg_resource_callback > '%s' \n", radio_->id(), resource_path.c_str() );
 		if ( resources_.empty() )
 			resources_.assign( COAPRADIO_RESOURCES_SIZE, CoapResource() );
 
@@ -929,6 +934,7 @@ template<typename OsModel_P,
 			const string_t &uri_host,
 			uint16_t uri_port)
 	{
+		debug_->debug( "node %x -- CoapService::get > \n", radio_->id() );
 		return request<T, TMethod>( receiver, COAP_CODE_GET ,uri_path, uri_query, callback, NULL, 0, confirmable, uri_host, uri_port );
 	}
 
@@ -944,6 +950,7 @@ template<typename OsModel_P,
 			const string_t &uri_host,
 			uint16_t uri_port)
 	{
+		debug_->debug( "node %x -- CoapService::put > \n", radio_->id() );
 		return request<T, TMethod>( receiver, COAP_CODE_PUT ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
 	}
 
@@ -959,6 +966,7 @@ template<typename OsModel_P,
 			const string_t &uri_host,
 			uint16_t uri_port)
 	{
+		debug_->debug( "node %x -- CoapService::post > \n", radio_->id() );
 		return request<T, TMethod>( receiver, COAP_CODE_POST ,uri_path, uri_query, callback, payload, payload_length, confirmable, uri_host, uri_port );
 	}
 
@@ -988,18 +996,22 @@ template<typename OsModel_P,
 				const string_t &uri_host,
 				uint16_t uri_port)
 	{
+		debug_->debug( "node %x -- CoapService::request > \n", radio_->id() );
 		coap_packet_t pack;
 
 		pack.set_code( code );
 		if( !pack.is_request() )
 		{
+			debug_->debug( "node %x -- CoapService::request > packet is not request\n", radio_->id() );
 			// TODO ordentlichen Fehler schmeißen?
 			return NULL;
 		}
 
-
+		debug_->debug( "node %x -- CoapService::request > setting path and query\n", radio_->id() );
 		pack.set_uri_path( uri_path );
 		pack.set_uri_query( uri_query );
+
+		debug_->debug( "node %x -- CoapService::request > setting data\n", radio_->id() );
 
 		pack.set_data( payload, payload_length );
 
@@ -1007,11 +1019,13 @@ template<typename OsModel_P,
 
 		if( string_t() != uri_host  )
 		{
+			debug_->debug( "node %x -- CoapService::request > setting host\n", radio_->id() );
 			pack.set_option( COAP_OPT_URI_HOST, uri_host );
 		}
 
 		pack.set_uri_port( uri_port );
 
+		debug_->debug( "node %x -- CoapService::request > calling gen_msg_id_tkn\n", radio_->id() );
 		return send_coap_gen_msg_id_token<T, TMethod>(receiver, pack, callback );
 	}
 
@@ -1021,6 +1035,7 @@ template<typename OsModel_P,
 				size_t payload_length,
 				CoapCode code )
 	{
+		debug_->debug( "node %x -- CoapService::reply > \n", radio_->id() );
 		coap_packet_t *sendstatus = NULL;
 		coap_packet_t & request = req_msg.message();
 		coap_packet_t reply;

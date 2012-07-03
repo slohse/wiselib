@@ -103,7 +103,7 @@ namespace wiselib {
         }
 
         char operator[] (int pos) const {
-            return (pos >= length_) ? NULL : buffer_[pos];
+            return (pos >= length_) ? '\0' : buffer_[pos];
         }
 
         StaticString& append(const char *other) {
