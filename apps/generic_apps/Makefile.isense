@@ -58,7 +58,7 @@ LOCAL_COMMON_FLAGS += -I$(WISELIB_PATH_TESTING) -I$(WISELIB_PATH)
 LOCAL_COMMON_FLAGS += -DISENSE_JENNIC
 LOCAL_COMMON_FLAGS += -D$(ISENSE_HARDWARE_TYPE)
 LOCAL_COMMON_FLAGS += -DNDEBUG -DOSMODEL=iSenseOsModel -DISENSE
-LOCAL_COMMON_FLAGS += -Os -finline-limit=40
+LOCAL_COMMON_FLAGS += -O2 -finline-limit=40
 #this was introduced later
 LOCAL_COMMON_FLAGS += -fno-strength-reduce -pipe -fno-builtin -nostdlib
 

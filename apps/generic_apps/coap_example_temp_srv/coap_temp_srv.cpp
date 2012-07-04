@@ -4,6 +4,9 @@
 #include "external_interface/external_interface.h"
 
 #define COAP_5148_DEBUG
+#ifdef COAP_5148_DEBUG
+void *global_debug_;
+#endif
 
 #include "radio/coap/coap_packet_static.h"
 #include "radio/coap/coap_service_static.h"
@@ -35,6 +38,7 @@ public:
 		rand_ = &wiselib::FacetProvider<Os, Os::Rand>::get_facet( value );
 		value.radio().hardware_radio().set_channel(11);
 #ifdef COAP_5148_DEBUG
+		global_debug_ = (void*) debug_;
 		cservice_.init( *radio_, *timer_, *rand_, *debug_ );
 #else
 		cservice_.init( *radio_, *timer_, *rand_ );

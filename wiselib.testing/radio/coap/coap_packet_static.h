@@ -22,6 +22,10 @@
 
 #include "coap.h"
 
+#ifdef COAP_5148_DEBUG
+extern void *global_debug_;
+#endif
+
 static const size_t SINGLE_OPTION_NO_HEADER = 0;
 
 namespace wiselib
@@ -68,11 +72,7 @@ namespace wiselib
 
 		///@name Construction / Destruction
 		///@{
-#ifdef COAP_5148_DEBUG
-		CoapPacketStatic( Debug *debug );
-#else
 		CoapPacketStatic( );
-#endif
 		CoapPacketStatic( const coap_packet_t &rhs );
 		~CoapPacketStatic();
 		///@}
@@ -466,26 +466,17 @@ namespace wiselib
 		return *this;
 	}
 
-#ifdef COAP_5148_DEBUG
-	template<typename OsModel_P,
-	typename Radio_P,
-	typename String_T,
-	size_t storage_size_>
-	CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::CoapPacketStatic(Debug *debug)
-	{
-		debug_ = debug;
-		init();
-	}
-#else
 	template<typename OsModel_P,
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
 	CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::CoapPacketStatic()
 	{
+#ifdef COAP_5148_DEBUG
+		debug_ = (Debug*) global_debug_;
+#endif
 		init();
 	}
-#endif
 
 	template<typename OsModel_P,
 	typename Radio_P,
