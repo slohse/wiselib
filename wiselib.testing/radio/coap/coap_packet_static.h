@@ -747,6 +747,9 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_path( const string_t &path )
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::set_uri_path> \n" );
+#endif
 		return set_option( COAP_OPT_URI_PATH, path );
 	}
 
@@ -756,6 +759,9 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_query( const string_t &query )
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::set_uri_query> \n" );
+#endif
 		return set_option( COAP_OPT_URI_QUERY, query );
 	}
 
@@ -809,6 +815,9 @@ namespace wiselib
 	size_t storage_size_>
 	void CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_uri_port( uint32_t port )
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::set_uri_port> \n" );
+#endif
 		remove_option( COAP_OPT_URI_PORT );
 		if( port != COAP_STD_PORT )
 		{
@@ -833,6 +842,9 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_option( CoapOptionNum option_number, uint32_t value )
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::set_option(uint)> \n" );
+#endif
 		remove_option(option_number);
 		return add_option( option_number, value );
 	}
@@ -843,6 +855,9 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_option( CoapOptionNum option_number, const string_t &value )
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::set_option(string_t)> \n" );
+#endif
 		remove_option(option_number);
 		return add_option( option_number, value );
 	}
@@ -853,6 +868,9 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_option( CoapOptionNum option_number, const OpaqueData &value )
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::set_option(opaque)> \n" );
+#endif
 		remove_option(option_number);
 		return add_option( option_number, value );
 	}
@@ -863,6 +881,9 @@ namespace wiselib
 		size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::add_option( CoapOptionNum option_number, uint32_t value )
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::add_option(uint)> \n" );
+#endif
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
 			return ERR_UNKNOWN_OPT;
@@ -897,6 +918,9 @@ namespace wiselib
 		size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::add_option( CoapOptionNum option_number, const string_t &value )
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::add_option(string)> \n" );
+#endif
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
 			return ERR_UNKNOWN_OPT;
@@ -984,6 +1008,9 @@ namespace wiselib
 		size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::add_option( CoapOptionNum option_number, const OpaqueData &value)
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::add_option(opaque)> \n" );
+#endif
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 		{
 			return ERR_UNKNOWN_OPT;
@@ -1184,6 +1211,9 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::remove_option( CoapOptionNum option_number )
 	{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::remove_option> \n" );
+#endif
 		block_data_t *removal_start = options_[option_number];
 		size_t removal_len = 0;
 		size_t num_segments = 0;
@@ -1198,6 +1228,9 @@ namespace wiselib
 		{
 			uint8_t prev = (option_number - ( ((*removal_start) & 0xf0 ) >> 4));
 			uint8_t next = 0;
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::remove_option> before do-while\n" );
+#endif
 			do
 			{
 				++num_segments;
@@ -1215,10 +1248,16 @@ namespace wiselib
 			} while( (removal_start + removal_len) < end_of_options_
 			         && ( *(removal_start + removal_len) & 0xf0 ) == 0 );
 
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::remove_option> after do-while\n" );
+#endif
 			// if the removed option is the last option and the one
 			// before is a fencepost, remove the fencepost
 			if( (removal_start + removal_len) >= end_of_options_ )
 			{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::remove_option> remove fencepost\n" );
+#endif
 				if(is_fencepost( prev ))
 				{
 					removal_start = options_[ prev ];
@@ -1234,6 +1273,9 @@ namespace wiselib
 				if( ( next - prev ) > max_delta
 				    && !is_end_of_opts_marker(removal_start + removal_len))
 				{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::remove_option> add new fencepost\n" );
+#endif
 					uint8_t fencepost_delta = next_fencepost_delta( option_number
 							- ( ( (*removal_start) & 0xf0 ) >> 4) );
 					*removal_start = fencepost_delta << 4;
@@ -1243,6 +1285,9 @@ namespace wiselib
 					prev += fencepost_delta;
 				}
 
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::remove_option> move following options\n" );
+#endif
 				// move following options
 				memmove( removal_start,
 				         removal_start + removal_len,
@@ -1255,6 +1300,9 @@ namespace wiselib
 			end_of_options_ -= removal_len;
 			option_count_ -= num_segments;
 
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::remove_option> scan opts\n" );
+#endif
 			scan_opts( removal_start, prev );
 
 			// remove End of Options marker if there are fewer than 15 options
@@ -1269,9 +1317,15 @@ namespace wiselib
 			          + ( *(options_[COAP_OPT_FENCEPOST] + 1) & 0xf0 )
 			          == COAP_END_OF_OPTIONS_MARKER ) )
 			{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::remove_option> remove end-of-opts marker\n" );
+#endif
 				remove_end_of_opts_marker();
 			}
 		}
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::remove_option> return\n" );
+#endif
 		return SUCCESS;
 	}
 
@@ -1384,7 +1438,7 @@ namespace wiselib
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts)
 	{
 #ifdef COAP_5148_DEBUG
-		debug_->debug("CoapPacket::add_option> \n" );
+		debug_->debug("CoapPacket::add_option(serialized)> \n" );
 #endif
 		if( options_[num] != NULL && !COAP_OPT_CAN_OCCUR_MULTIPLE[num] )
 			return ERR_MULTIPLE_OCCURENCES_OF_OPTION;
