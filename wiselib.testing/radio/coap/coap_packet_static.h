@@ -856,10 +856,19 @@ namespace wiselib
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::set_option( CoapOptionNum option_number, const string_t &value )
 	{
 #ifdef COAP_5148_DEBUG
-		debug_->debug("CoapPacket::set_option(string_t)> \n" );
+		debug_->debug("CoapPacket::set_option(string_t)> calling remove_option\n" );
 #endif
 		remove_option(option_number);
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::set_option(string_t)> calling add_option\n" );
+#endif
+#ifdef COAP_5148_DEBUG
+		int ao_status = add_option( option_number, value );
+		debug_->debug("CoapPacket::set_option(string_t)> add_option returned %i\n", ao_status );
+		return ao_status;
+#else
 		return add_option( option_number, value );
+#endif
 	}
 
 	template<typename OsModel_P,
