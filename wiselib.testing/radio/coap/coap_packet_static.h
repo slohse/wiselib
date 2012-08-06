@@ -1239,8 +1239,8 @@ namespace wiselib
 
 			scan_opts( removal_start, prev );
 
-			// remove End of Options marker if there are fewer than 15 options
-			// now
+			// remove End of Options marker if removing the option(s)
+			// led the number of options to falling below 15
 			if( option_count_ + num_segments >= COAP_UNLIMITED_OPTIONS
 			    && option_count_ < COAP_UNLIMITED_OPTIONS )
 			{
@@ -1494,7 +1494,7 @@ namespace wiselib
 			option_count_ += num_of_opts;
 
 
-		// remove all deltas equal to COAP_END_OF_OPTIONS_MARKER if
+		// add COAP_END_OF_OPTIONS_MARKER if
 		// inserting the options resulted in crossing the
 		//  COAP_UNLIMITED_OPTIONS "border"
 		if( option_count_ >= COAP_UNLIMITED_OPTIONS
@@ -1540,7 +1540,7 @@ namespace wiselib
 	size_t storage_size_>
 	bool CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::is_end_of_opts_marker(block_data_t *opthead)
 	{
-		if( option_count_ >= COAP_UNLIMITED_OPTIONS && *opthead == COAP_END_OF_OPTIONS_MARKER )
+		if( *opthead == COAP_END_OF_OPTIONS_MARKER )
 			return true;
 		return false;
 	}
