@@ -26,7 +26,7 @@ using namespace wiselib;
 
 typedef PCOsModel Os;
 typedef wiselib::StaticString string_t;
-typedef COAPSERVICE<Os, UnitTestRadio, DummyTimerModel, Os::Debug, Os::Rand, string_t> coapradio_t;
+typedef COAPSERVICE<Os, UnitTestRadio, DummyTimerModel, Os::Rand, string_t> coapradio_t;
 typedef coapradio_t::coap_packet_t coap_packet_t;
 typedef UnitTestRadio::block_data_t block_data_t;
 typedef UnitTestRadio::node_id_t node_id_t;
@@ -512,15 +512,17 @@ BOOST_FIXTURE_TEST_CASE( inserting_options_before_others, FacetsFixture )
 	packet.set_option( COAP_OPT_LOCATION_PATH, location_path );
 	packet.set_opt_if_none_match(true);
 
-	block_data_t packet_expected[ ] = { 0x53, COAP_CODE_EMPTY, 0x00, 0x00 ,
+	block_data_t packet_expected[ ] = { 0x54, COAP_CODE_EMPTY, 0x00, 0x00 ,
 	                    // location path
 	                    0x68, 'l', 'o', 'c', 'a', 't', 'i', 'o', 'n',
 	                    0x04, 'p', 'a', 't', 'h',
+	                    // fencepost
+	                    0x80,
 	                    // if none match
-	                    0xf0
+	                    0x70
 	                    };
 
-	packet_serialize_length_expected = 19;
+	packet_serialize_length_expected = 20;
 
 	packet_serialize_length_actual = packet.serialize( packet_actual );
 
@@ -736,7 +738,7 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule, FacetsFixture )
 
 	node_id_t id = 23;
 	coapradio_t cradio;
-	cradio.init( *radio_, *timer_, *debug_ , *rand_ );
+	cradio.init( *radio_, *timer_, *rand_ );
 
 	BOOST_CHECK_EQUAL( timer_->scheduledEvents() , 0 );
 
@@ -796,7 +798,7 @@ BOOST_FIXTURE_TEST_CASE( ACKschedule2, FacetsFixture )
 {
 	node_id_t id = 23;
 	coapradio_t cradio;
-	cradio.init( *radio_, *timer_, *debug_ , *rand_ );
+	cradio.init( *radio_, *timer_, *rand_ );
 
 	DummyResource dresource = DummyResource();
 	// register a resource
