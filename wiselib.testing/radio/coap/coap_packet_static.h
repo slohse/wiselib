@@ -1227,14 +1227,10 @@ namespace wiselib
 		size_t removal_len = 0;
 		size_t num_segments = 0;
 		size_t curr_segment_len;
-		uint8_t max_delta = COAP_MAX_DELTA_DEFAULT;
-		if( option_count_ >= COAP_UNLIMITED_OPTIONS )
-		{
-			max_delta = COAP_MAX_DELTA_UNLIMITED;
-		}
 
 		if( removal_start != NULL )
 		{
+			// previous option number is current option number minus delta
 			uint8_t prev = (option_number - ( ((*removal_start) & 0xf0 ) >> 4));
 			uint8_t next = 0;
 #ifdef COAP_5148_DEBUG
@@ -1279,7 +1275,7 @@ namespace wiselib
 			{
 				// insert a new fencepost if necessary
 				next = option_number + ( ( (*(removal_start + removal_len)) & 0xf0 ) >> 4);
-				if( ( next - prev ) > max_delta
+				if( ( next - prev ) > COAP_MAX_DELTA_DEFAULT
 				    && !is_end_of_opts_marker(removal_start + removal_len))
 				{
 #ifdef COAP_5148_DEBUG
@@ -1314,17 +1310,10 @@ namespace wiselib
 #endif
 			scan_opts( removal_start, prev );
 
-			// remove End of Options marker if there are fewer than 15 options
-			// now, OR if there are exactly 15 and one of them is a fencepost
-			// inserted because a delta of exactly 15 would have to be used
-			// otherwise
-			if( ( option_count_ + num_segments >= COAP_UNLIMITED_OPTIONS
+			// remove End of Options marker if removing the option(s)
+			// led the number of options to falling below 15
+			if( option_count_ + num_segments >= COAP_UNLIMITED_OPTIONS
 			    && option_count_ < COAP_UNLIMITED_OPTIONS )
-			    || ( option_count_ == COAP_UNLIMITED_OPTIONS
-			       && options_[COAP_OPT_FENCEPOST] != NULL
-			       && ( *(options_[COAP_OPT_FENCEPOST]) & 0xf0 )
-			          + ( *(options_[COAP_OPT_FENCEPOST] + 1) & 0xf0 )
-			          == COAP_END_OF_OPTIONS_MARKER ) )
 			{
 #ifdef COAP_5148_DEBUG
 		debug_->debug("CoapPacket::remove_option> remove end-of-opts marker\n" );
@@ -1370,20 +1359,6 @@ namespace wiselib
 	size_t CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>
 	::option_count() const
 	{
-//		size_t count = 0;
-//		block_data_t * position = (block_data_t*) storage_;
-//		size_t len = 0;
-//		while( position < end_of_options_ )
-//		{
-//			len = (*position) & 0x0f;
-//			if( len == 15 )
-//			{
-//				len = 16 + ( *(position + 1) );
-//			}
-//			position += len + 1;
-//			++count;
-//		}
-//		return count;
 		return option_count_;
 	}
 
@@ -1454,13 +1429,7 @@ namespace wiselib
 		CoapOptionNum prev = (CoapOptionNum) 0;
 		CoapOptionNum next = (CoapOptionNum) 0;
 		uint8_t fencepost = 0;
-		uint8_t max_delta = COAP_MAX_DELTA_DEFAULT;
-		if( option_count_ + num_of_opts >= COAP_UNLIMITED_OPTIONS
-		    || ( num_of_opts == SINGLE_OPTION_NO_HEADER
-		       && option_count_ + 1 >= COAP_UNLIMITED_OPTIONS ) )
-		{
-			max_delta = COAP_MAX_DELTA_UNLIMITED;
-		}
+
 		// only add header when a single option is added
 		size_t overhead_len = 0;
 		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
@@ -1477,7 +1446,6 @@ namespace wiselib
 		// there are options set
 		if( put_here > storage_ )
 		{
-
 			// look for the next bigger option - this is where we need to start
 			// moving things further back
 			for( size_t i = (size_t) num + 1; i < COAP_OPTION_ARRAY_SIZE; ++i )
@@ -1500,7 +1468,7 @@ namespace wiselib
 						        // bitwise AND and shift to get the delta
 						        & 0xf0) >> 4 ));
 
-						if( nextnext - num <= max_delta )
+						if( nextnext - num <= COAP_MAX_DELTA_DEFAULT )
 						{
 							options_[next] = NULL;
 							next = nextnext;
@@ -1535,7 +1503,7 @@ namespace wiselib
 				// small enough, we can ommit the fencepost
 				CoapOptionNum prevprev = (CoapOptionNum) ( prev -
 						( ( *( options_[prev] ) && 0xf0) >> 4 ) );
-				if( num - prevprev <= max_delta )
+				if( num - prevprev <= COAP_MAX_DELTA_DEFAULT )
 				{
 					put_here = options_[prev];
 					options_[prev] = NULL;
@@ -1546,7 +1514,7 @@ namespace wiselib
 			fenceposts_omitted_len = next_opt_start - put_here;
 		}
 
-		if( num - prev > max_delta )
+		if( num - prev > COAP_MAX_DELTA_DEFAULT )
 		{
 			++overhead_len;
 			fencepost = next_fencepost_delta( prev );
@@ -1606,7 +1574,7 @@ namespace wiselib
 			option_count_ += num_of_opts;
 
 
-		// remove all deltas equal to COAP_END_OF_OPTIONS_MARKER if
+		// add COAP_END_OF_OPTIONS_MARKER if
 		// inserting the options resulted in crossing the
 		//  COAP_UNLIMITED_OPTIONS "border"
 		if( option_count_ >= COAP_UNLIMITED_OPTIONS
@@ -1631,37 +1599,10 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::add_end_of_opts_marker()
 	{
-		uint8_t prev = 0;
-		block_data_t *move_back_start;
-		for( size_t i = 0; i < COAP_OPTION_ARRAY_SIZE; ++i)
-		{
-			if( options_[i] != NULL )
-			{
-				if( ( i - prev ) == COAP_MAX_DELTA_DEFAULT )
-				{
-					if( end_of_options_ + 1 > payload_ )
-						return ERR_NOMEM;
-					move_back_start = options_[i];
-					memmove( ( move_back_start + 1 ),
-					         move_back_start,
-					         (size_t) ( end_of_options_ - move_back_start ) );
-					options_[i] = move_back_start + 1;
-					*move_back_start = next_fencepost_delta( prev ) << 4;
-					uint8_t fencepost = ( prev + next_fencepost_delta( prev ) );
-					*(options_[i]) = (*(options_[i]) & 0x0f) | ( ( i - fencepost ) << 4 );
-					options_[fencepost] = move_back_start;
-					++end_of_options_;
-					++option_count_;
-				}
-				prev = i;
-			}
-		}
 		if( end_of_options_ + 1 > payload_ )
 			return ERR_NOMEM;
 		*end_of_options_ = COAP_END_OF_OPTIONS_MARKER;
 		++end_of_options_;
-
-		scan_opts( storage_, 0 );
 
 		return SUCCESS;
 	}
@@ -1672,36 +1613,6 @@ namespace wiselib
 	size_t storage_size_>
 	void CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::remove_end_of_opts_marker()
 	{
-		// look for fenceposts that were inserted because the delta was
-		// equal to COAP_END_OF_OPTIONS_MARKER and remove them, as they are
-		// no longer necessary
-		uint8_t prev;
-		uint8_t next;
-		for( size_t i = COAP_OPT_FENCEPOST;
-		     i < COAP_LARGEST_OPTION_NUMBER;
-		     i += COAP_OPT_FENCEPOST )
-		{
-			if( options_[i] != NULL )
-			{
-				prev = i - ( ( *options_[i] & 0xf0 ) >> 4 );
-				next = i + ( ( *(options_[i] + 1) & 0xf0 ) >> 4 );
-				if( next - prev == COAP_MAX_DELTA_DEFAULT )
-				{
-					memmove( options_[i],
-					         (options_[i] + 1),
-					         (size_t) ( end_of_options_ - (options_[i] + 1) ) );
-					options_[next] = options_[i];
-					options_[i] = NULL;
-					*options_[next] = ((*options_[next]) & 0x0f)
-					                  | COAP_END_OF_OPTIONS_MARKER;
-					--option_count_;
-					--end_of_options_;
-				}
-			}
-		}
-
-		scan_opts( storage_, 0 );
-
 		// remove COAP_END_OF_OPTIONS_MARKER
 		--end_of_options_;
 	}
@@ -1712,7 +1623,7 @@ namespace wiselib
 	size_t storage_size_>
 	bool CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::is_end_of_opts_marker(block_data_t *opthead)
 	{
-		if( option_count_ >= COAP_UNLIMITED_OPTIONS && *opthead == COAP_END_OF_OPTIONS_MARKER )
+		if( *opthead == COAP_END_OF_OPTIONS_MARKER )
 			return true;
 		return false;
 	}
