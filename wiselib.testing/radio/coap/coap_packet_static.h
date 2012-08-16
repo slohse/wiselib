@@ -1460,7 +1460,7 @@ namespace wiselib
 		if( fencepost != 0)
 		{
 			*put_here = fencepost << 4;
-			prev = (CoapOptionNum) fencepost;
+			prev = (CoapOptionNum) (fencepost + prev);
 			options_[fencepost] = put_here;
 			++put_here;
 			++option_count_;
