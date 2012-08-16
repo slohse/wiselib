@@ -1446,6 +1446,9 @@ namespace wiselib
 		// there are options set
 		if( put_here > storage_ )
 		{
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::add_option(serialized)> put_here > storage\n" );
+#endif
 			// look for the next bigger option - this is where we need to start
 			// moving things further back
 			for( size_t i = (size_t) num + 1; i < COAP_OPTION_ARRAY_SIZE; ++i )
@@ -1497,6 +1500,10 @@ namespace wiselib
 				}
 			}
 
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::add_option(serialized)> prev %i, next %i\n", prev, next );
+#endif
+
 			if( is_fencepost( prev ) )
 			{
 				// if the delta to the option before the fencepost is
@@ -1540,11 +1547,14 @@ namespace wiselib
 		if( fencepost != 0)
 		{
 			*put_here = fencepost << 4;
-			prev = (CoapOptionNum) fencepost;
+			prev = (CoapOptionNum) (fencepost + prev);
 			options_[fencepost] = put_here;
 			++put_here;
 			++option_count_;
 		}
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::add_option(serialized)> num(%i) - prev(%i) = %i\n", num, prev, num-prev );
+#endif
 		// if multiple options are inserted only add delta, otherwise add size too
 		*put_here = ( *put_here & 0x0f ) | ((num - prev) << 4);
 		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
