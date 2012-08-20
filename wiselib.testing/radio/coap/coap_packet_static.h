@@ -685,13 +685,31 @@ namespace wiselib
 	uint32_t CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::what_options_are_set() const
 	{
 		uint32_t result = 0;
-		for( size_t i = 0; i < COAP_OPTION_ARRAY_SIZE; ++i )
+
+		block_data_t* pos = storage_;
+		uint8_t delta = 0;
+		CoapOptionNum curr_opt = (CoapOptionNum) 0;
+		size_t len = 0;
+		while( pos < end_of_options_ )
 		{
-			FAIL_COMPILATION_HERE
-			// TODO
-			if( options_[i] != NULL )
-				result |= 1 << i;
+			if( is_end_of_opts_marker( pos ) )
+				break;
+			if( curr_opt > COAP_LARGEST_OPTION_NUMBER )
+				break;
+			delta = (((*pos) & 0xf0) >> 4);
+			curr_opt += delta;
+
+			result |= 1 << i;
+
+			len = *pos & 0x0f;
+			if( len == COAP_LONG_OPTION )
+			{
+				len += *(pos + 1);
+				++len;
+			}
+			pos += len + 1;
 		}
+
 		return result;
 	}
 
@@ -1408,195 +1426,65 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts)
+	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>
+	::add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts)
 	{
-#ifdef COAP_5148_DEBUG
-		debug_->debug("CoapPacket::add_option(serialized)> \n" );
-#endif
-		if( options_[num] != NULL && !COAP_OPT_CAN_OCCUR_MULTIPLE[num] )
-			return ERR_MULTIPLE_OCCURENCES_OF_OPTION;
-		CoapOptionNum prev = (CoapOptionNum) 0;
-		CoapOptionNum next = (CoapOptionNum) 0;
-		uint8_t fencepost = 0;
+		block_data_t *put_here = storage_;
 
-		// only add header when a single option is added
-		size_t overhead_len = 0;
-		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
+		CoapOptionNum prev_opt = (CoapOptionNum) 0;
+
+		// find the appropriate place to put the option
+		// (after options with lower option number, before options
+		// with higher option number)
+		// variables are in limited scope because they are used in the loop only
+		// but don't need to be created every loop
 		{
-			overhead_len = 1;
-			if( len >= COAP_LONG_OPTION )
-				++overhead_len;
-		}
-
-		size_t fenceposts_omitted_len = 0;
-
-		block_data_t *put_here = end_of_options_;
-		block_data_t *next_opt_start = put_here;
-		// there are options set
-		if( put_here > storage_ )
-		{
-#ifdef COAP_5148_DEBUG
-		debug_->debug("CoapPacket::add_option(serialized)> put_here > storage\n" );
-#endif
-			// look for the next bigger option - this is where we need to start
-			// moving things further back
-			for( size_t i = (size_t) num + 1; i < COAP_OPTION_ARRAY_SIZE; ++i )
+			block_data_t *prev_opt_pos = put_here;
+			size_t curr_opt_len = 0;
+			uint8_t delta = 0;
+			CoapOptionNum curr_opt = (CoapOptionNum) 0;
+			while( put_here < end_of_options_ )
 			{
-				if( options_[i] != NULL )
+				if( is_end_of_opts_marker( pos ) )
+					break;
+				delta = (((*pos) & 0xf0) >> 4);
+				curr_opt += delta;
+				if( curr_opt > num )
 				{
-					next = (CoapOptionNum) i;
-					put_here = options_[i];
-
-					if( is_fencepost( next ) )
-					{
-						// if the delta to the option after the fencepost is
-						// small enough, we can ommit the fencepost
-						CoapOptionNum nextnext = (CoapOptionNum) ( next +
-						        // get the next option header
-								// considering the fenceposts length is only a
-								// precaution, it should be zero
-						        ( ( *( options_[next]
-						        + ( *(options_[next]) & 0x0f ) + 1 )
-						        // bitwise AND and shift to get the delta
-						        & 0xf0) >> 4 ));
-
-						if( nextnext - num <= COAP_MAX_DELTA_DEFAULT )
-						{
-							options_[next] = NULL;
-							next = nextnext;
-						}
-					}
-					next_opt_start = options_[next];
-
+					put_here = prev_opt_pos;
 					break;
 				}
-			}
 
-			// look for previous option - can be the same option we're inserting
-			if( next != 0 )
-			{
-				prev = (CoapOptionNum) ( next - (CoapOptionNum) ( ( *(options_[next]) & 0xf0 ) >> 4 ));
-			}
-			else
-			{
-				for( size_t i = (size_t) num; i > 0; --i )
+				curr_opt_len = *put_here & 0x0f;
+				if( curr_opt_len == COAP_LONG_OPTION )
 				{
-					if( options_[i] != NULL )
-					{
-						prev = (CoapOptionNum) i;
-						break;
-					}
+					curr_opt_len += *(put_here + 1);
+					++curr_opt_len;
 				}
+				prev_opt = curr_opt;
+				prev_opt_pos = put_here;
+				put_here += curr_opt_len + 1;
 			}
-
-#ifdef COAP_5148_DEBUG
-		debug_->debug("CoapPacket::add_option(serialized)> prev %i, next %i\n", prev, next );
-#endif
-
-			if( is_fencepost( prev ) )
-			{
-				// if the delta to the option before the fencepost is
-				// small enough, we can ommit the fencepost
-				CoapOptionNum prevprev = (CoapOptionNum) ( prev -
-						( ( *( options_[prev] ) && 0xf0) >> 4 ) );
-				if( num - prevprev <= COAP_MAX_DELTA_DEFAULT )
-				{
-					put_here = options_[prev];
-					options_[prev] = NULL;
-					prev = prevprev;
-				}
-			}
-
-			fenceposts_omitted_len = next_opt_start - put_here;
 		}
+		if( prev_opt == num && !COAP_OPT_CAN_OCCUR_MULTIPLE[num] )
+			return ERR_MULTIPLE_OCCURENCES_OF_OPTION;
 
-		if( num - prev > COAP_MAX_DELTA_DEFAULT )
-		{
-			++overhead_len;
-			fencepost = next_fencepost_delta( prev );
-		}
-
-		// move following options back
-		size_t bytes_needed = len + overhead_len - fenceposts_omitted_len;
-		if( end_of_options_ + bytes_needed >= payload_ )
-			return ERR_NOMEM;
+		// if there are options following, we need to move them back
 		if( put_here < end_of_options_ )
 		{
-			// correcting delta of following option
-			*next_opt_start = ( *next_opt_start & 0x0f )
-			                  | (block_data_t) ((next - num) << 4);
-
-			memmove( next_opt_start + bytes_needed,
-			        next_opt_start,
-			        (size_t) (end_of_options_ - next_opt_start));
+			FAIL_COMPILE_HERE!!!
 		}
 
-		memcpy( put_here + (bytes_needed - len), serial_opt, len );
-		end_of_options_ += bytes_needed;
-		if( fencepost != 0)
-		{
-			*put_here = fencepost << 4;
-			prev = (CoapOptionNum) (fencepost + prev);
-			options_[fencepost] = put_here;
-			++put_here;
-			++option_count_;
-		}
-#ifdef COAP_5148_DEBUG
-		debug_->debug("CoapPacket::add_option(serialized)> num(%i) - prev(%i) = %i\n", num, prev, num-prev );
-#endif
-		// if multiple options are inserted only add delta, otherwise add size too
-		*put_here = ( *put_here & 0x0f ) | ((num - prev) << 4);
-		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
-		{
-			if( len < COAP_LONG_OPTION )
-			{
-				*put_here = ( *put_here & 0xf0 ) | (len & 0x0f);
-			}
-			else
-			{
-				*put_here = ( *put_here & 0xf0 ) | 0x0f;
-				*(put_here + 1) = (len - COAP_LONG_OPTION);
-			}
-		}
-
-		// if we just appended we don't want to overwrite the option's pointer
-		if( prev == num )
-		{
-			put_here += len;
-		}
-
-		scan_opts( put_here, prev );
-
-		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
-			++option_count_;
-		else
-			option_count_ += num_of_opts;
 
 
-		// add COAP_END_OF_OPTIONS_MARKER if
-		// inserting the options resulted in crossing the
-		//  COAP_UNLIMITED_OPTIONS "border"
-		if( option_count_ >= COAP_UNLIMITED_OPTIONS
-		    && ( option_count_ - num_of_opts < COAP_UNLIMITED_OPTIONS
-		         || ( num_of_opts == SINGLE_OPTION_NO_HEADER
-		              && ( option_count_ - 1 ) < COAP_UNLIMITED_OPTIONS ) ) )
-		{
-			int status = add_end_of_opts_marker();
-			if( status != SUCCESS )
-				return status;
-		}
-
-#ifdef COAP_5148_DEBUG
-		debug_->debug("CoapPacket::add_option> end\n" );
-#endif
-		return SUCCESS;
 	}
 
 	template<typename OsModel_P,
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::add_end_of_opts_marker()
+	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>
+	::add_end_of_opts_marker()
 	{
 		if( end_of_options_ + 1 > payload_ )
 			return ERR_NOMEM;
@@ -1631,15 +1519,16 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	block_data_t* CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::get_opt_ptr( CoapOptionNum num)
+	block_data_t* CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>
+	::get_opt_ptr( CoapOptionNum num)
 	{
 		block_data_t* pos = storage_;
 		uint8_t delta = 0;
-		CoapOptionNum curr_opt = COAP_OPT_NOOPT;
+		CoapOptionNum curr_opt = (CoapOptionNum) 0;
 		size_t len = 0;
 		while( pos < end_of_options_ )
 		{
-			if( is_end_of_opts_marker( start ) )
+			if( is_end_of_opts_marker( pos ) )
 				break;
 			delta = (((*pos) & 0xf0) >> 4);
 			curr_opt += delta;
