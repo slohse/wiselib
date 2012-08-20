@@ -412,7 +412,6 @@ namespace wiselib
 		Debug* debug_;
 #endif
 
-		block_data_t* options_[COAP_OPTION_ARRAY_SIZE];
 		// contains Options and Data
 		block_data_t storage_[storage_size_];
 
@@ -427,7 +426,7 @@ namespace wiselib
 		bool is_critical( uint8_t option_number ) const;
 		size_t optlen(block_data_t * optheader) const;
 		size_t make_segments_from_string( const char *cstr, char delimiter, CoapOptionNum optnum, block_data_t *segments, size_t &num_segments ) const;
-		void make_string_from_segments( char delimiter, CoapOptionNum optnum, string_t &result );
+		int make_string_from_segments( char delimiter, CoapOptionNum optnum, string_t &result );
 
 	};
 
@@ -442,13 +441,6 @@ namespace wiselib
 		if( &rhs != this )
 		{
 			memcpy( storage_, rhs.storage_, storage_size_ );
-			for( size_t i = 0; i < COAP_OPTION_ARRAY_SIZE; ++i)
-			{
-				if(rhs.options_[i] != NULL )
-				{
-					options_[i] = storage_ + ( rhs.options_[i] - rhs.storage_ );
-				}
-			}
 			payload_ = storage_ + ( rhs.payload_ - rhs.storage_ );
 			end_of_options_ = storage_ + ( rhs.end_of_options_ - rhs.storage_ );
 			data_length_ = rhs.data_length_;
@@ -507,10 +499,6 @@ namespace wiselib
 		type_ = COAP_MSG_TYPE_NON;
 		code_ = COAP_CODE_EMPTY;
 		msg_id_ = 0;
-		for(size_t i = 0; i < COAP_OPTION_ARRAY_SIZE; ++i)
-		{
-			options_[i] = NULL;
-		}
 
 		payload_ = storage_ + storage_size_;
 		end_of_options_ = storage_;
@@ -699,6 +687,8 @@ namespace wiselib
 		uint32_t result = 0;
 		for( size_t i = 0; i < COAP_OPTION_ARRAY_SIZE; ++i )
 		{
+			FAIL_COMPILATION_HERE
+			// TODO
 			if( options_[i] != NULL )
 				result |= 1 << i;
 		}
@@ -777,13 +767,13 @@ namespace wiselib
 		     && optnum != COAP_OPT_URI_QUERY )
 			return ERR_METHOD_NOT_APPLICABLE;
 
-		if( options_[optnum] == NULL )
+		block_data_t *pos = get_opt_ptr( optnum );
+		if( pos == NULL )
 			return ERR_OPT_NOT_SET;
 
 		result.clear();
 		string_t curr_segment;
 		block_data_t swap;
-		block_data_t *pos = options_[optnum];
 		block_data_t *nextpos;
 		size_t value_start;
 		size_t curr_segment_len;
@@ -1038,10 +1028,10 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::get_option( CoapOptionNum option_number, uint32_t &value )
 	{
-		if( options_[option_number] != NULL )
+		block_data_t *raw = get_opt_ptr( option_number );
+		if( raw != NULL )
 		{
 			value = 0;
-			block_data_t *raw = options_[option_number];
 			size_t len = *raw & 0xf;
 			size_t pos = 1;
 
@@ -1077,25 +1067,21 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::get_option( CoapOptionNum option_number, string_t &value )
 	{
-		if( options_[option_number] == NULL )
-			return ERR_OPT_NOT_SET;
-
 		if( option_number == COAP_OPT_LOCATION_PATH
 				|| option_number  == COAP_OPT_URI_PATH )
 		{
-			make_string_from_segments ( '/', option_number, value );
+			return make_string_from_segments ( '/', option_number, value );
 		}
 		else if ( option_number == COAP_OPT_LOCATION_QUERY
 				|| option_number  == COAP_OPT_URI_QUERY )
 		{
-			make_string_from_segments ( '&', option_number, value );
+			return make_string_from_segments ( '&', option_number, value );
 		}
 		else
 		{
 			// TODO: testen ob das funtioniert
-			make_string_from_segments ( '\0', option_number, value );
+			return make_string_from_segments ( '\0', option_number, value );
 		}
-		return SUCCESS;
 	}
 
 	template<typename OsModel_P,
@@ -1104,13 +1090,17 @@ namespace wiselib
 	size_t storage_size_>
 	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::get_option( CoapOptionNum option_number, OpaqueData &value )
 	{
-		if( options_[option_number] == NULL )
+		if( option_number > COAP_LARGEST_OPTION_NUMBER )
+			return ERR_UNKNOWN_OPT;
+
+		block_data_t* pos = get_opt_ptr( option_number );
+		if( pos == NULL )
 			return ERR_OPT_NOT_SET;
 
-		size_t len = optlen( options_[option_number] );
+		size_t len = optlen( pos );
 		size_t value_start = (len >= 15) ? 2 : 1;
 
-		value.set( options_[option_number] + value_start, len );
+		value.set( pos + value_start, len );
 
 		return SUCCESS;
 	}
@@ -1124,12 +1114,12 @@ namespace wiselib
 	{
 		if( option_number > COAP_LARGEST_OPTION_NUMBER )
 			return ERR_UNKNOWN_OPT;
-		if( options_[option_number] == NULL )
+
+		block_data_t *pos = get_opt_ptr( option_number );
+		if( pos == NULL )
 			return ERR_OPT_NOT_SET;
 
 		values.clear();
-
-		block_data_t *pos = options_[option_number];
 
 		if( COAP_OPTION_FORMAT[option_number] == COAP_FORMAT_STRING )
 		{
@@ -1223,7 +1213,7 @@ namespace wiselib
 #ifdef COAP_5148_DEBUG
 		debug_->debug("CoapPacket::remove_option> \n" );
 #endif
-		block_data_t *removal_start = options_[option_number];
+		block_data_t *removal_start = get_opt_ptr( option_number );
 		size_t removal_len = 0;
 		size_t num_segments = 0;
 		size_t curr_segment_len;
@@ -1265,9 +1255,10 @@ namespace wiselib
 #endif
 				if(is_fencepost( prev ))
 				{
-					removal_start = options_[ prev ];
+					// TODO: hier evtl optimieren, dass die Position
+					// der vorherigen opt zwischengespeichert wird
+					removal_start = get_opt_ptr( prev );
 					removal_len = (size_t) (end_of_options_ - removal_start);
-					options_[ prev ] = NULL;
 					++num_segments;
 				}
 			}
@@ -1300,8 +1291,6 @@ namespace wiselib
 				*removal_start = (*removal_start & 0x0f) | ( ( next - prev ) << 4 );
 			}
 
-			options_[ option_number ] = NULL;
-
 			end_of_options_ -= removal_len;
 			option_count_ -= num_segments;
 
@@ -1333,7 +1322,7 @@ namespace wiselib
 	size_t storage_size_>
 	bool CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::opt_if_none_match() const
 	{
-		return options_[COAP_OPT_IF_NONE_MATCH] != NULL;
+		return get_opt_ptr( COAP_OPT_IF_NONE_MATCH ) != NULL;
 	}
 
 	template<typename OsModel_P,
@@ -1642,28 +1631,33 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	void CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::scan_opts( block_data_t *start, uint8_t prev)
+	block_data_t* CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>::get_opt_ptr( CoapOptionNum num)
 	{
+		block_data_t* pos = storage_;
 		uint8_t delta = 0;
-		while( start < end_of_options_ )
+		CoapOptionNum curr_opt = COAP_OPT_NOOPT;
+		size_t len = 0;
+		while( pos < end_of_options_ )
 		{
 			if( is_end_of_opts_marker( start ) )
 				break;
-			if( (delta = (((*start) & 0xf0) >> 4)) != 0 )
+			delta = (((*pos) & 0xf0) >> 4);
+			curr_opt += delta;
+			if( curr_opt == num )
 			{
-				if( prev + delta > COAP_LARGEST_OPTION_NUMBER )
-					break;
-				options_[ prev + delta ] = start;
-				prev = prev + delta;
+				return pos;
 			}
-			size_t len = *start & 0x0f;
+			if( curr_opt > num || curr_opt > COAP_LARGEST_OPTION_NUMBER )
+				break;
+			len = *pos & 0x0f;
 			if( len == COAP_LONG_OPTION )
 			{
-				len += *(start + 1);
+				len += *(pos + 1);
 				++len;
 			}
-			start += len + 1;
+			pos += len + 1;
 		}
+		return NULL;
 	}
 
 	template<typename OsModel_P,
@@ -1869,15 +1863,16 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	void CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>
+	int CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>
 	::make_string_from_segments( char delimiter, CoapOptionNum optnum, string_t &result )
 	{
 		result = "";
-		if( options_[optnum] != NULL )
+		block_data_t *pos = get_opt_ptr( optnum );
+		if( pos != NULL )
 		{
 			char terminated_delimiter[] = { delimiter, '\0' };
 			block_data_t swap;
-			block_data_t *pos = options_[optnum];
+
 			block_data_t *nextpos;
 			size_t value_start;
 			size_t curr_segment_len;
@@ -1903,7 +1898,12 @@ namespace wiselib
 				pos = nextpos;
 			} while ( pos < end_of_options_ && ( swap & 0xf0 ) == 0 );
 		}
+		else
+		{
+			return ERR_OPT_NOT_SET;
+		}
 
+		return SUCCESS;
 	}
 
 }
