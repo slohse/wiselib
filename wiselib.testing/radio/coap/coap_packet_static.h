@@ -419,6 +419,7 @@ namespace wiselib
 		int add_end_of_opts_marker();
 		void remove_end_of_opts_marker();
 		bool is_end_of_opts_marker( block_data_t *option_header);
+		block_data_t* get_opt_ptr( CoapOptionNum num);
 		void scan_opts( block_data_t *start, uint8_t prev );
 		int initial_scan_opts( size_t num_of_opts, size_t message_length );
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
@@ -699,7 +700,7 @@ namespace wiselib
 			delta = (((*pos) & 0xf0) >> 4);
 			curr_opt += delta;
 
-			result |= 1 << i;
+			result |= 1 << curr_opt;
 
 			len = *pos & 0x0f;
 			if( len == COAP_LONG_OPTION )
@@ -1430,8 +1431,16 @@ namespace wiselib
 	::add_option(CoapOptionNum num, const block_data_t *serial_opt, size_t len, size_t num_of_opts)
 	{
 		block_data_t *put_here = storage_;
+		block_data_t *push_back = end_of_options_;
+		block_data_t *prev_opt_pos = put_here;
 
 		CoapOptionNum prev_opt = (CoapOptionNum) 0;
+		CoapOptionNum next_opt = (CoapOptionNum) 0;
+		block_data_t fencepost = 0;
+
+		// anything that adds to len. This might be headers (if only a single
+		// option without header was passed) or fenceposts that had to be added
+		size_t overhead_len = 0;
 
 		// find the appropriate place to put the option
 		// (after options with lower option number, before options
@@ -1439,15 +1448,14 @@ namespace wiselib
 		// variables are in limited scope because they are used in the loop only
 		// but don't need to be created every loop
 		{
-			block_data_t *prev_opt_pos = put_here;
 			size_t curr_opt_len = 0;
 			uint8_t delta = 0;
 			CoapOptionNum curr_opt = (CoapOptionNum) 0;
 			while( put_here < end_of_options_ )
 			{
-				if( is_end_of_opts_marker( pos ) )
+				if( is_end_of_opts_marker( put_here ) )
 					break;
-				delta = (((*pos) & 0xf0) >> 4);
+				delta = (((*put_here) & 0xf0) >> 4);
 				curr_opt += delta;
 				if( curr_opt > num )
 				{
@@ -1472,11 +1480,116 @@ namespace wiselib
 		// if there are options following, we need to move them back
 		if( put_here < end_of_options_ )
 		{
-			FAIL_COMPILE_HERE!!!
+			push_back = put_here;
+
+			next_opt = ( CoapOptionNum ) ( ( (*push_back & 0xf0) >> 4 )+ prev_opt );
+			// if the next option is a fencepost we might be able to omit it
+			if( is_fencepost( next_opt )  )
+			{
+				block_data_t *nextnext_pos = push_back + optlen( push_back ) +1;
+				CoapOptionNum nextnext = ( CoapOptionNum ) ( ( (*nextnext_pos & 0xf0) >> 4 ) + next_opt );
+				if( nextnext - num <= COAP_MAX_DELTA_DEFAULT )
+				{
+					push_back = nextnext_pos;
+					next_opt = nextnext;
+				}
+			}
+		}
+		else
+		{
+			// a fencepost might be required
+			if( num - prev_opt > COAP_MAX_DELTA_DEFAULT )
+			{
+				fencepost = next_fencepost_delta( prev_opt ) << 4;
+				++overhead_len;
+			}
 		}
 
+		if( is_fencepost( prev_opt ) )
+		{
+			// if the delta to the option before the fencepost is
+			// small enough, we can omit the fencepost
+			CoapOptionNum prevprev = (CoapOptionNum) ( prev_opt -
+					( ( *prev_opt_pos && 0xf0) >> 4 ) );
+			if( num - prevprev <= COAP_MAX_DELTA_DEFAULT )
+			{
+				put_here = prev_opt_pos;
+				prev_opt = prevprev;
+			}
+		}
 
+		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
+		{
+			++overhead_len;
+			if( len >= COAP_LONG_OPTION )
+				++overhead_len;
+		}
 
+		// now we actually start moving stuff
+
+		// yes, this might turn out to be a negative number
+		int bytes_needed = len + overhead_len - ( push_back - put_here );
+		if( end_of_options_ + bytes_needed >= payload_ )
+			return ERR_NOMEM;
+
+		if( put_here < end_of_options_ )
+		{
+			// correcting delta of following option
+			*push_back = ( *push_back & 0x0f )
+			                  | (block_data_t) ((next_opt - num) << 4);
+
+			memmove( push_back + bytes_needed,
+					push_back,
+			        (size_t) (end_of_options_ - push_back));
+		}
+
+		memcpy( put_here + (bytes_needed - len), serial_opt, len );
+		end_of_options_ += bytes_needed;
+		if( fencepost != 0)
+		{
+			*put_here = fencepost << 4;
+			prev_opt = (CoapOptionNum) (fencepost + prev_opt);
+			++put_here;
+			++option_count_;
+		}
+
+		// if multiple options are inserted only add delta, otherwise add size too
+		*put_here = ( *put_here & 0x0f ) | ((num - prev_opt) << 4);
+		if( num_of_opts == SINGLE_OPTION_NO_HEADER )
+		{
+			if( len < COAP_LONG_OPTION )
+			{
+				*put_here = ( *put_here & 0xf0 ) | (len & 0x0f);
+			}
+			else
+			{
+				*put_here = ( *put_here & 0xf0 ) | 0x0f;
+				*(put_here + 1) = (len - COAP_LONG_OPTION);
+			}
+			++option_count_;
+		}
+		else
+		{
+			option_count_ += num_of_opts;
+		}
+
+		// add COAP_END_OF_OPTIONS_MARKER if
+		// inserting the options resulted in crossing the
+		//  COAP_UNLIMITED_OPTIONS "border"
+		if( option_count_ >= COAP_UNLIMITED_OPTIONS
+		    && ( option_count_ - num_of_opts < COAP_UNLIMITED_OPTIONS
+		         || ( num_of_opts == SINGLE_OPTION_NO_HEADER
+		              && ( option_count_ - 1 ) < COAP_UNLIMITED_OPTIONS ) ) )
+		{
+			int status = add_end_of_opts_marker();
+			if( status != SUCCESS )
+				return status;
+		}
+
+#ifdef COAP_5148_DEBUG
+		debug_->debug("CoapPacket::add_option> end\n" );
+#endif
+		return SUCCESS;
 	}
 
 	template<typename OsModel_P,
@@ -1624,11 +1737,6 @@ namespace wiselib
 				previous = current;
 				curr_position += opt_length;
 				continue;
-			}
-
-			if( current != previous )
-			{
-				options_[ current ] = curr_position;
 			}
 
 			++option_count_;
