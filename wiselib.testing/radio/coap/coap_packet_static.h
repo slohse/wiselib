@@ -419,7 +419,7 @@ namespace wiselib
 		int add_end_of_opts_marker();
 		void remove_end_of_opts_marker();
 		bool is_end_of_opts_marker( block_data_t *option_header);
-		block_data_t* get_opt_ptr( CoapOptionNum num);
+		block_data_t* get_opt_ptr( CoapOptionNum num );
 		void scan_opts( block_data_t *start, uint8_t prev );
 		int initial_scan_opts( size_t num_of_opts, size_t message_length );
 		uint8_t next_fencepost_delta(uint8_t previous_opt_number) const;
@@ -1276,7 +1276,7 @@ namespace wiselib
 				{
 					// TODO: hier evtl optimieren, dass die Position
 					// der vorherigen opt zwischengespeichert wird
-					removal_start = get_opt_ptr( prev );
+					removal_start = get_opt_ptr( (CoapOptionNum) prev );
 					removal_len = (size_t) (end_of_options_ - removal_start);
 					++num_segments;
 				}
@@ -1312,11 +1312,6 @@ namespace wiselib
 
 			end_of_options_ -= removal_len;
 			option_count_ -= num_segments;
-
-#ifdef COAP_5148_DEBUG
-		debug_->debug("CoapPacket::remove_option> scan opts\n" );
-#endif
-			scan_opts( removal_start, prev );
 
 			// remove End of Options marker if removing the option(s)
 			// led the number of options to falling below 15
@@ -1450,7 +1445,7 @@ namespace wiselib
 		{
 			size_t curr_opt_len = 0;
 			uint8_t delta = 0;
-			CoapOptionNum curr_opt = (CoapOptionNum) 0;
+			uint8_t curr_opt = 0;
 			while( put_here < end_of_options_ )
 			{
 				if( is_end_of_opts_marker( put_here ) )
@@ -1469,7 +1464,7 @@ namespace wiselib
 					curr_opt_len += *(put_here + 1);
 					++curr_opt_len;
 				}
-				prev_opt = curr_opt;
+				prev_opt = (CoapOptionNum) curr_opt;
 				prev_opt_pos = put_here;
 				put_here += curr_opt_len + 1;
 			}
@@ -1632,12 +1627,12 @@ namespace wiselib
 	typename Radio_P,
 	typename String_T,
 	size_t storage_size_>
-	block_data_t* CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>
+	typename Radio_P::block_data_t* CoapPacketStatic<OsModel_P, Radio_P, String_T, storage_size_>
 	::get_opt_ptr( CoapOptionNum num)
 	{
 		block_data_t* pos = storage_;
 		uint8_t delta = 0;
-		CoapOptionNum curr_opt = (CoapOptionNum) 0;
+		uint8_t curr_opt = 0;
 		size_t len = 0;
 		while( pos < end_of_options_ )
 		{
